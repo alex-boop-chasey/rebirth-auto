@@ -631,6 +631,7 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
     context = parseContext(body.context, {
       allowedKinds: ctxCfg.allowedKinds,
       maxRefs: ctxCfg.maxRefs,
+      maxRefLength: ctxCfg.maxRefLength,
     });
   } catch (err) {
     console.error('[chatbot] Context parse failed (continuing unprimed)', err);

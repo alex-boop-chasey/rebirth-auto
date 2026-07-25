@@ -8,6 +8,7 @@ import '../styles/global.css';
 import { client } from '../sanity/lib/client';
 import CompareTray from '../components/CompareTray.astro';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
+import SearchDock from '../components/search/SearchDock.astro';
 import FilterDrawer from '../components/filters/FilterDrawer.astro';
 import InventoryResults from '../components/filters/InventoryResults.astro';
 import { iconSvg } from '../lib/listing';
@@ -108,11 +109,15 @@ const canonicalURL = new URL(
             Browse the current range at Rebirth Auto — quality vehicles, full specs,
             and a team ready to help you drive away happy.
           </p>
+
+          {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
+              drawer below stays the no-JS fallback). */}
+          <SearchDock />
         </section>
 
         {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
         <div id="inventory" class="mt-8 flex items-end justify-between border-b border-slate-200 pb-4">
-          <h2 class="text-xl font-semibold tracking-tight text-slate-900">Current inventory</h2>
+          <h2 id="inventory-heading" class="text-xl font-semibold tracking-tight text-slate-900">Current inventory</h2>
           <button
             type="button"
             id="filters-trigger"

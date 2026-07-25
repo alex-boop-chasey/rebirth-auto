@@ -1,0 +1,287 @@
+---
+/**
+ * SearchDock — the Rebi-fronted plain-English homepage search entry point.
+ * ------------------------------------------------------------------
+ * A JS-ONLY enhancement layered on the hero. With no JS it stays hidden and the
+ * classic Filters drawer (#filters-trigger + <FilterDrawer>) is the fallback
+ * (Lens 1). On submit it POSTs /api/search, drives the ONE filter URL via the
+ * shared `applyFilterUrl` (URL = single source of truth, Decision 5), and asks
+ * the chat widget to slide Rebi in grounded on the on-screen results — WITHOUT
+ * touching the chatbot streaming core (a decoupled `reb:search` DOM event).
+ *
+ * Grid-driving is homepage-fenced by construction: the dock only exists on the
+ * homepage, and #inventory-results is only there.
+ */
+import { dealerConfig } from '../../config/dealer';
+
+const { placeholders, typewriter } = dealerConfig.chat.search;
+// Config → client, so a tenant swap restyles copy/timings without code edits.
+const dockConfig = JSON.stringify({ placeholders, typewriter });
+---
+
+<div id="search-dock" class="search-dock" data-config={dockConfig} hidden>
+  <form id="search-dock-form" class="search-dock-form" role="search" autocomplete="off">
+    <span class="search-dock-ico" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </span>
+    <input
+      id="search-dock-input"
+      class="search-dock-input"
+      type="text"
+      name="q"
+      aria-label="Describe the car you're looking for"
+      maxlength="300"
+    />
+    <button id="search-dock-submit" class="search-dock-submit" type="submit">
+      <span class="search-dock-submit-label">Search</span>
+      <span class="search-dock-spinner" hidden aria-hidden="true"></span>
+    </button>
+  </form>
+  <p class="search-dock-hint">
+    Ask in plain English — Rebi reads your search and lines up the matches. Prefer to click?
+    <button type="button" id="search-dock-manual" class="search-dock-manual">Refine manually</button>
+  </p>
+</div>
+
+<style>
+  .search-dock { margin: 1.75rem auto 0; max-width: 40rem; }
+  .search-dock[hidden] { display: none; }
+  .search-dock-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border: 1px solid rgb(15 23 42 / 12%);
+    border-radius: 9999px;
+    padding: 0.4rem 0.4rem 0.4rem 1rem;
+    box-shadow: 0 12px 30px -12px rgb(15 23 42 / 18%);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .search-dock-form:focus-within {
+    border-color: rgb(1 97 239);
+    box-shadow: 0 12px 30px -10px rgb(1 97 239 / 30%);
+  }
+  .search-dock-ico { display: flex; color: rgb(100 116 139); flex-shrink: 0; }
+  .search-dock-ico svg { width: 1.15rem; height: 1.15rem; }
+  .search-dock-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+    color: rgb(15 23 42);
+    padding: 0.35rem 0;
+  }
+  .search-dock-input::placeholder { color: rgb(100 116 139); }
+  .search-dock-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    background: rgb(1 97 239);
+    color: #fff;
+    border: none;
+    border-radius: 9999px;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .search-dock-submit:hover:not(:disabled) { background: rgb(1 84 207); }
+  .search-dock-submit:disabled { opacity: 0.7; cursor: progress; }
+  .search-dock-spinner {
+    width: 1rem; height: 1rem; border-radius: 9999px;
+    border: 2px solid rgb(255 255 255 / 40%); border-top-color: #fff;
+    animation: search-dock-spin 0.7s linear infinite;
+  }
+  .search-dock-spinner[hidden] { display: none; }
+  @keyframes search-dock-spin { to { transform: rotate(360deg); } }
+  .search-dock-hint {
+    margin: 0.7rem 0 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgb(100 116 139);
+  }
+  .search-dock-manual {
+    background: none; border: none; padding: 0;
+    color: rgb(1 97 239); font: inherit; font-weight: 600; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .search-dock-form, .search-dock-submit { transition: none; }
+    .search-dock-spinner { animation-duration: 1.4s; }
+  }
+</style>
+
+<script>
+  import { applyFilterUrl } from '../../lib/client/filter-url';
+  import {
+    parseFilters,
+    serializeFilters,
+    hrefFor,
+    hasActiveFilters,
+    type FilterState,
+  } from '../../lib/listings-query';
+
+  const dock = document.getElementById('search-dock');
+  const form = document.getElementById('search-dock-form') as HTMLFormElement | null;
+  const input = document.getElementById('search-dock-input') as HTMLInputElement | null;
+  const submit = document.getElementById('search-dock-submit') as HTMLButtonElement | null;
+  const submitLabel = dock?.querySelector<HTMLElement>('.search-dock-submit-label') ?? null;
+  const spinner = dock?.querySelector<HTMLElement>('.search-dock-spinner') ?? null;
+  const manualBtn = document.getElementById('search-dock-manual');
+
+  if (dock && form && input && submit) {
+    // Reveal the dock — it's a JS-only enhancement (no-JS keeps the drawer).
+    dock.hidden = false;
+
+    type DockConfig = {
+      placeholders: string[];
+      typewriter: { typeMs: number; deleteMs: number; dwellMs: number };
+    };
+    let cfg: DockConfig = { placeholders: [], typewriter: { typeMs: 45, deleteMs: 25, dwellMs: 1800 } };
+    try {
+      const raw = dock.getAttribute('data-config');
+      if (raw) cfg = { ...cfg, ...JSON.parse(raw) };
+    } catch { /* keep defaults */ }
+
+    const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+    // --- Cycling typewriter placeholder --------------------------------------
+    // Pauses while the field is focused or has text; resumes on blur of an empty
+    // field. Purely a placeholder — never touches the input's real value.
+    let twTimer: ReturnType<typeof setTimeout> | null = null;
+    let phraseIdx = 0;
+    let charIdx = 0;
+    let deleting = false;
+    const clearTw = () => { if (twTimer) { clearTimeout(twTimer); twTimer = null; } };
+
+    const twTick = () => {
+      const phrases = cfg.placeholders;
+      if (!phrases.length || document.activeElement === input || input.value) return;
+      const phrase = phrases[phraseIdx % phrases.length];
+      if (!deleting) {
+        charIdx++;
+        input.placeholder = phrase.slice(0, charIdx);
+        if (charIdx >= phrase.length) {
+          deleting = true;
+          twTimer = setTimeout(twTick, cfg.typewriter.dwellMs);
+          return;
+        }
+        twTimer = setTimeout(twTick, cfg.typewriter.typeMs);
+      } else {
+        charIdx--;
+        input.placeholder = phrase.slice(0, Math.max(0, charIdx));
+        if (charIdx <= 0) {
+          deleting = false;
+          phraseIdx++;
+        }
+        twTimer = setTimeout(twTick, cfg.typewriter.deleteMs);
+      }
+    };
+    const startTw = () => {
+      clearTw();
+      if (REDUCED_MOTION || !cfg.placeholders.length) {
+        input.placeholder = cfg.placeholders[0] ?? 'Describe the car you’re looking for…';
+        return;
+      }
+      twTimer = setTimeout(twTick, 400);
+    };
+    input.addEventListener('focus', () => { clearTw(); if (!input.value) input.placeholder = 'Describe the car you’re looking for…'; });
+    input.addEventListener('blur', () => { if (!input.value) startTw(); });
+    startTw();
+
+    // --- Submit → /api/search → drive grid + open Rebi -----------------------
+    // Homepage-fenced by construction: the dock only renders on the homepage, and
+    // #inventory-results only exists there. We still guard before applyFilterUrl.
+    let seq = 0; // supersede-in-flight — a slow response can't overwrite a newer one
+    const setBusy = (b: boolean) => {
+      submit.disabled = b;
+      if (submitLabel) submitLabel.hidden = b;
+      if (spinner) spinner.hidden = !b;
+    };
+
+    const currentUrlState = (): FilterState =>
+      parseFilters(new URLSearchParams(window.location.search));
+
+    const runSearch = async (query: string) => {
+      const my = ++seq;
+      setBusy(true);
+      let data: any = null;
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, filters: currentUrlState() }),
+        });
+        data = await res.json().catch(() => null);
+      } catch { /* network error — fall through to the graceful open below */ }
+      if (my !== seq) return; // superseded by a newer submit
+      setBusy(false);
+
+      const gridPresent = !!document.getElementById('inventory-results');
+      const filters: FilterState | null =
+        data && data.filters ? (data.filters as FilterState) : null;
+      const confidence: string = data?.confidence ?? 'low';
+      const interpretation: string =
+        typeof data?.interpretation === 'string' ? data.interpretation : '';
+      const clarifying: string | null =
+        typeof data?.clarifyingQuestion === 'string' ? data.clarifyingQuestion : null;
+
+      // Apply only a confident, NON-EMPTY extraction — an empty extraction at high
+      // confidence must NOT clear the visitor's existing filters (salvaged guard).
+      const applied =
+        !!filters && confidence !== 'low' && hasActiveFilters(filters);
+
+      if (applied && gridPresent && filters) {
+        applyFilterUrl(hrefFor({ ...filters, page: 1 }));
+        flipHeading(true);
+      }
+
+      // The ref the server grounds Rebi on: the filter string now on screen.
+      const groundState = applied && filters ? { ...filters, page: 1 } : currentUrlState();
+      const ref = serializeFilters(groundState);
+
+      // Compose the client-only opening (never sent to the server — no injection).
+      let opening: string;
+      if (applied) {
+        opening = interpretation
+          ? `${interpretation} They're lined up below — ask me anything about them, or tell me how to narrow things down.`
+          : "Here are the matches — ask me anything about them, or tell me how to narrow things down.";
+      } else {
+        opening = [interpretation, clarifying].filter(Boolean).join(' ') ||
+          "I couldn't quite pin that down — tell me a bit more, like a budget, body type, or fuel type, and I'll line up the matches.";
+      }
+
+      // Ask the chat widget to slide Rebi in with this search context. Decoupled
+      // DOM event — the chatbot streaming/escalation core is never touched.
+      document.dispatchEvent(new CustomEvent('reb:search', { detail: { ref, opening } }));
+    };
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = input.value.trim();
+      if (!query) { input.focus(); return; }
+      clearTw();
+      runSearch(query);
+    });
+
+    // "Refine manually" opens the classic drawer (its trigger stays the fallback).
+    manualBtn?.addEventListener('click', () => {
+      document.getElementById('filters-trigger')?.click();
+    });
+  }
+
+  // Flip the inventory heading between "Current inventory" and "Results" (JS-only;
+  // the no-JS heading stays "Current inventory").
+  function flipHeading(toResults: boolean) {
+    const h = document.getElementById('inventory-heading');
+    if (h) h.textContent = toResults ? 'Results' : 'Current inventory';
+  }
+</script>

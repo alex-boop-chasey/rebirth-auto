@@ -156,12 +156,36 @@ export interface DealerConfig {
     context: {
       /** Master on/off. When false, any sent context is ignored (no priming). */
       enabled: boolean;
-      /** Which context kinds this dealer accepts. `listing` + `compare` are wired. */
+      /** Which context kinds this dealer accepts. `listing`/`compare`/`search` wired. */
       allowedKinds: readonly ConversationContextKind[];
       /** Hard cap on refs a single context may carry (bounds the focus fetch). */
       maxRefs: number;
+      /**
+       * Hard cap on the CHARACTER length of a single ref. A `search` ref is a
+       * serialized filter query string; capping it stops a multi-kilobyte ref from
+       * bloating the KV cache key / focus query. Over-long refs are dropped.
+       */
+      maxRefLength: number;
       /** KV TTL (seconds) for a resolved focus block. Ignored if no KV bound. */
       cacheTtlSeconds: number;
+    };
+    /**
+     * Rebi-fronted natural-language search (the homepage search dock + the
+     * `/api/search` endpoint). Deterministic pre-pass → structured-tier LLM only
+     * on a miss; fail-open. Front-of-house copy (placeholders, typewriter timings)
+     * lives here too so a tenant swap restyles it without code edits.
+     */
+    search: {
+      /** Master on/off — lets a dealer disable AI search without a deploy. */
+      enabled: boolean;
+      /** Reject queries longer than this (chars) before any AI call. */
+      maxQueryLength: number;
+      /** Per-IP rate limit for /api/search (its OWN `search:` KV counter). */
+      rateLimit: { windowSeconds: number; maxRequests: number };
+      /** Cycling typewriter placeholder examples for the hero search input. */
+      placeholders: readonly string[];
+      /** Typewriter animation timings (ms). */
+      typewriter: { typeMs: number; deleteMs: number; dwellMs: number };
     };
   };
 }
@@ -294,9 +318,27 @@ export const dealerConfig: DealerConfig = {
     },
     context: {
       enabled: true,
-      allowedKinds: ['listing', 'compare'],
+      allowedKinds: ['listing', 'compare', 'search'],
       maxRefs: 4,
+      // A search ref is a serialized filter string; 512 chars is generous for one
+      // (the URL contract's dimensions can't realistically exceed it).
+      maxRefLength: 512,
       cacheTtlSeconds: 120, // a focused vehicle's price/status shifts slowly
+    },
+    search: {
+      enabled: true,
+      maxQueryLength: 300,
+      // Shopper search is higher-volume than Studio authoring but still capped
+      // per-IP to bound AI cost. Generous for genuine refining.
+      rateLimit: { windowSeconds: 3600, maxRequests: 30 },
+      placeholders: [
+        'Family SUV with 7 seats under $40,000',
+        'Reliable diesel ute for towing, low kms',
+        'First car for my daughter, automatic, under $15k',
+        'Something economical for the commute',
+        'Late-model hybrid with under 50,000 km',
+      ],
+      typewriter: { typeMs: 45, deleteMs: 25, dwellMs: 1800 },
     },
   },
 };

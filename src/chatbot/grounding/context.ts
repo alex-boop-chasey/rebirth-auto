@@ -15,6 +15,7 @@
 import { client } from '../../sanity/lib/client';
 import { getDealerConfig } from '../../config/dealer';
 import { formatPrice } from '../../lib/listing';
+import { parseFilters, buildListingsFilter, activeChips } from '../../lib/listings-query';
 import { cachedText } from './cache';
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
@@ -85,6 +86,41 @@ function renderFocus(rows: FocusRow[], kind: ConversationContext['kind']): strin
 }
 
 /**
+ * Render the "RESULTS CURRENTLY ON SCREEN" focus block for a `search` context —
+ * the live matches for the filter state the visitor is looking at. `''` when the
+ * filter parses to nothing meaningful (→ omit; Rebi just chats). The exact total
+ * grounds Rebi honestly (including "nothing matches" and the dealer-subset
+ * body-type case, where a code the dealer doesn't stock reads 0).
+ */
+function renderSearchFocus(rows: FocusRow[], total: number, summary: string, max: number): string {
+  const header =
+    '=== RESULTS CURRENTLY ON SCREEN (the vehicles the visitor is looking at — authoritative, fetched live) ===';
+  const footer = '=== END RESULTS CURRENTLY ON SCREEN ===';
+  const filterLine = summary
+    ? `The visitor is searching for: ${summary}.`
+    : 'The visitor is browsing the full inventory.';
+  if (total === 0 || rows.length === 0) {
+    return [
+      header,
+      filterLine,
+      'No vehicles currently match that search. Tell the visitor plainly that nothing in stock matches right now, and offer to broaden the search or connect them with our team. DO NOT invent alternatives, prices, or specs.',
+      footer,
+    ].join('\n');
+  }
+  const shown = rows.slice(0, max).map((r, i) => renderFocusLine(r, i));
+  const note =
+    total > shown.length
+      ? `There are ${total} vehicles matching this search. Listed below are ${shown.length} of them (lowest-priced first) as a representative sample — the ONLY listings you may quote prices or specs from. Do NOT claim there are only ${shown.length}; the true total is ${total}, and the rest are on /listings.`
+      : `There ${total === 1 ? 'is' : 'are'} ${total} matching vehicle${total === 1 ? '' : 's'}, all listed below.`;
+  return [
+    header,
+    `${filterLine} ${note} Treat these results as the subject of the conversation. Never quote a price or spec not shown here, never invent vehicles beyond this list, and help the visitor weigh options or narrow down. Point interested visitors to the listing on /listings or to the team.`,
+    ...shown,
+    footer,
+  ].join('\n');
+}
+
+/**
  * Resolve a conversation context to its live CONVERSATION FOCUS block, or `null`
  * when priming is disabled, the kind isn't allowed, nothing resolves, or any
  * error occurs (fail-open — the focus is simply omitted). KV TTL-cached keyed by
@@ -101,10 +137,43 @@ export async function resolveFocus(
   const refs = context.refs.slice(0, cfg.maxRefs);
   if (!refs.length) return null;
 
+  // `search` carries ONE ref: a serialized filter query string describing the
+  // grid on screen. Parse it back through the URL contract's `parseFilters`,
+  // query the exact same set + count, and render the on-screen results.
+  if (context.kind === 'search') {
+    const ref = refs[0];
+    const max = getDealerConfig().chat.grounding.lookup.maxListings;
+    try {
+      const text = await cachedText(
+        kv,
+        `grounding:focus:v1:search:${ref}`,
+        cfg.cacheTtlSeconds,
+        async () => {
+          const state = parseFilters(new URLSearchParams(ref));
+          const summary = activeChips(state)
+            .map((c) => `${c.label.toLowerCase()} ${c.value}`)
+            .join(', ');
+          const { filter, params } = buildListingsFilter(state);
+          // Mirror the homepage grid query (no extra status scoping) so the total
+          // matches exactly what the visitor sees. Public projection — no dealerNotes.
+          const query = `{
+            "items": *[${filter}] | order(price asc) [0...${max}]${FOCUS_PROJECTION},
+            "total": count(*[${filter}])
+          }`;
+          const res = await client.fetch<{ items: FocusRow[]; total: number }>(query, params);
+          return renderSearchFocus(res?.items ?? [], res?.total ?? 0, summary, max);
+        },
+      );
+      return text || null;
+    } catch (err) {
+      console.error('[grounding] Search focus resolution failed (omitting focus)', err);
+      return null;
+    }
+  }
+
   // `listing` (one id) and `compare` (several ids) both resolve their refs by
   // `_id` through the same fetch — the only difference is the framing in
-  // `renderFocus`. `search` (a query ref) shares this seam later; until then it
-  // no-ops.
+  // `renderFocus`.
   if (context.kind !== 'listing' && context.kind !== 'compare') return null;
 
   try {

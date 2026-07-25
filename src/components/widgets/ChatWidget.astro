@@ -416,6 +416,19 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
 </style>
 
 <script>
+  // Shared filter-URL driver + URL contract helpers — the "type it to Rebi"
+  // search refine drives the ONE filter URL client-side (Decision 5), NEVER
+  // touching the chatbot streaming core. `extractFilters` is the same
+  // deterministic matcher the server search pre-pass uses (one vocabulary).
+  import { applyFilterUrl } from '../../lib/client/filter-url';
+  import {
+    parseFilters,
+    serializeFilters,
+    hrefFor,
+    type FilterState,
+  } from '../../lib/listings-query';
+  import { extractFilters, hasConcreteFilters } from '../../lib/vehicle-filter-extract';
+
   const GREETING =
     "Hi! I'm Rebi, the Rebirth Auto assistant. Ask me about our vehicles, financing, servicing, or trade-ins — I'm happy to help.";
 
@@ -533,6 +546,13 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     const buildOpening = (kind: string, title: string) => {
       if (kind === 'compare') {
         return 'Happy to help you compare these — what matters most: price, running costs, space, or features?';
+      }
+      // `search`: the SearchDock composes the whole opening (interpretation +
+      // optional clarifying question) and passes it in as `title`. Fall back to a
+      // generic line if it's empty.
+      if (kind === 'search') {
+        return title ||
+          "Here are the matches — ask me anything about them, or tell me how to narrow things down.";
       }
       return title
         ? `Happy to help with the ${title} — want to know about its price, kilometres, features, or booking a look?`
@@ -961,7 +981,16 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       if (TURNSTILE_KEY && !sessionId) p.turnstileToken = getTurnstileToken();
       // Re-send the priming context each turn (server resolves it live). Only
       // `{ kind, refs }` — the opening greeting stays client-side.
-      if (activeContext) p.context = { kind: activeContext.kind, refs: activeContext.refs };
+      if (activeContext) {
+        let refs = activeContext.refs;
+        // For a search context on the homepage, ground Rebi on the LIVE URL state
+        // (the single source of truth) — so a chip removal or manual-drawer change
+        // is reflected without re-searching. Off-homepage, keep the stored ref.
+        if (activeContext.kind === 'search' && gridPresent()) {
+          refs = [serializeFilters(parseFilters(new URLSearchParams(location.search)))];
+        }
+        p.context = { kind: activeContext.kind, refs };
+      }
       return p;
     };
 
@@ -1051,6 +1080,35 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       }
     };
 
+    // "Type it to Rebi" refine helpers (§C). A message is treated as a REFINE
+    // (drives the grid) only when it looks like a filter command, NOT a question —
+    // so "is the diesel reliable?" answers from the results without moving the grid,
+    // while "actually under $30k" re-drives it. Deterministic; an LLM intent
+    // classifier is a later refinement.
+    const QUESTION_STARTERS =
+      /^(is|are|am|do|does|did|can|could|would|will|should|has|have|had|what|whats|why|how|which|who|whom|whose|when|where|was|were|may|might)\b/i;
+    const looksLikeQuestion = (t: string) => {
+      const s = t.trim();
+      return s.includes('?') || QUESTION_STARTERS.test(s);
+    };
+    // Merge a deterministic extraction onto the current filter state: a stated
+    // dimension overrides, an unstated one is preserved; always reset to page 1.
+    const mergeFilters = (current: FilterState, ex: FilterState): FilterState => {
+      const m: FilterState = { ...current, page: 1 };
+      if (ex.bodyType.length) m.bodyType = ex.bodyType;
+      if (ex.transmission.length) m.transmission = ex.transmission;
+      if (ex.fuelType.length) m.fuelType = ex.fuelType;
+      if (ex.driveType.length) m.driveType = ex.driveType;
+      if (ex.condition.length) m.condition = ex.condition;
+      if (ex.seats.length) m.seats = ex.seats;
+      if (ex.priceMin != null) m.priceMin = ex.priceMin;
+      if (ex.priceMax != null) m.priceMax = ex.priceMax;
+      if (ex.yearMin != null) m.yearMin = ex.yearMin;
+      if (ex.yearMax != null) m.yearMax = ex.yearMax;
+      if (ex.odoMax != null) m.odoMax = ex.odoMax;
+      return m;
+    };
+
     const send = async (text: string) => {
       if (busy || !text.trim()) return;
 
@@ -1070,6 +1128,24 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       addBubble('user', format(text), ts);
       save();
       showTyping();
+
+      // §C "type it to Rebi": on the homepage, with an active search context, a
+      // filter-y (non-question) message re-drives the grid CLIENT-SIDE via the
+      // shared applyFilterUrl (URL = source of truth) BEFORE the chat turn — so the
+      // grounded reply below comments on the tighter set. The chatbot streaming
+      // core is never touched; only the filter URL moves. A question leaves the
+      // grid alone and just gets a grounded answer.
+      if (activeContext?.kind === 'search' && gridPresent() && !looksLikeQuestion(text)) {
+        try {
+          const ex = extractFilters(text);
+          if (ex && hasConcreteFilters(ex.state)) {
+            const merged = mergeFilters(parseFilters(new URLSearchParams(location.search)), ex.state);
+            applyFilterUrl(hrefFor(merged)); // pushState → new URL → basePayload reads it
+            activeContext.refs = [serializeFilters(merged)];
+            try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+          }
+        } catch { /* refine is best-effort — the grounded chat turn still runs */ }
+      }
 
       const payload = basePayload();
       const wantStream = USE_STREAM && (status === 'ai_active' || status === 'closed');
@@ -1240,6 +1316,27 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       } else {
         renderHistory(); // already open — refresh so the primed greeting shows
       }
+    });
+
+    // Homepage grid guard — #inventory-results exists ONLY on the homepage. The
+    // search context drives the grid there; off-homepage it's conversational-only.
+    const gridPresent = () => !!document.getElementById('inventory-results');
+
+    // The SearchDock (hero) drives the grid via applyFilterUrl, then asks Rebi to
+    // slide in grounded on the on-screen results via this decoupled DOM event —
+    // NO action channel, NO SSE change, the streaming core is untouched. `ref` is
+    // the serialized filter string (server grounds on it); `opening` is the
+    // client-only greeting (never sent — no injection).
+    document.addEventListener('reb:search', (e) => {
+      const detail = (e as CustomEvent).detail || {};
+      const ref: string = typeof detail.ref === 'string' ? detail.ref : '';
+      const opening: string = typeof detail.opening === 'string' ? detail.opening : '';
+      // A search always primes with exactly one ref (may be '' → server drops it,
+      // Rebi just chats). Pass the composed opening through as the `title`.
+      activeContext = { kind: 'search', refs: [ref], opening: buildOpening('search', opening) };
+      try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+      if (panel.hidden) openPanel();
+      else renderHistory();
     });
 
     confirmX?.addEventListener('click', () => closeConfirm());

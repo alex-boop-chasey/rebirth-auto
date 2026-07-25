@@ -31,6 +31,14 @@ export interface ParseContextOptions {
   allowedKinds: readonly string[];
   /** Hard cap on how many refs a context may carry (from `chat.context.maxRefs`). */
   maxRefs: number;
+  /**
+   * Hard cap on each ref's CHARACTER length (from `chat.context.maxRefLength`).
+   * A `search` ref is a serialized filter query string; capping it stops a
+   * multi-kilobyte ref from bloating the KV cache key / focus query. Refs longer
+   * than this are dropped (not truncated — a partial filter string is worse than
+   * none). Optional so older callers stay valid; unbounded when omitted.
+   */
+  maxRefLength?: number;
 }
 
 /**
@@ -48,12 +56,14 @@ export function parseContext(raw: unknown, opts: ParseContextOptions): Conversat
   const rawRefs = (raw as { refs?: unknown }).refs;
   if (!Array.isArray(rawRefs)) return null;
 
+  const maxLen = opts.maxRefLength ?? Infinity;
   const seen = new Set<string>();
   const refs: string[] = [];
   for (const r of rawRefs) {
     if (typeof r !== 'string') continue;
     const trimmed = r.trim();
-    if (!trimmed || seen.has(trimmed)) continue;
+    // Drop empty, over-long (KV-key-bloat guard), or duplicate refs.
+    if (!trimmed || trimmed.length > maxLen || seen.has(trimmed)) continue;
     seen.add(trimmed);
     refs.push(trimmed);
     if (refs.length >= opts.maxRefs) break;
