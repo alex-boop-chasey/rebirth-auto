@@ -377,8 +377,8 @@ export const dealerConfig: DealerConfig = {
           maps: 'a small, easy-to-drive, affordable automatic: bodyType hatchback, transmission auto, and a modest priceMax (around 25000) if no budget is given. P-plate/licence status is NOT a filter — do not invent one; just map the practical intent and you may note the assumption in interpretation.',
         },
         {
-          phrase: 'economical / cheap to run / good on fuel / low fuel / fuel efficient / save on petrol',
-          maps: 'prefer fuelType hybrid or electric; if the intent is broader "cheap to run", also a smaller, lower-priced petrol hatchback (bodyType hatchback). Never invent a fuel-economy (L/100km) figure — there is no such field.',
+          phrase: 'economical / cheap to run / good on fuel / low fuel / low fuel economy / fuel efficient / save on petrol',
+          maps: 'running COST, not a fuel type: bodyType hatchback (small) and a modest priceMax (around 25000) if no budget is given. Do NOT emit a fuelType — a small petrol car is cheap to run, so forcing hybrid/electric wrongly excludes economical stock. Only add a fuelType when the visitor explicitly names a fuel (petrol/diesel/hybrid/electric). Never invent a fuel-economy (L/100km) figure — there is no such field.',
         },
         {
           phrase: 'easy to park / city car / runabout / small / compact / around town',

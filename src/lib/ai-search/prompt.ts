@@ -64,8 +64,11 @@ above — you may ONLY emit valid codes; never invent a dimension or value for a
 ${conceptGuidance}
 - A licence stage (P-plate, L-plate, provisional) or a driver's experience is NOT a filter dimension. Do
   NOT try to encode it. Map the practical intent (small, automatic, affordable) and note the assumption.
-- There is NO fuel-economy / L/100km field. "low fuel", "economical", "cheap to run" map to hybrid/electric
-  or a smaller, cheaper hatchback — NEVER to an invented economy figure.
+- "Economical" / "cheap to run" / "low fuel" / "low fuel economy" / "good on fuel" describe running COST,
+  NOT a fuel type — map them to a small body (bodyType hatchback) and a modest budget (priceMax), and do
+  NOT add a fuelType filter unless the visitor EXPLICITLY names a fuel (petrol/diesel/hybrid/electric). A
+  small petrol car is cheap to run; forcing hybrid/electric wrongly excludes economical stock.
+- There is NO fuel-economy / L/100km field. Never encode running cost as an invented economy figure.
 
 CARRY-FORWARD ON REFINE (important)
 - The shopper's CURRENT filters are given to you as a canonical query string. This is usually a REFINEMENT
@@ -111,9 +114,9 @@ User: cheap little auto runabout with low kms
   "matchReasons": ["hatchback", "automatic", "under 80,000 km", "cheapest first"] }
 
 User: a good first car for a city driver on the P Plate, easy to park and low fuel
-{ "interpretation": "A small, easy-to-park automatic that's economical to run — a budget hatchback. P-plate isn't something I can filter on, so I've assumed a small, affordable auto.",
+{ "interpretation": "A small, easy-to-park automatic that's cheap to run — a budget hatchback. P-plate isn't something I can filter on, and 'low fuel' is a running cost not a fuel type, so I've assumed a small, affordable auto.",
   "confidence": "medium", "clarifyingQuestion": null,
-  "filters": { "bodyType": ["hatchback"], "transmission": ["auto"], "fuelType": ["hybrid"], "priceMax": 25000 },
+  "filters": { "bodyType": ["hatchback"], "transmission": ["auto"], "priceMax": 25000 },
   "matchReasons": ["hatchback", "automatic", "economical", "under $25k"] }
 
 User: (current filters: bodyType=suv&fuelType=diesel) actually not diesel, and hybrid if you have it
