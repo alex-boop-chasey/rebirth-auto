@@ -1149,6 +1149,15 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       setTimeout(() => input.focus(), 50);
     };
     const closePanel = () => {
+      // Abandoned primed open: the visitor opened a context-primed chat but never
+      // sent a message. Discard the context so a later plain launcher open shows
+      // Rebi's default greeting, not the stale primed one. Only when unengaged —
+      // once a message exists (history.length > 0) the context is intended
+      // continuity for an in-progress primed conversation and must persist.
+      if (activeContext && history.length === 0) {
+        activeContext = null;
+        try { sessionStorage.removeItem(CONTEXT_KEY); } catch { /* ignore */ }
+      }
       panel.hidden = true;
       root.classList.remove('reb-open');
       launcher.setAttribute('aria-expanded', 'false');
