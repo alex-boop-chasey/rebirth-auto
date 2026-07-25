@@ -482,6 +482,13 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
 
     let history: Msg[] = [];
     let busy = false;
+    // Pending "Rebi is typing… → greeting" reveal on a fresh/primed open. Held so
+    // it can be cancelled if the panel closes (or resets) before it fires — see
+    // renderGreetingWithTyping / closePanel / newChat.
+    let greetingTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearGreetingTimer = () => {
+      if (greetingTimer) { clearTimeout(greetingTimer); greetingTimer = null; }
+    };
     // Assigned by the voice-dictation feature block below when the Web Speech API
     // is available; a no-op otherwise so close/submit paths can always call it.
     let stopDictation: () => void = () => {};
@@ -662,6 +669,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
 
     // Render from client history (the AI-only phase — has nice timestamps).
     const renderHistory = () => {
+      clearGreetingTimer(); // an immediate render supersedes any pending typing→greeting
       log.innerHTML = '';
       lastTs = 0;
       // Always render exactly ONE greeting — the log was just cleared, so it
@@ -675,6 +683,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
 
     // Render authoritatively from the server (once a human is involved).
     const renderFromServer = (messages: ServerMsg[]) => {
+      clearGreetingTimer(); // an authoritative server render supersedes any pending typing→greeting
       log.innerHTML = '';
       lastTs = 0;
       seen.clear();
@@ -687,6 +696,27 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         if (m.id > lastId) lastId = m.id;
         if (m.role === 'human') humanArrived = true;
       }
+    };
+
+    // Fresh/primed open with no conversation yet: make Rebi feel like it's
+    // composing a unique message. Clear the log, show the pulsing-dots typing
+    // indicator, then after a short, slightly-randomised beat reveal the greeting
+    // (the primed opening when a context is active, else the default). Cancelled by
+    // clearGreetingTimer() if the panel closes/resets before it fires.
+    const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const renderGreetingWithTyping = () => {
+      clearGreetingTimer();
+      log.innerHTML = '';
+      lastTs = 0;
+      showTyping();
+      // ~1.5–2.5s so it feels alive, not fixed; near-instant under reduced motion.
+      const delay = REDUCED_MOTION ? 0 : 1500 + Math.random() * 1000;
+      greetingTimer = setTimeout(() => {
+        greetingTimer = null;
+        if (panel.hidden) { hideTyping(); return; } // never pop a greeting into a closed panel
+        hideTyping();
+        addBubble('assistant', format(currentGreeting()));
+      }, delay);
     };
 
     // --- Networking helpers ---
@@ -831,6 +861,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // Start a fresh conversation — clears the client session so the next message
     // mints a new one. (Old session is left in D1 and lazily cleaned up.)
     const newChat = () => {
+      clearGreetingTimer(); // tearing down — cancel any pending typing→greeting reveal
       stopPolling();
       try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
       try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
@@ -1139,16 +1170,26 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     };
 
     const openPanel = () => {
+      clearGreetingTimer(); // clear any stale timer if openPanel is re-entered before it fired
       panel.hidden = false;
       root.classList.add('reb-open');
       launcher.setAttribute('aria-expanded', 'true');
-      renderHistory();
+      // Fresh/primed open (no conversation yet) → typing indicator, then greeting.
+      // Returning to an in-progress chat → render immediately, no fake typing.
+      // (syncOnOpen may later re-render authoritatively from the server, which
+      // cancels the pending timer via renderFromServer/renderHistory.)
+      if (history.length === 0) renderGreetingWithTyping();
+      else renderHistory();
       if (TURNSTILE_KEY && !sessionId) ensureTurnstile();
       syncOnOpen();
       updateBadge();
       setTimeout(() => input.focus(), 50);
     };
     const closePanel = () => {
+      // Cancel a pending typing→greeting reveal and clear any lingering dots so we
+      // never leave a dangling indicator or pop a greeting into the closed panel.
+      clearGreetingTimer();
+      hideTyping();
       // Abandoned primed open: the visitor opened a context-primed chat but never
       // sent a message. Discard the context so a later plain launcher open shows
       // Rebi's default greeting, not the stale primed one. Only when unengaged —
