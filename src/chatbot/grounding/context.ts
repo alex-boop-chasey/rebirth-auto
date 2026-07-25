@@ -66,13 +66,17 @@ function renderFocusLine(r: FocusRow, i: number): string {
 }
 
 /** Render the delimited focus block, or `''` when nothing resolved (→ omit). */
-function renderFocus(rows: FocusRow[]): string {
+function renderFocus(rows: FocusRow[], kind: ConversationContext['kind']): string {
   if (!rows.length) return '';
   const soldOrGone = rows.some((r) => r.status && r.status !== 'active');
-  const header = '=== CONVERSATION FOCUS (the vehicle the visitor is looking at — authoritative, fetched live) ===';
+  const isCompare = kind === 'compare';
+  const header = isCompare
+    ? '=== CONVERSATION FOCUS (the vehicles the visitor is comparing — authoritative, fetched live) ==='
+    : '=== CONVERSATION FOCUS (the vehicle the visitor is looking at — authoritative, fetched live) ===';
   const footer = '=== END CONVERSATION FOCUS ===';
-  const framing =
-    'The visitor opened this chat from a specific vehicle. Treat it as the subject of the conversation unless they clearly move on to something else. The details below are fetched live from our stock system: never quote a price, spec, or availability that is not shown here, and never invent details.';
+  const framing = isCompare
+    ? 'The visitor is COMPARING these vehicles — help them weigh the trade-offs (price, running costs, space, features) and decide between them. The details below are fetched live from our stock system: ground every claim in this data, never invent a difference not supported by it, and never quote a price, spec, or availability that is not shown here.'
+    : 'The visitor opened this chat from a specific vehicle. Treat it as the subject of the conversation unless they clearly move on to something else. The details below are fetched live from our stock system: never quote a price, spec, or availability that is not shown here, and never invent details.';
   const lines = rows.map((r, i) => renderFocusLine(r, i));
   const soldNote = soldOrGone
     ? 'One or more of these vehicles is no longer active (e.g. SOLD). If the visitor asks about it, tell them honestly it is no longer available and offer to help find something similar or connect them with our team.'
@@ -97,9 +101,11 @@ export async function resolveFocus(
   const refs = context.refs.slice(0, cfg.maxRefs);
   if (!refs.length) return null;
 
-  // v1 resolves `listing` refs by `_id`. Other kinds share this seam later
-  // (compare = several ids, search = a query ref); until then they no-op.
-  if (context.kind !== 'listing') return null;
+  // `listing` (one id) and `compare` (several ids) both resolve their refs by
+  // `_id` through the same fetch — the only difference is the framing in
+  // `renderFocus`. `search` (a query ref) shares this seam later; until then it
+  // no-ops.
+  if (context.kind !== 'listing' && context.kind !== 'compare') return null;
 
   try {
     const text = await cachedText(
@@ -109,7 +115,7 @@ export async function resolveFocus(
       async () => {
         const query = `*[_type == "listing" && _id in $ids]${FOCUS_PROJECTION}`;
         const rows = await client.fetch<FocusRow[]>(query, { ids: refs });
-        return renderFocus(rows ?? []);
+        return renderFocus(rows ?? [], context.kind);
       },
     );
     return text || null;

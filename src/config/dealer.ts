@@ -156,7 +156,7 @@ export interface DealerConfig {
     context: {
       /** Master on/off. When false, any sent context is ignored (no priming). */
       enabled: boolean;
-      /** Which context kinds this dealer accepts. v1 wires only `listing`. */
+      /** Which context kinds this dealer accepts. `listing` + `compare` are wired. */
       allowedKinds: readonly ConversationContextKind[];
       /** Hard cap on refs a single context may carry (bounds the focus fetch). */
       maxRefs: number;
@@ -294,7 +294,7 @@ export const dealerConfig: DealerConfig = {
     },
     context: {
       enabled: true,
-      allowedKinds: ['listing'],
+      allowedKinds: ['listing', 'compare'],
       maxRefs: 4,
       cacheTtlSeconds: 120, // a focused vehicle's price/status shifts slowly
     },

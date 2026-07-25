@@ -30,6 +30,15 @@
       >
         Clear
       </button>
+      <button
+        id="compare-ask-ai"
+        type="button"
+        data-rebi-open
+        data-rebi-kind="compare"
+        class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+      >
+        Ask AI
+      </button>
       <a
         id="compare-go"
         href="/compare"
@@ -90,6 +99,7 @@
   const thumbsEl = document.getElementById('compare-thumbs');
   const countEl = document.getElementById('compare-count');
   const goEl = document.getElementById('compare-go') as HTMLAnchorElement | null;
+  const askAiEl = document.getElementById('compare-ask-ai');
   const removeIcon = iconSvg('cross', 'h-3 w-3');
 
   function esc(s: string): string {
@@ -131,6 +141,19 @@
     tray.classList.remove('hidden');
     if (countEl) countEl.textContent = String(ids.length);
     if (goEl) goEl.href = `/compare?ids=${ids.map(encodeURIComponent).join(',')}`;
+
+    // The tray is JS-rendered, so the "Ask AI" trigger's refs are set live from
+    // the current selection. The ChatWidget's delegated listener reads these
+    // declarative attributes — no chat logic lives here. `data-rebi-refs` is the
+    // comma-joined ids; the title is a neutral "these N vehicles" (no free text
+    // on the wire — only the refs are sent; the title is client-display-only).
+    if (askAiEl) {
+      askAiEl.setAttribute('data-rebi-refs', ids.join(','));
+      askAiEl.setAttribute(
+        'data-rebi-title',
+        `these ${ids.length} ${ids.length === 1 ? 'vehicle' : 'vehicles'}`,
+      );
+    }
 
     if (thumbsEl) {
       thumbsEl.innerHTML = ids

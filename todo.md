@@ -49,3 +49,69 @@ One ongoing Rebi session across search → listing → compare that *accumulates
 This gives us a complete, ready-to-go base to branch the "plug into any website" AI-helper product from later. Do this AT that 100% milestone (not before), so the snapshot captures the finished, working chatbot rather than a half-built one.
 
 > Note: this is a full copy/fork of the repo at that point — distinct from the "extract the kernel into its own repo" task above, which is the later cleanup step.
+
+
+## FUTURE IDEA
+
+Yes — but the tagging shouldn't live in your rendered HTML. That's the instinct worth redirecting, because in-page markup means the bot still has to fetch a page, parse it, and decide what's relevant. All the latency you're trying to avoid is in that step.
+
+What you actually want is **one source of truth that emits three outputs**: the HTML for humans, JSON-LD for external crawlers, and a chunked retrieval index for Reb. Astro's content collections are already the right place for this — you're halfway there.
+
+## 1. Put the tags in the collection schema
+
+```ts
+// src/content/config.ts
+const services = defineCollection({
+  schema: z.object({
+    title: z.string(),
+    kind: z.enum(['service', 'faq', 'policy', 'process', 'pricing']),
+    audience: z.enum(['prospect', 'client', 'technical']).default('prospect'),
+    tags: z.array(z.string()),
+    // the money field:
+    canonicalAnswer: z.string().max(400).optional(),
+    triggers: z.array(z.string()).default([]), // phrasings that should hit this
+    updated: z.date(),
+  }),
+});
+```
+
+`canonicalAnswer` and `triggers` are what let you skip inference entirely for common questions.
+
+## 2. Chunk at build time, not query time
+
+Write a small integration that walks the collections and emits `/reb-index.json`. Chunk on H2/H3 boundaries, one entry per answer-sized unit — roughly 100–300 words. Each entry gets a stable ID and a deep link:
+
+```json
+{
+  "id": "pricing/what-does-a-site-cost",
+  "url": "https://rebirthwebdesign.com.au/pricing#what-does-a-site-cost",
+  "kind": "pricing",
+  "tags": ["cost", "quote", "budget"],
+  "title": "What does a site cost?",
+  "canonicalAnswer": "Most small business sites land between …",
+  "body": "…",
+  "updated": "2026-07-20"
+}
+```
+
+The deep link matters: Reb can cite a real anchor rather than "see our pricing page."
+
+Resist tagging *every* bit. Over-chunking is the common failure — you end up with fragments that carry no context and retrieval gets noisier, not sharper.
+
+## 3. Tier the lookup so most queries never reach the model
+
+This is where the "without waiting" comes from:
+
+1. **Exact/normalised match** against `triggers` → return `canonicalAnswer` verbatim. Zero LLM call, single-digit milliseconds.
+2. **Vector search** over the index → Cloudflare Vectorize with Workers AI for embeddings, generated at build. For a site your size (probably 100–400 chunks), you could equally ship the vectors as a flat JSON and do cosine similarity in the Worker — no Vectorize bill, no network hop.
+3. **Generate** only when neither tier is confident, with the top 3 chunks as context, streamed.
+
+Given Reb already has a comprehensive Q&A set, tier 1 is mostly a data-migration job — move those Q&As into collection entries with `triggers`, so the same content feeds the widget, the FAQ page, and the `FAQPage` JSON-LD.
+
+## 4. Same source, external outputs
+
+From the same build step, generate the `FAQPage` and `Service` JSON-LD blocks, plus an `/llms.txt` markdown mirror if you want it. It costs nothing once the index exists, and it means your on-page markup can never drift from what Reb believes.
+
+The thing that makes this work isn't the markup format — it's that a question is answered by a lookup rather than a reasoning step. Everything above is just plumbing to make that lookup possible.
+
+Want me to sketch the Astro integration that does the chunking and index emit? That's the piece with the most fiddly bits.

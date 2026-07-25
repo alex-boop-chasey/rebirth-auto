@@ -520,14 +520,22 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // avoids contradicting live figures the server will supply on the first reply.
     const currentGreeting = () => activeContext?.opening || GREETING;
 
-    const buildOpening = (title: string) =>
-      title
+    // The primed opening, varied by kind. `listing` names the single car (no
+    // price — avoids contradicting live figures); `compare` frames the decision
+    // without naming figures the server will supply on the first real reply.
+    const buildOpening = (kind: string, title: string) => {
+      if (kind === 'compare') {
+        return 'Happy to help you compare these — what matters most: price, running costs, space, or features?';
+      }
+      return title
         ? `Happy to help with the ${title} — want to know about its price, kilometres, features, or booking a look?`
         : 'Happy to help with this vehicle — want to know about its price, kilometres, features, or booking a look?';
+    };
 
-    const setActiveContext = (kind: string, ref: string, title: string) => {
-      if (!ref) return;
-      activeContext = { kind: kind || 'listing', refs: [ref], opening: buildOpening(title) };
+    const setActiveContext = (kind: string, refs: string[], title: string) => {
+      if (!refs.length) return;
+      const k = kind || 'listing';
+      activeContext = { kind: k, refs, opening: buildOpening(k, title) };
       try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
     };
 
@@ -1156,20 +1164,27 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     minimiseBtn?.addEventListener('click', closePanel);
 
     // Delegated listener for priming triggers anywhere on the page (e.g. the
-    // per-listing "Ask about this car" button). Same precedent as ContactModal /
-    // CompareTray: the wiring lives here, the trigger is just declarative markup
-    // (`data-rebi-open data-rebi-kind data-rebi-ref data-rebi-title`). Sets the
-    // active context and opens the panel with the primed greeting.
+    // per-listing "Ask about this car" button, the compare tray's "Ask AI").
+    // Same precedent as ContactModal / CompareTray: the wiring lives here, the
+    // trigger is just declarative markup (`data-rebi-open data-rebi-kind
+    // data-rebi-ref | data-rebi-refs data-rebi-title`). Sets the active context
+    // and opens the panel with the primed greeting.
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       const trigger = target?.closest?.('[data-rebi-open]') as HTMLElement | null;
       if (!trigger) return;
       e.preventDefault();
       const kind = trigger.getAttribute('data-rebi-kind') || 'listing';
-      const ref = trigger.getAttribute('data-rebi-ref') || '';
+      // A trigger carries either one `data-rebi-ref` (listing) or a comma-joined
+      // `data-rebi-refs` (compare); normalise both into a trimmed, non-empty array.
+      const single = trigger.getAttribute('data-rebi-ref') || '';
+      const multi = trigger.getAttribute('data-rebi-refs') || '';
+      const refs = (multi ? multi.split(',') : single ? [single] : [])
+        .map((r) => r.trim())
+        .filter(Boolean);
       const title = trigger.getAttribute('data-rebi-title') || '';
-      if (!ref) return;
-      setActiveContext(kind, ref, title);
+      if (!refs.length) return;
+      setActiveContext(kind, refs, title);
       if (panel.hidden) {
         openPanel(); // renders the primed greeting via currentGreeting()
       } else {
