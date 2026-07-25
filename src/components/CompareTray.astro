@@ -13,6 +13,7 @@
  * The sidecar meta cache lets the tray render thumbnails on pages where the
  * card isn't present. Cap: 4. Same-category only.
  */
+import { iconSvg } from '../lib/listing';
 ---
 
 <div
@@ -35,8 +36,9 @@
         type="button"
         data-rebi-open
         data-rebi-kind="compare"
-        class="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-[rgb(1_97_239)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgb(1_84_207)]"
       >
+        <Fragment set:html={iconSvg('sparkle', 'h-4 w-4')} />
         Ask AI
       </button>
       <a

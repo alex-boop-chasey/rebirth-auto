@@ -141,6 +141,8 @@ export const icons: Record<string, string> = {
     '<path d="M8 13.3l-.9-.8C4 9.6 2 7.8 2 5.6 2 3.9 3.3 2.6 5 2.6c1 0 1.9.5 2.5 1.2l.5.6.5-.6C9.1 3.1 10 2.6 11 2.6c1.7 0 3 1.3 3 3 0 2.2-2 4-5.1 6.9l-.9.8z"/>',
   image:
     '<rect x="2.5" y="3" width="11" height="10" rx="1.5"/><circle cx="6" cy="6.5" r="1.2"/><path d="M3 11.5l3-2.5 2.5 2 2-1.5 2.5 2.5"/>',
+  sparkle:
+    '<path d="M6.5 3.8Q6.9 8.6 9.7 9Q6.9 9.4 6.5 14.2Q6.1 9.4 3.3 9Q6.1 8.6 6.5 3.8Z"/><path d="M11.7 2.6Q11.9 3.9 13 4.1Q11.9 4.3 11.7 5.6Q11.5 4.3 10.4 4.1Q11.5 3.9 11.7 2.6Z"/>',
 };
 
 export function iconSvg(name: string, cls = 'h-3.5 w-3.5'): string {
