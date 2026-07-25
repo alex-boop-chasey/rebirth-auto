@@ -5,41 +5,64 @@
  * A JS-ONLY enhancement layered on the hero. With no JS it stays hidden and the
  * classic Filters drawer (#filters-trigger + <FilterDrawer>) is the fallback
  * (Lens 1). On submit it POSTs /api/search, drives the ONE filter URL via the
- * shared `applyFilterUrl` (URL = single source of truth, Decision 5), and asks
- * the chat widget to slide Rebi in grounded on the on-screen results — WITHOUT
- * touching the chatbot streaming core (a decoupled `reb:search` DOM event).
+ * shared `applyFilterUrl` (URL = single source of truth, Decision 5), and speaks
+ * back INLINE — a small "Rebi" speech bubble anchored ABOVE the search pill that
+ * reports what it found. It does NOT open or prime the corner Rebi widget.
+ *
+ * The bubble is absolutely anchored above the pill (`.dock-wrap` is the relative
+ * anchor), so it grows UPWARD into the hero subhead's space — the search pill
+ * never moves as the message appears or changes height. The subhead fades (kept
+ * in layout) while a search is active to give the bubble clean room.
  *
  * Grid-driving is homepage-fenced by construction: the dock only exists on the
  * homepage, and #inventory-results is only there.
  */
 import { dealerConfig } from '../../config/dealer';
 
-const { placeholders, typewriter } = dealerConfig.chat.search;
+const { placeholders, typewriter, messages } = dealerConfig.chat.search;
 // Config → client, so a tenant swap restyles copy/timings without code edits.
-const dockConfig = JSON.stringify({ placeholders, typewriter });
+const dockConfig = JSON.stringify({ placeholders, typewriter, messages });
 ---
 
 <div id="search-dock" class="search-dock" data-config={dockConfig} hidden>
-  <form id="search-dock-form" class="search-dock-form" role="search" autocomplete="off">
-    <span class="search-dock-ico" aria-hidden="true">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-    </span>
-    <input
-      id="search-dock-input"
-      class="search-dock-input"
-      type="text"
-      name="q"
-      aria-label="Describe the car you're looking for"
-      maxlength="300"
-    />
-    <button id="search-dock-submit" class="search-dock-submit" type="submit">
-      <span class="search-dock-submit-label">Search</span>
-      <span class="search-dock-spinner" hidden aria-hidden="true"></span>
-    </button>
-  </form>
+  <div class="dock-wrap">
+    <!-- Rebi speaks: a speech bubble anchored ABOVE the pill (hidden until a
+         search runs). Absolute positioning keeps the pill rock-still. -->
+    <div id="search-dock-msg" class="reb-bubble" data-state="finding" aria-live="polite" hidden>
+      <span class="reb-avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3.6v1.8"></path>
+          <circle cx="12" cy="2.7" r="1" fill="currentColor" stroke="none"></circle>
+          <rect x="4.5" y="6" width="15" height="12" rx="3.6"></rect>
+          <circle cx="9.2" cy="12" r="1.25" fill="currentColor" stroke="none"></circle>
+          <circle cx="14.8" cy="12" r="1.25" fill="currentColor" stroke="none"></circle>
+          <path d="M9.6 15.3h4.8"></path>
+          <path d="M2.6 10.6v2.8"></path>
+          <path d="M21.4 10.6v2.8"></path>
+        </svg>
+      </span>
+      <p class="reb-name">Rebi</p>
+      <div class="reb-body" data-msg-body></div>
+    </div>
+
+    <form id="search-dock-form" class="search-dock-form" role="search" autocomplete="off">
+      <span class="search-dock-ico" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </span>
+      <input
+        id="search-dock-input"
+        class="search-dock-input"
+        type="text"
+        name="q"
+        aria-label="Describe the car you're looking for"
+        maxlength="300"
+      />
+      <button id="search-dock-submit" class="search-dock-submit" type="submit">Search</button>
+    </form>
+  </div>
   <p class="search-dock-hint">
     Ask in plain English — Rebi reads your search and lines up the matches. Prefer to click?
     <button type="button" id="search-dock-manual" class="search-dock-manual">Refine manually</button>
@@ -49,6 +72,11 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
 <style>
   .search-dock { margin: 1.75rem auto 0; max-width: 40rem; }
   .search-dock[hidden] { display: none; }
+
+  /* The bubble anchors to this; the pill stays in normal flow and never moves. */
+  .dock-wrap { position: relative; }
+
+  /* ===== The search pill ===== */
   .search-dock-form {
     display: flex;
     align-items: center;
@@ -93,15 +121,8 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
     cursor: pointer;
     transition: background 0.15s ease;
   }
-  .search-dock-submit:hover:not(:disabled) { background: rgb(1 84 207); }
-  .search-dock-submit:disabled { opacity: 0.7; cursor: progress; }
-  .search-dock-spinner {
-    width: 1rem; height: 1rem; border-radius: 9999px;
-    border: 2px solid rgb(255 255 255 / 40%); border-top-color: #fff;
-    animation: search-dock-spin 0.7s linear infinite;
-  }
-  .search-dock-spinner[hidden] { display: none; }
-  @keyframes search-dock-spin { to { transform: rotate(360deg); } }
+  .search-dock-submit:hover { background: rgb(1 84 207); }
+  .search-dock-submit:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
   .search-dock-hint {
     margin: 0.7rem 0 0;
     text-align: center;
@@ -109,13 +130,175 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
     color: rgb(100 116 139);
   }
   .search-dock-manual {
-    background: none; border: none; padding: 0;
-    color: rgb(1 97 239); font: inherit; font-weight: 600; cursor: pointer;
-    text-decoration: underline; text-underline-offset: 2px;
+    background: none;
+    border: none;
+    padding: 0;
+    color: rgb(1 97 239);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
+
+  @media (max-width: 520px) {
+    .search-dock-form { flex-wrap: wrap; border-radius: 1.25rem; }
+    .search-dock-submit { width: 100%; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .search-dock-form, .search-dock-submit { transition: none; }
-    .search-dock-spinner { animation-duration: 1.4s; }
+  }
+</style>
+
+<!--
+  The Rebi bubble's inner content is built at runtime by the script below, so it
+  never receives Astro's scoped-style hash. These rules are therefore global, but
+  namespaced under the unique #search-dock-msg id — zero leakage, and no collision
+  with the corner ChatWidget's own .reb-* classes.
+-->
+<style is:global>
+  /* ===== Rebi speech bubble — absolutely anchored ABOVE the pill ===== */
+  #search-dock-msg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 0.78rem); /* sit above the pill, growing upward */
+    z-index: 5;
+    background: var(--reb-bubble-bg);
+    border: 1px solid var(--reb-bubble-ring);
+    border-radius: 1.15rem;
+    box-shadow:
+      0 18px 40px -20px rgb(1 97 239 / 35%),
+      0 2px 6px -2px rgb(15 23 42 / 8%);
+    backdrop-filter: blur(10px);
+    padding: 0.95rem 1.1rem 0.95rem 3.4rem; /* left room for the overlapping avatar */
+    text-align: left;
+    transform-origin: bottom center;
+    animation: sd-inflate 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+    --reb-bubble-bg: rgb(255 255 255 / 94%);
+    --reb-bubble-ring: rgb(1 97 239 / 22%);
+  }
+  #search-dock-msg[hidden] { display: none; }
+
+  /* Tail/beak pointing down at the pill — shares the bubble bg + ring so the
+     blur and tint match seamlessly. A single element, no dead layers. */
+  #search-dock-msg::after {
+    content: '';
+    position: absolute;
+    left: 2.5rem;
+    bottom: -0.5rem;
+    width: 1rem;
+    height: 1rem;
+    background: var(--reb-bubble-bg);
+    border-right: 1px solid var(--reb-bubble-ring);
+    border-bottom: 1px solid var(--reb-bubble-ring);
+    transform: rotate(45deg);
+    backdrop-filter: blur(10px);
+  }
+
+  /* Rebi-blue avatar overlapping the bubble's top-left rim (persona continuity
+     with the corner ChatWidget robot). */
+  #search-dock-msg .reb-avatar {
+    position: absolute;
+    left: -0.55rem;
+    top: -0.55rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+      0 6px 16px -6px rgb(1 97 239 / 60%),
+      0 0 0 3px rgb(255 255 255 / 92%);
+  }
+  #search-dock-msg .reb-avatar svg { width: 1.45rem; height: 1.45rem; color: #fff; }
+
+  #search-dock-msg .reb-name {
+    margin: 0 0 0.15rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(1 97 239);
+  }
+  #search-dock-msg .reb-body { min-height: 1.4rem; }
+  #search-dock-msg .reb-text { margin: 0; font-size: 0.98rem; line-height: 1.45; color: rgb(15 23 42); }
+  #search-dock-msg .reb-text strong { font-weight: 800; }
+  #search-dock-msg .reb-text,
+  #search-dock-msg .reb-actions { animation: sd-fade 0.28s ease both; }
+
+  /* Waiting: label + three-dot typing indicator (the ChatWidget reb-blink look). */
+  #search-dock-msg .reb-waiting { display: flex; align-items: center; gap: 0.55rem; }
+  #search-dock-msg .reb-typing { display: inline-flex; gap: 0.28rem; align-items: center; }
+  #search-dock-msg .reb-typing span {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 9999px;
+    background: rgb(1 97 239);
+    opacity: 0.3;
+    animation: sd-blink 1.2s infinite;
+  }
+  #search-dock-msg .reb-typing span:nth-child(2) { animation-delay: 0.2s; }
+  #search-dock-msg .reb-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  #search-dock-msg .reb-actions { margin-top: 0.7rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  #search-dock-msg .reb-newsearch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgb(1 97 239);
+    color: #fff;
+    border: none;
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 8px 18px -8px rgb(1 97 239 / 60%);
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  #search-dock-msg .reb-newsearch:hover { background: rgb(1 84 207); transform: translateY(-1px); }
+  #search-dock-msg .reb-newsearch:focus-visible { outline: 2px solid rgb(109 40 217); outline-offset: 2px; }
+  #search-dock-msg .reb-newsearch svg { width: 0.95rem; height: 0.95rem; }
+
+  /* Semantic tone tints per state (kept subtle; distinct from the brand accent). */
+  #search-dock-msg[data-state='nomatch'] {
+    --reb-bubble-ring: rgb(148 163 184 / 40%);
+    box-shadow: 0 18px 40px -22px rgb(15 23 42 / 25%);
+  }
+  #search-dock-msg[data-state='nomatch'] .reb-name { color: rgb(100 116 139); }
+  #search-dock-msg[data-state='unclear'] { --reb-bubble-ring: rgb(234 179 8 / 45%); }
+  #search-dock-msg[data-state='unclear'] .reb-name { color: rgb(161 98 7); }
+
+  @keyframes sd-inflate {
+    from { opacity: 0; transform: translateY(10px) scale(0.94); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes sd-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes sd-blink {
+    0%, 60%, 100% { opacity: 0.28; }
+    30% { opacity: 1; }
+  }
+
+  @media (max-width: 520px) {
+    #search-dock-msg { padding-left: 1.1rem; padding-top: 1.6rem; }
+    #search-dock-msg .reb-avatar { left: 0.7rem; top: -1.05rem; }
+    #search-dock-msg::after { left: 1.6rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #search-dock-msg,
+    #search-dock-msg .reb-text,
+    #search-dock-msg .reb-actions { animation: none; }
+    #search-dock-msg .reb-typing span { animation: none; opacity: 0.5; }
+    #search-dock-msg .reb-newsearch { transition: none; }
   }
 </style>
 
@@ -123,7 +306,6 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
   import { applyFilterUrl } from '../../lib/client/filter-url';
   import {
     parseFilters,
-    serializeFilters,
     hrefFor,
     hasActiveFilters,
     type FilterState,
@@ -133,25 +315,51 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
   const form = document.getElementById('search-dock-form') as HTMLFormElement | null;
   const input = document.getElementById('search-dock-input') as HTMLInputElement | null;
   const submit = document.getElementById('search-dock-submit') as HTMLButtonElement | null;
-  const submitLabel = dock?.querySelector<HTMLElement>('.search-dock-submit-label') ?? null;
-  const spinner = dock?.querySelector<HTMLElement>('.search-dock-spinner') ?? null;
+  const bubble = document.getElementById('search-dock-msg');
+  const bodyEl = bubble?.querySelector<HTMLElement>('[data-msg-body]') ?? null;
+  const subhead = document.getElementById('hero-subhead');
   const manualBtn = document.getElementById('search-dock-manual');
 
-  if (dock && form && input && submit) {
+  if (dock && form && input && submit && bubble && bodyEl) {
     // Reveal the dock — it's a JS-only enhancement (no-JS keeps the drawer).
     dock.hidden = false;
 
     type DockConfig = {
       placeholders: string[];
       typewriter: { typeMs: number; deleteMs: number; dwellMs: number };
+      messages: {
+        finding: string;
+        resultsRefine: string;
+        noMatch: string;
+        unclear: string;
+        newSearchLabel: string;
+      };
     };
-    let cfg: DockConfig = { placeholders: [], typewriter: { typeMs: 45, deleteMs: 25, dwellMs: 1800 } };
+    let cfg: DockConfig = {
+      placeholders: [],
+      typewriter: { typeMs: 45, deleteMs: 25, dwellMs: 1800 },
+      messages: {
+        finding: 'Finding your results…',
+        resultsRefine: 'Here are your {count} matches — tell me more to narrow it down, or start a new search.',
+        noMatch: 'Nothing matched that one — try describing it a different way.',
+        unclear: "I couldn't quite pin that down — try adding a budget, body type, or fuel type.",
+        newSearchLabel: 'New search',
+      },
+    };
     try {
       const raw = dock.getAttribute('data-config');
       if (raw) cfg = { ...cfg, ...JSON.parse(raw) };
     } catch { /* keep defaults */ }
 
     const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+    // The hero subhead fades (kept in layout → nothing shifts) while a search is
+    // active, giving the upward-growing bubble clean space. Motion-safe: opacity
+    // only, and no transition under reduced motion.
+    if (subhead && !REDUCED_MOTION) subhead.style.transition = 'opacity 0.3s ease';
+    const setActive = (on: boolean) => {
+      if (subhead) subhead.style.opacity = on ? '0' : '';
+    };
 
     // --- Cycling typewriter placeholder --------------------------------------
     // Pauses while the field is focused or has text; resumes on blur of an empty
@@ -187,6 +395,8 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
     };
     const startTw = () => {
       clearTw();
+      charIdx = 0;
+      deleting = false;
       if (REDUCED_MOTION || !cfg.placeholders.length) {
         input.placeholder = cfg.placeholders[0] ?? 'Describe the car you’re looking for…';
         return;
@@ -197,33 +407,108 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
     input.addEventListener('blur', () => { if (!input.value) startTw(); });
     startTw();
 
-    // --- Submit → /api/search → drive grid + open Rebi -----------------------
+    // --- The Rebi bubble ------------------------------------------------------
+    type BubbleState = 'finding' | 'results' | 'nomatch' | 'unclear';
+
+    const refreshIcon =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v6h6"></path><path d="M3.5 8a9 9 0 1 1-1 5"></path></svg>';
+
+    const hideBubble = () => {
+      bubble.hidden = true;
+      bodyEl.innerHTML = '';
+    };
+
+    // Render a bubble state. `text` is used verbatim as textContent (safe for the
+    // server-authored `unclear` copy — never innerHTML). The `results` state alone
+    // builds trusted innerHTML from the config template + numeric count so the
+    // count can be bolded without an injection surface.
+    const renderBubble = (state: BubbleState, text: string, count?: number) => {
+      bubble.hidden = false;
+      bubble.setAttribute('data-state', state);
+      // Re-trigger the inflate animation on each state change (motion-safe).
+      if (!REDUCED_MOTION) {
+        bubble.style.animation = 'none';
+        void bubble.offsetWidth;
+        bubble.style.animation = '';
+      }
+      bodyEl.innerHTML = '';
+
+      if (state === 'finding') {
+        const wrap = document.createElement('div');
+        wrap.className = 'reb-waiting';
+        const p = document.createElement('p');
+        p.className = 'reb-text';
+        p.textContent = text;
+        const dots = document.createElement('span');
+        dots.className = 'reb-typing';
+        dots.setAttribute('aria-hidden', 'true');
+        dots.innerHTML = '<span></span><span></span><span></span>';
+        wrap.appendChild(p);
+        wrap.appendChild(dots);
+        bodyEl.appendChild(wrap);
+        return;
+      }
+
+      const p = document.createElement('p');
+      p.className = 'reb-text';
+      if (state === 'results') {
+        // cfg.messages.resultsRefine is trusted config; count is a number.
+        p.innerHTML = cfg.messages.resultsRefine.replace('{count}', `<strong>${count ?? 0}</strong>`);
+      } else {
+        p.textContent = text;
+      }
+      bodyEl.appendChild(p);
+
+      if (state === 'results') {
+        const actions = document.createElement('div');
+        actions.className = 'reb-actions';
+        const btn = document.createElement('button');
+        btn.className = 'reb-newsearch';
+        btn.type = 'button';
+        btn.setAttribute('data-msg-newsearch', '');
+        btn.innerHTML = refreshIcon;
+        btn.appendChild(document.createTextNode(cfg.messages.newSearchLabel));
+        btn.addEventListener('click', resetSearch);
+        actions.appendChild(btn);
+        bodyEl.appendChild(actions);
+      }
+    };
+
+    // --- Submit → /api/search → drive grid + speak inline ---------------------
     // Homepage-fenced by construction: the dock only renders on the homepage, and
     // #inventory-results only exists there. We still guard before applyFilterUrl.
     let seq = 0; // supersede-in-flight — a slow response can't overwrite a newer one
-    const setBusy = (b: boolean) => {
-      submit.disabled = b;
-      if (submitLabel) submitLabel.hidden = b;
-      if (spinner) spinner.hidden = !b;
-    };
 
     const currentUrlState = (): FilterState =>
       parseFilters(new URLSearchParams(window.location.search));
+    const emptyState = (): FilterState => parseFilters(new URLSearchParams());
+
+    // Read the TRUE match total from the freshly-swapped grid (single source of
+    // truth). "No vehicles match" or a missing node → 0.
+    const readGridTotal = (): number => {
+      const node = document.querySelector('#inventory-results [data-results-count]');
+      if (!node) return 0;
+      const txt = node.textContent ?? '';
+      if (/No vehicles match/i.test(txt)) return 0;
+      const m = txt.match(/of ([\d,]+)/);
+      return m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
+    };
 
     const runSearch = async (query: string) => {
       const my = ++seq;
-      setBusy(true);
       let data: any = null;
       try {
+        // First search is fresh (deterministic pre-pass eligible); once filters
+        // are active a follow-up REFINES (carries the current filters forward).
+        const refine = hasActiveFilters(currentUrlState());
         const res = await fetch('/api/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, filters: currentUrlState() }),
+          body: JSON.stringify({ query, filters: currentUrlState(), refine }),
         });
         data = await res.json().catch(() => null);
-      } catch { /* network error — fall through to the graceful open below */ }
+      } catch { /* network error — fall through to the unclear message below */ }
       if (my !== seq) return; // superseded by a newer submit
-      setBusy(false);
 
       const gridPresent = !!document.getElementById('inventory-results');
       const filters: FilterState | null =
@@ -236,39 +521,48 @@ const dockConfig = JSON.stringify({ placeholders, typewriter });
 
       // Apply only a confident, NON-EMPTY extraction — an empty extraction at high
       // confidence must NOT clear the visitor's existing filters (salvaged guard).
-      const applied =
-        !!filters && confidence !== 'low' && hasActiveFilters(filters);
+      const applied = !!filters && confidence !== 'low' && hasActiveFilters(filters);
 
       if (applied && gridPresent && filters) {
-        applyFilterUrl(hrefFor({ ...filters, page: 1 }));
+        await applyFilterUrl(hrefFor({ ...filters, page: 1 }));
+        if (my !== seq) return; // superseded during the grid swap
         flipHeading(true);
       }
 
-      // The ref the server grounds Rebi on: the filter string now on screen.
-      const groundState = applied && filters ? { ...filters, page: 1 } : currentUrlState();
-      const ref = serializeFilters(groundState);
-
-      // Compose the client-only opening (never sent to the server — no injection).
-      let opening: string;
       if (applied) {
-        opening = interpretation
-          ? `${interpretation} They're lined up below — ask me anything about them, or tell me how to narrow things down.`
-          : "Here are the matches — ask me anything about them, or tell me how to narrow things down.";
+        const total = readGridTotal();
+        if (total > 0) {
+          renderBubble('results', '', total);
+        } else {
+          renderBubble('nomatch', cfg.messages.noMatch);
+        }
       } else {
-        opening = [interpretation, clarifying].filter(Boolean).join(' ') ||
-          "I couldn't quite pin that down — tell me a bit more, like a budget, body type, or fuel type, and I'll line up the matches.";
+        const unclear = [interpretation, clarifying].filter(Boolean).join(' ') || cfg.messages.unclear;
+        renderBubble('unclear', unclear);
       }
-
-      // Ask the chat widget to slide Rebi in with this search context. Decoupled
-      // DOM event — the chatbot streaming/escalation core is never touched.
-      document.dispatchEvent(new CustomEvent('reb:search', { detail: { ref, opening } }));
     };
+
+    // "New search": full reset to idle → base inventory, heading + bubble + input.
+    async function resetSearch() {
+      seq++; // invalidate any in-flight search so it can't re-message
+      await applyFilterUrl(hrefFor(emptyState())); // base "/" → full inventory
+      flipHeading(false);
+      hideBubble();
+      setActive(false);
+      input!.value = '';
+      input!.focus();
+      startTw();
+    }
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const query = input.value.trim();
       if (!query) { input.focus(); return; }
-      clearTw();
+      // Wipe the input (ready for the next prompt) and restart the placeholder.
+      input.value = '';
+      startTw();
+      setActive(true);
+      renderBubble('finding', cfg.messages.finding);
       runSearch(query);
     });
 

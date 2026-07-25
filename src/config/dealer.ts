@@ -216,6 +216,24 @@ export interface DealerConfig {
       placeholders: readonly string[];
       /** Typewriter animation timings (ms). */
       typewriter: { typeMs: number; deleteMs: number; dwellMs: number };
+      /**
+       * Copy for the inline AI search bubble (SearchDock's "Rebi speaks"
+       * message above the pill). All dealer-tunable — no literals in the
+       * component. `{count}` in `resultsRefine` is interpolated with the real
+       * match total read back from the swapped inventory grid.
+       */
+      messages: {
+        /** Shown with the waiting dots while /api/search + the grid swap run. */
+        finding: string;
+        /** Applied a filter with matches. Supports a `{count}` token. */
+        resultsRefine: string;
+        /** Applied a filter but nothing matched. */
+        noMatch: string;
+        /** Couldn't confidently extract filters (fallback when the server sends none). */
+        unclear: string;
+        /** Label for the "start over" button shown in the results state. */
+        newSearchLabel: string;
+      };
     };
   };
 }
@@ -405,6 +423,15 @@ export const dealerConfig: DealerConfig = {
         'Late-model hybrid with under 50,000 km',
       ],
       typewriter: { typeMs: 45, deleteMs: 25, dwellMs: 1800 },
+      messages: {
+        finding: 'Finding your results…',
+        resultsRefine:
+          'Here are your {count} matches — tell me more to narrow it down, or start a new search.',
+        noMatch: 'Nothing matched that one — try describing it a different way.',
+        unclear:
+          "I couldn't quite pin that down — try adding a budget, body type, or fuel type.",
+        newSearchLabel: 'New search',
+      },
     },
   },
 };
