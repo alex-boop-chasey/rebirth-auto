@@ -105,6 +105,26 @@ export interface DealerConfig {
       /** Master on/off. When false, Rebi uses the static prompt only. */
       enabled: boolean;
       /**
+       * Anti-hallucination firewall (src/chatbot/grounding/verify.ts). A post-hoc
+       * scrub of Rebi's reply against the grounded allow-list (exact prices + the
+       * brands present in this turn's grounding): a free model that invents a car
+       * or price is caught before it reaches the visitor. Load-bearing while the
+       * reply runs on a free tier; harmless (near-never fires) once Haiku lands.
+       * The known-brand LEXICON itself is dealer-agnostic and lives in verify.ts
+       * (CAR_MAKES) — see DECISION.md Decision 1 (config is for dealer-specific
+       * values; a world-wide brand list is not one). These are the tunables.
+       */
+      antiHallucination: {
+        /** Master on/off for the firewall. */
+        enabled: boolean;
+        /** `block` swaps a violating reply for a grounded fallback; `redact` masks the bad tokens. */
+        mode: 'block' | 'redact';
+        /** The primary, reliable check: block any `$`-figure not in the grounded prices. */
+        priceCheck: boolean;
+        /** The best-effort secondary check: block a real brand that isn't in this turn's grounding. */
+        makeCheck: boolean;
+      };
+      /**
        * The Sanity document `_type` holding this dealer's business facts.
        * Resolved as `*[_type == businessInfoType][0]` (the current dealer's doc).
        */
@@ -182,6 +202,16 @@ export interface DealerConfig {
       maxQueryLength: number;
       /** Per-IP rate limit for /api/search (its OWN `search:` KV counter). */
       rateLimit: { windowSeconds: number; maxRequests: number };
+      /**
+       * Soft-concept → filter guidance interpolated into the `/api/search`
+       * extraction prompt (src/lib/ai-search/prompt.ts). Lets a dealer teach the
+       * interpreter its local phrasing ("first car", "camping", "easy to park")
+       * without a code edit. Each entry is a `phrase` (the buyer wording) and a
+       * `maps` sentence telling the model which ENUM filters to emit — the output
+       * stays enum-locked (the schema rejects anything off-vocabulary), so a
+       * concept can only ever resolve to valid codes, never an invented value.
+       */
+      concepts: readonly { phrase: string; maps: string }[];
       /** Cycling typewriter placeholder examples for the hero search input. */
       placeholders: readonly string[];
       /** Typewriter animation timings (ms). */
@@ -298,6 +328,12 @@ export const dealerConfig: DealerConfig = {
   chat: {
     grounding: {
       enabled: true,
+      antiHallucination: {
+        enabled: true,
+        mode: 'block',
+        priceCheck: true,
+        makeCheck: true,
+      },
       businessInfoType: 'businessInfo',
       cacheTtlSeconds: {
         businessFacts: 300, // 5 min — facts change rarely
@@ -331,6 +367,36 @@ export const dealerConfig: DealerConfig = {
       // Shopper search is higher-volume than Studio authoring but still capped
       // per-IP to bound AI cost. Generous for genuine refining.
       rateLimit: { windowSeconds: 3600, maxRequests: 30 },
+      // Soft phrases → enum filters. The model must still emit only valid codes;
+      // these teach it how this dealer's buyers describe intent. P-plate / licence
+      // status is deliberately NOT a filter dimension — the guidance says to map
+      // the practical intent (small, auto, budget) and never invent a dimension.
+      concepts: [
+        {
+          phrase: 'first car / P-plate / P-plater / L-plate / learner / new driver / young driver',
+          maps: 'a small, easy-to-drive, affordable automatic: bodyType hatchback, transmission auto, and a modest priceMax (around 25000) if no budget is given. P-plate/licence status is NOT a filter — do not invent one; just map the practical intent and you may note the assumption in interpretation.',
+        },
+        {
+          phrase: 'economical / cheap to run / good on fuel / low fuel / fuel efficient / save on petrol',
+          maps: 'prefer fuelType hybrid or electric; if the intent is broader "cheap to run", also a smaller, lower-priced petrol hatchback (bodyType hatchback). Never invent a fuel-economy (L/100km) figure — there is no such field.',
+        },
+        {
+          phrase: 'easy to park / city car / runabout / small / compact / around town',
+          maps: 'a small car: bodyType hatchback (add transmission auto if "easy" clearly implies it).',
+        },
+        {
+          phrase: 'camping / touring / off-road / adventure / outback / 4x4 / beach',
+          maps: 'driveType 4wd or awd, and bodyType suv or ute.',
+        },
+        {
+          phrase: 'family / kids / school run / space for the family',
+          maps: 'bodyType suv or wagon, and seats 7 or 8 when they mention several children.',
+        },
+        {
+          phrase: 'towing / tow / caravan / trailer / boat',
+          maps: 'bodyType ute or suv, and fuelType diesel (torque for towing).',
+        },
+      ],
       placeholders: [
         'Family SUV with 7 seats under $40,000',
         'Reliable diesel ute for towing, low kms',

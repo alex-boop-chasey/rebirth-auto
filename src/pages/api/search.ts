@@ -76,6 +76,16 @@ export const POST: APIRoute = async ({ request }) => {
 
   const current = normalizeCurrentFilters((body as { filters?: unknown })?.filters);
 
+  // Refine mode (the in-chat "type it to Rebi" refine). A refine is always a
+  // MODIFICATION of the grid already on screen, so it must carry the current
+  // filters forward and can REMOVE one ("actually not diesel") — both of which
+  // the deterministic pre-pass cannot do (it ignores `current` and can't parse
+  // negation). So a refine SKIPS the pre-pass and goes straight to the enum-locked
+  // interpreter, which owns carry-forward + removal + the soft-concept map. Opt-in
+  // and additive: the hero SearchDock sends no flag, so its fast pre-pass path for
+  // fresh searches is byte-identical to before.
+  const refine = (body as { refine?: unknown })?.refine === true;
+
   // Per-IP rate limit (KV). DISTINCT `search:` prefix so search does NOT share the
   // chat `rl:` 10/hr counter. Guard when unbound; fail OPEN so a KV hiccup never
   // blocks a real visitor.
@@ -95,9 +105,10 @@ export const POST: APIRoute = async ({ request }) => {
 
   // --- Stage 1: deterministic pre-pass (free, no LLM) -------------------------
   // If the enum/synonym matcher finds concrete filters, answer from them and skip
-  // the model entirely. Only soft/ambiguous queries fall through to Stage 2.
+  // the model entirely. Only soft/ambiguous queries fall through to Stage 2. A
+  // refine always skips this (see `refine` above) so carry-forward/removal work.
   try {
-    const pre = extractFilters(query);
+    const pre = refine ? null : extractFilters(query);
     if (pre && hasConcreteFilters(pre.state)) {
       const { interpretation, matchReasons } = describeState(pre.state);
       const resp: SearchResponse = {

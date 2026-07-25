@@ -27,6 +27,17 @@ export const TIERS = {
   // gpt-oss-20b → gemma-4-26b (hermes-3:free was discontinued on OpenRouter's
   // free tier; gemma-4 is a different lab/architecture, so failures are
   // uncorrelated with the primary).
+  //
+  // DEFERRED DEMO UPGRADE (Rebi's reply brain → Haiku): the chatbot reply runs on
+  // this free tier today, backstopped by the grounding firewall (src/chatbot/
+  // grounding/verify.ts) so a free model can't ship an invented car/price. When
+  // the demo warrants it, flipping the reply to Haiku is a ONE-LINE change —
+  // point the chatbot at a Haiku-backed tier (e.g. prepend 'anthropic/
+  // claude-haiku-4-5' here, or switch generateReply/streamChatResponse's
+  // `capability` to 'chat-quality'). Everything built around it (LLM refine,
+  // grounding, firewall, concept map) is model-agnostic and needs no rebuild;
+  // Haiku just makes the whole thing markedly better and the firewall near-never
+  // fires. See the standing memory note (phase3-demo-swap-structured-model).
   'chat-cheap': {
     models: [
       'openai/gpt-oss-20b:free',

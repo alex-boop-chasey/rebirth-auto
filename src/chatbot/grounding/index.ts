@@ -18,14 +18,40 @@ import { getBusinessFacts } from './business-facts';
 import { getInventoryOverview } from './overview';
 import { getLiveMatches } from './lookup';
 import { resolveFocus } from './context';
+import { CAR_MAKES, extractPriceValues, findKnownMakes, type GroundingFacts } from './verify';
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
+
+export type { GroundingFacts } from './verify';
+
+export interface GroundedPrompt {
+  /** The fully-composed, live-grounded system prompt string. */
+  prompt: string;
+  /**
+   * The anti-hallucination allow-list, derived from the EXACT prompt above (so
+   * it captures every price/brand the model was actually shown — from the
+   * overview, live matches, and primed focus alike — and nothing else). Built by
+   * re-reading the composed PUBLIC prompt, so it can never expose `dealerNotes`
+   * (which is never in the prompt).
+   */
+  facts: GroundingFacts;
+}
+
+/** Build the firewall allow-list from the composed public prompt + whether a specific-vehicle block ran. */
+function buildFacts(prompt: string, hasInventory: boolean): GroundingFacts {
+  return {
+    allowedPrices: new Set(extractPriceValues(prompt)),
+    stockedMakes: new Set(findKnownMakes(prompt, CAR_MAKES)),
+    knownMakes: CAR_MAKES,
+    hasInventory,
+  };
+}
 
 export async function buildGroundedSystemPrompt(
   kv: KVNamespaceLike | undefined,
   userMessage: string,
   context?: ConversationContext | null,
-): Promise<string | null> {
+): Promise<GroundedPrompt | null> {
   const cfg = getDealerConfig().chat;
 
   // Conversation focus is resolved INDEPENDENTLY of inventory grounding: a chat
@@ -41,7 +67,10 @@ export async function buildGroundedSystemPrompt(
   // primed vehicle). Returning null here would suppress priming (the bug the
   // critic flagged), so we key that decision on `focus`, not on grounding.
   if (!cfg.grounding.enabled) {
-    return focus ? buildSystemPrompt({ focus }) : null;
+    if (!focus) return null;
+    const prompt = buildSystemPrompt({ focus });
+    // A resolved focus is a specific-vehicle block → inventory-bearing.
+    return { prompt, facts: buildFacts(prompt, true) };
   }
 
   const g = cfg.grounding;
@@ -65,5 +94,20 @@ export async function buildGroundedSystemPrompt(
   // came back null (fetch errors), the prompt shows the degraded sentinel.
   const available = overview !== null || matches !== null;
 
-  return buildSystemPrompt({ businessFacts, overview, matches, available, focus });
+  const prompt = buildSystemPrompt({ businessFacts, overview, matches, available, focus });
+
+  // Inventory-bearing (→ the streaming path BUFFERS the whole reply before any of
+  // it reaches the browser). True when either:
+  //   - a conversation FOCUS is present (a primed listing/compare/search context —
+  //     this is exactly the owner's failing case: a low/zero-match search where a
+  //     free model is most tempted to INVENT a car, so we must never flash it), OR
+  //   - the live-matches block actually LISTS vehicles (numbered rows) the model
+  //     could mis-quote.
+  // A stray keyword lookup that found nothing, or the overview alone (roll-up
+  // counts), is NOT inventory-bearing — those turns keep streaming live and are
+  // scrubbed at `done`.
+  const listsVehicles = (s: string | null): boolean => !!s && /(^|\n)\s*\d+\.\s/.test(s);
+  const hasInventory = focus !== null || listsVehicles(matches);
+
+  return { prompt, facts: buildFacts(prompt, hasInventory) };
 }

@@ -16,6 +16,7 @@
 
 import { buildSystemPrompt } from './system-prompt';
 import { buildGroundedSystemPrompt } from './grounding';
+import { scrubReply, type GroundingFacts } from './grounding/verify';
 import { parseContext, type ConversationContext } from './context';
 import { getDealerConfig } from '../config/dealer';
 import {
@@ -195,6 +196,44 @@ function stripMarkers(text: string): string {
 const BOTH_FAILED_REPLY =
   "Sorry, Rebi's having a bit of trouble responding right now. You can reach one of our team members directly on (07) 5550 0100 or through the contact page at /contact and we'll get back to you.";
 
+/**
+ * Grounded fallback the anti-hallucination firewall substitutes when it BLOCKS a
+ * reply that quoted an invented car/price. Deliberately names nothing specific.
+ */
+const FIREWALL_FALLBACK =
+  "I want to make sure I only give you accurate details — you can browse everything we currently have in stock on /listings, and our team can confirm the specifics or check availability for you on (07) 5550 0100.";
+
+/**
+ * A fail-open reply scrubber. NEVER throws (a firewall bug must not break a chat
+ * turn); on a detected grounding violation it substitutes the grounded fallback
+ * (block) or masks the bad tokens (redact). Shared by the JSON and streaming reply
+ * paths so both are protected identically. See src/chatbot/grounding/verify.ts.
+ */
+type Scrubber = (text: string) => { text: string; violated: boolean };
+
+function makeScrubber(facts: GroundingFacts | null): Scrubber | null {
+  const cfg = getDealerConfig().chat.grounding.antiHallucination;
+  if (!facts || !cfg.enabled) return null;
+  return (text: string) => {
+    try {
+      const r = scrubReply(text, facts, {
+        mode: cfg.mode,
+        priceCheck: cfg.priceCheck,
+        makeCheck: cfg.makeCheck,
+        fallback: FIREWALL_FALLBACK,
+      });
+      if (r.violated) {
+        console.warn('[chatbot] grounding firewall substituted a reply —', r.reasons.join('; '));
+      }
+      return { text: r.text, violated: r.violated };
+    } catch (err) {
+      // Fail-open: the firewall must never itself break a chat turn.
+      console.error('[chatbot] grounding firewall errored (passing reply through)', err);
+      return { text, violated: false };
+    }
+  };
+}
+
 interface ModelResult {
   ok: boolean;
   reply?: string;
@@ -313,6 +352,18 @@ interface StreamOpts {
   sessionId?: string;
   ip: string;
   visitorText: string;
+  /**
+   * Fail-open grounding firewall (from makeScrubber). When present, the reply is
+   * scrubbed before it is persisted/emitted. Additive — absent → today's behaviour.
+   */
+  scrub?: Scrubber | null;
+  /**
+   * Buffer this streamed turn (hold back live deltas until the whole reply is
+   * scrubbed) because it surfaced specific inventory — so an invented car/price
+   * can never stream to the browser. Mirrors the existing escalation buffer.
+   * Pure-chat turns leave this false and stream live, scrubbed at `done`.
+   */
+  bufferInventory?: boolean;
 }
 
 /**
@@ -325,7 +376,7 @@ interface StreamOpts {
  * Events: `delta` | `done` | `escalate` | `error`.
  */
 function streamChatResponse(opts: StreamOpts): Response {
-  const { messages, env, db, sessionId, ip, visitorText } = opts;
+  const { messages, env, db, sessionId, ip, visitorText, scrub, bufferInventory } = opts;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -337,15 +388,34 @@ function streamChatResponse(opts: StreamOpts): Response {
       // captured from the terminal chunk for the model_used column.
       let modelUsed: string | undefined;
 
-      // Finish the normal (non-escalation) way: persist + emit `done`.
+      // Finish the normal (non-escalation) way: scrub → persist + emit `done`.
+      // The grounding firewall runs HERE, over the full reply text:
+      //   - alreadyStreamed=false (a buffered inventory turn, or a marker-stripped
+      //     replacement): emit the scrubbed text as ONE delta — nothing bad ever
+      //     streamed live.
+      //   - alreadyStreamed=true (a pure-chat turn streamed live): if the firewall
+      //     substituted the reply, emit a `replace:true` delta so the client
+      //     overwrites the bubble with the safe text.
       const finishNormal = async (text: string, alreadyStreamed: boolean) => {
         if (isResolved(text)) resolved = true;
-        const clean = stripMarkers(text);
+        let clean = stripMarkers(text);
         if (!clean) {
           send({ type: 'error' });
           return;
         }
-        if (!alreadyStreamed) send({ type: 'delta', text: clean });
+        let replaced = false;
+        if (scrub) {
+          const s = scrub(clean);
+          if (s.violated) {
+            clean = s.text;
+            replaced = true;
+          }
+        }
+        if (!alreadyStreamed) {
+          send({ type: 'delta', text: clean });
+        } else if (replaced) {
+          send({ type: 'delta', text: clean, replace: true });
+        }
         const lastId = db && sessionId ? await persistExchange(db, sessionId, visitorText, clean, modelUsed) : undefined;
         send({ type: 'done', sessionId, status: 'ai_active', lastId, resolved });
       };
@@ -365,11 +435,16 @@ function streamChatResponse(opts: StreamOpts): Response {
           decided = true;
           if (isEscalation(content)) {
             escalating = true;
-          } else {
+          } else if (!bufferInventory) {
+            // Normal live streaming (pure-chat turns). Inventory-bearing turns fall
+            // through and buffer silently — exactly like the escalation buffer —
+            // so finishNormal can scrub the whole reply before ANY of it is sent.
             streaming = true;
             if (isResolved(content)) resolved = true;
             const clean = stripMarkers(content);
             if (clean) send({ type: 'delta', text: clean });
+          } else if (isResolved(content)) {
+            resolved = true;
           }
         };
 
@@ -638,12 +713,25 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   }
 
   let groundedSystemMessage = systemMessage;
+  // The anti-hallucination allow-list for THIS turn (exact grounded prices + the
+  // brands present in the grounding). null when grounding produced nothing → no
+  // scrub (the static prompt carries no live inventory, so nothing to firewall).
+  let groundingFacts: GroundingFacts | null = null;
   try {
     const grounded = await buildGroundedSystemPrompt(env.GROUNDING_KV, latestUserMessage.content, context);
-    if (grounded) groundedSystemMessage = { role: 'system' as const, content: grounded };
+    if (grounded) {
+      groundedSystemMessage = { role: 'system' as const, content: grounded.prompt };
+      groundingFacts = grounded.facts;
+    }
   } catch (err) {
     console.error('[chatbot] Grounding failed (using static prompt)', err);
   }
+
+  // Build the fail-open reply firewall from this turn's facts (null → disabled/none).
+  const scrub = makeScrubber(groundingFacts);
+  // Buffer streamed turns that surfaced specific inventory so a bad token never
+  // streams live (mirrors the escalation buffer). Pure-chat turns stream + scrub-at-done.
+  const bufferInventory = !!scrub && !!groundingFacts?.hasInventory;
 
   // Build the conversation for the model. With D1 bound, memory is server-side
   // (system prompt + recent history + the new user turn); otherwise fall back to
@@ -674,6 +762,8 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
       sessionId,
       ip,
       visitorText: latestUserMessage.content,
+      scrub,
+      bufferInventory,
     });
   }
 
@@ -716,6 +806,10 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   const resolved = isResolved(rawReply);
   let reply = stripMarkers(rawReply);
   if (!reply) reply = 'Let me get our team to help with that — you can reach us on (07) 5550 0100 or via /contact.';
+
+  // Anti-hallucination firewall (fail-open): block an invented car/price before it
+  // is persisted or returned. Runs on the marker-stripped reply.
+  if (scrub) reply = scrub(reply).text;
 
   const lastId = db && sessionId ? await persistExchange(db, sessionId, latestUserMessage.content, reply, result.model) : undefined;
   return json({ reply, sessionId, status: 'ai_active', lastId, resolved });

@@ -418,16 +418,18 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
 <script>
   // Shared filter-URL driver + URL contract helpers — the "type it to Rebi"
   // search refine drives the ONE filter URL client-side (Decision 5), NEVER
-  // touching the chatbot streaming core. `extractFilters` is the same
-  // deterministic matcher the server search pre-pass uses (one vocabulary).
+  // touching the chatbot streaming core. The refine now routes through the SAME
+  // /api/search LLM the hero SearchDock uses (deterministic pre-pass → enum-locked
+  // structured extraction), so soft phrases ("cheap and low fuel") actually move
+  // the grid — the client-side keyword matcher couldn't.
   import { applyFilterUrl } from '../../lib/client/filter-url';
   import {
     parseFilters,
     serializeFilters,
     hrefFor,
+    hasActiveFilters,
     type FilterState,
   } from '../../lib/listings-query';
-  import { extractFilters, hasConcreteFilters } from '../../lib/vehicle-filter-extract';
 
   const GREETING =
     "Hi! I'm Rebi, the Rebirth Auto assistant. Ask me about our vehicles, financing, servicing, or trade-ins — I'm happy to help.";
@@ -1032,7 +1034,9 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       const handleEvent = (evt: any) => {
         if (evt.type === 'delta') {
           ensureBubble();
-          acc += evt.text;
+          // `replace:true` = the grounding firewall substituted the reply after it
+          // had already streamed live (a pure-chat turn) — overwrite, don't append.
+          if (evt.replace) acc = evt.text; else acc += evt.text;
           if (bubble) { bubble.innerHTML = format(acc); scroll(); }
         } else if (evt.type === 'done') {
           finished = true;
@@ -1091,22 +1095,41 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       const s = t.trim();
       return s.includes('?') || QUESTION_STARTERS.test(s);
     };
-    // Merge a deterministic extraction onto the current filter state: a stated
-    // dimension overrides, an unstated one is preserved; always reset to page 1.
-    const mergeFilters = (current: FilterState, ex: FilterState): FilterState => {
-      const m: FilterState = { ...current, page: 1 };
-      if (ex.bodyType.length) m.bodyType = ex.bodyType;
-      if (ex.transmission.length) m.transmission = ex.transmission;
-      if (ex.fuelType.length) m.fuelType = ex.fuelType;
-      if (ex.driveType.length) m.driveType = ex.driveType;
-      if (ex.condition.length) m.condition = ex.condition;
-      if (ex.seats.length) m.seats = ex.seats;
-      if (ex.priceMin != null) m.priceMin = ex.priceMin;
-      if (ex.priceMax != null) m.priceMax = ex.priceMax;
-      if (ex.yearMin != null) m.yearMin = ex.yearMin;
-      if (ex.yearMax != null) m.yearMax = ex.yearMax;
-      if (ex.odoMax != null) m.odoMax = ex.odoMax;
-      return m;
+
+    // §C refine: interpret a filter-y (non-question) message via the SAME
+    // /api/search LLM the hero uses, carrying the current grid forward, and drive
+    // the ONE filter URL with the COMPLETE returned set. Returns once the URL has
+    // moved (pushState is synchronous), so the grounded chat turn below reads the
+    // refined set. Best-effort: any failure leaves the grid on its current state
+    // and the chat turn still runs. NEVER touches the chatbot streaming core.
+    const refineGridViaSearch = async (text: string): Promise<void> => {
+      try {
+        const current = parseFilters(new URLSearchParams(location.search));
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // refine:true → the interpreter carries the current grid forward and can
+          // remove a filter ("actually not diesel"); it skips the pre-pass, which can't.
+          body: JSON.stringify({ query: text, filters: current, refine: true }),
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json().catch(() => null);
+        const filters: FilterState | null =
+          data && data.filters ? (data.filters as FilterState) : null;
+        const confidence: string = data?.confidence ?? 'low';
+        // Apply only a confident, NON-EMPTY extraction — a low/empty result must
+        // NOT wipe the visitor's current grid. The LLM carries the current filters
+        // forward (REPLACE semantics: "actually not diesel" removes it), so we
+        // drive the URL with the complete returned set.
+        if (filters && confidence !== 'low' && hasActiveFilters(filters)) {
+          const next: FilterState = { ...filters, page: 1 };
+          applyFilterUrl(hrefFor(next)); // pushState → new location.search BEFORE basePayload reads it
+          if (activeContext) {
+            activeContext.refs = [serializeFilters(next)];
+            try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+          }
+        }
+      } catch { /* refine is best-effort — the grounded chat turn still runs */ }
     };
 
     const send = async (text: string) => {
@@ -1130,21 +1153,13 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       showTyping();
 
       // §C "type it to Rebi": on the homepage, with an active search context, a
-      // filter-y (non-question) message re-drives the grid CLIENT-SIDE via the
-      // shared applyFilterUrl (URL = source of truth) BEFORE the chat turn — so the
-      // grounded reply below comments on the tighter set. The chatbot streaming
-      // core is never touched; only the filter URL moves. A question leaves the
-      // grid alone and just gets a grounded answer.
+      // filter-y (non-question) message re-drives the grid via /api/search BEFORE
+      // the chat turn — so basePayload (which reads location.search) grounds the
+      // reply on the refined set. AWAITED so the URL has moved first (critique
+      // §2.5). The chatbot streaming core is never touched; only the filter URL
+      // moves. A question leaves the grid alone and just gets a grounded answer.
       if (activeContext?.kind === 'search' && gridPresent() && !looksLikeQuestion(text)) {
-        try {
-          const ex = extractFilters(text);
-          if (ex && hasConcreteFilters(ex.state)) {
-            const merged = mergeFilters(parseFilters(new URLSearchParams(location.search)), ex.state);
-            applyFilterUrl(hrefFor(merged)); // pushState → new URL → basePayload reads it
-            activeContext.refs = [serializeFilters(merged)];
-            try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
-          }
-        } catch { /* refine is best-effort — the grounded chat turn still runs */ }
+        await refineGridViaSearch(text);
       }
 
       const payload = basePayload();

@@ -19,6 +19,12 @@ import { getDealerConfig } from '../../config/dealer';
 
 const list = (codes: readonly (string | number)[]) => codes.join(', ');
 
+// Dealer-taught soft-concept guidance (config-as-data — src/config/dealer.ts).
+// Rendered as a bulleted map the interpreter reads; output stays enum-locked.
+const conceptGuidance = getDealerConfig()
+  .chat.search.concepts.map((c) => `- "${c.phrase}" → ${c.maps}`)
+  .join('\n');
+
 // Built once at module load. Dealer currency comes from config (never hardcoded).
 export const SYSTEM_PROMPT = `You are the search interpreter for a car dealership website. You turn a shopper's plain-English
 request into a STRUCTURED filter extraction. You do not chat, you do not write prose, and you never
@@ -51,6 +57,22 @@ INTERPRETATION NOTES
 - Multiple acceptable values in one dimension → include them all (e.g. "hybrid or electric" → ["hybrid","electric"]).
 - "family car", "off-road", "economical" etc. are interpretations: map them to concrete filters and FLAG
   the assumption in interpretation (usually confidence "medium").
+
+SOFT-CONCEPT GUIDANCE (how this dealer's buyers phrase intent → which filters to emit)
+Map these lifestyle/soft phrases to concrete ENUM filters. They are still constrained to the VOCABULARY
+above — you may ONLY emit valid codes; never invent a dimension or value for a concept.
+${conceptGuidance}
+- A licence stage (P-plate, L-plate, provisional) or a driver's experience is NOT a filter dimension. Do
+  NOT try to encode it. Map the practical intent (small, automatic, affordable) and note the assumption.
+- There is NO fuel-economy / L/100km field. "low fuel", "economical", "cheap to run" map to hybrid/electric
+  or a smaller, cheaper hatchback — NEVER to an invented economy figure.
+
+CARRY-FORWARD ON REFINE (important)
+- The shopper's CURRENT filters are given to you as a canonical query string. This is usually a REFINEMENT
+  of what's already on screen. Carry the current filters forward unless the new request modifies or removes
+  one, then return the COMPLETE resulting filter set (current ⊕ the change), not just the delta.
+- If the request REMOVES a constraint ("actually not diesel", "drop the auto"), return the set WITHOUT it.
+- If it ADDS or TIGHTENS one ("also under $30k", "make it a hybrid"), keep the rest and add/replace that one.
 
 CONFIDENCE
 - "high": every meaningful part of the query mapped cleanly, no guessing.
@@ -87,6 +109,18 @@ User: cheap little auto runabout with low kms
   "confidence": "medium", "clarifyingQuestion": null,
   "filters": { "bodyType": ["hatchback"], "transmission": ["auto"], "odoMax": 80000, "sort": "price-asc" },
   "matchReasons": ["hatchback", "automatic", "under 80,000 km", "cheapest first"] }
+
+User: a good first car for a city driver on the P Plate, easy to park and low fuel
+{ "interpretation": "A small, easy-to-park automatic that's economical to run — a budget hatchback. P-plate isn't something I can filter on, so I've assumed a small, affordable auto.",
+  "confidence": "medium", "clarifyingQuestion": null,
+  "filters": { "bodyType": ["hatchback"], "transmission": ["auto"], "fuelType": ["hybrid"], "priceMax": 25000 },
+  "matchReasons": ["hatchback", "automatic", "economical", "under $25k"] }
+
+User: (current filters: bodyType=suv&fuelType=diesel) actually not diesel, and hybrid if you have it
+{ "interpretation": "Keeping the SUV, dropping diesel and looking for a hybrid instead.",
+  "confidence": "high", "clarifyingQuestion": null,
+  "filters": { "bodyType": ["suv"], "fuelType": ["hybrid"] },
+  "matchReasons": ["SUV", "hybrid", "not diesel"] }
 
 User: low-km diesel ute, 4x4, done under 80k
 { "interpretation": "A diesel 4WD ute with under 80,000 km on the odometer.",
