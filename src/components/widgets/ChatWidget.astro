@@ -242,9 +242,12 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(52rem, 96vw);
-    height: min(46rem, 92vh);
+    /* Biased ~6rem BELOW viewport centre so the brightest part of the wash sits
+       behind the conversation + input (which sit in the lower half of the centred
+       block), not floating above the bubbles. */
+    transform: translate(-50%, calc(-50% + 6rem));
+    width: min(50rem, 96vw);
+    height: min(40rem, 88vh);
     z-index: 1; /* below .reb-panel (10000), above the page (inside #reb-chat's context) */
     pointer-events: none;
     opacity: 0;
@@ -274,7 +277,12 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     display: flex;
     flex-direction: column;
     width: min(30rem, calc(100vw - 2rem));
-    height: min(38rem, calc(100vh - 4rem));
+    /* Content-height, vertically CENTERED as a unit (was a near-full-height block
+       that jammed the input against the bottom edge). max-height keeps it on-screen
+       on short viewports; the stage height below adapts via vh so the input row
+       stays fully visible. */
+    height: auto;
+    max-height: calc(100vh - 2rem);
     color: var(--ink);
     animation: reb-rise 0.35s ease-out;
   }
@@ -340,8 +348,10 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
      so nothing needs a frosted shelf strip. */
   .reb-stage-viewport {
     position: relative;
-    flex: 1;
-    min-height: 0;
+    /* Bounded height (not flex:1) so the block is content-sized and centers as a
+       unit; adapts to short viewports via vh so the input row is never cut off.
+       Cards still recede UPWARD from just above the input, exactly like SearchDock. */
+    height: min(20rem, 50vh);
     perspective: 1200px;
     perspective-origin: 50% 120%;
     overflow: hidden;
