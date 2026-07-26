@@ -106,6 +106,10 @@ export const POST: APIRoute = async ({ request }) => {
   const facts: DescriptionFacts = {
     title: draft.title ?? '(untitled)',
     category: draft.category ?? 'automotive',
+    make: draft.make,
+    model: draft.model,
+    colour: draft.colour,
+    engine: draft.engine,
     specs: draft.vehicleSpecs ?? {},
     dealerNotes: draft.dealerNotes ?? '',
   };

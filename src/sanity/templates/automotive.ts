@@ -1,8 +1,14 @@
 import type { Template } from 'sanity';
 
 /**
- * Automotive listing vocabulary — the ordered spec labels for an automotive
- * listing. Array order = display order on the site.
+ * Automotive listing vocabulary — the ordered legacy spec labels that used to be
+ * scaffolded into every new listing's `details[]`. The standard specs now have
+ * their own typed fields on the document, so the new-listing template NO LONGER
+ * seeds `details` (that array is an escape hatch for genuine one-offs).
+ *
+ * This list is KEPT (exported) as the canonical label → field reference for the
+ * upcoming data migration that copies existing `details[]` rows into the new
+ * typed fields. It is intentionally unused by the template itself now.
  */
 export const AUTOMOTIVE_SPEC_LABELS: ReadonlyArray<{
   label: string;
@@ -33,23 +39,6 @@ export const AUTOMOTIVE_SPEC_LABELS: ReadonlyArray<{
   { label: 'Stock Number', valueType: 'text' },
 ];
 
-const slugify = (label: string) =>
-  label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-// Label slug + short random suffix — unique within the array and collision-safe
-// even if an editor later duplicates a scaffolded row.
-const detailKey = (label: string) => `${slugify(label)}-${Math.random().toString(36).slice(2, 8)}`;
-
-const details = AUTOMOTIVE_SPEC_LABELS.map((spec) => ({
-  _key: detailKey(spec.label),
-  _type: 'detail' as const,
-  label: spec.label,
-  valueType: spec.valueType,
-  // unit only where the vocabulary specifies one; no value fields are set so
-  // editors fill them in.
-  ...(spec.unit ? { unit: spec.unit } : {}),
-}));
-
 export const automotiveListingTemplate: Template = {
   id: 'listing-automotive',
   title: 'Listing (Automotive)',
@@ -58,6 +47,5 @@ export const automotiveListingTemplate: Template = {
     category: 'automotive',
     status: 'active',
     currency: 'AUD',
-    details,
   },
 };

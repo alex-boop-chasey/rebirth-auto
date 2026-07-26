@@ -11,6 +11,7 @@ import {
   LISTING_FIELDS,
   formatPrice,
   detailDisplay,
+  buildSpecRows,
   categoryLabel,
   iconSvg,
   isLowerBetter,
@@ -42,16 +43,22 @@ if (ids.length > 0) {
 
 const hasListings = listings.length > 0;
 
-// Union of detail labels across all listings, in first-appearance order.
+// Unified spec rows per listing (typed fields, with details[] fallback), keyed
+// by id so the union + per-cell lookups below operate on the same shape.
+const rowsById = new Map<string, ListingDetail[]>(
+  listings.map((l) => [l._id, buildSpecRows(l)]),
+);
+
+// Union of row labels across all listings, in first-appearance order.
 const labels: string[] = [];
 for (const l of listings) {
-  for (const d of l.details ?? []) {
+  for (const d of rowsById.get(l._id) ?? []) {
     if (!labels.includes(d.label)) labels.push(d.label);
   }
 }
 
 const detailFor = (l: Listing, label: string): ListingDetail | undefined =>
-  (l.details ?? []).find((d) => d.label === label);
+  (rowsById.get(l._id) ?? []).find((d) => d.label === label);
 
 // Which columns win a numeric row? Returns a Set of column indexes, or null when
 // the row isn't comparable (any value missing, mixed units, or everyone ties).

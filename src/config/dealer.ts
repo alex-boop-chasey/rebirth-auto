@@ -301,6 +301,7 @@ export type FilterDimension =
   | 'year'
   | 'odometer'
   | 'bodyType'
+  | 'colour'
   | 'transmission'
   | 'fuelType'
   | 'driveType'
@@ -343,6 +344,7 @@ export const dealerConfig: DealerConfig = {
       'year',
       'odometer',
       'bodyType',
+      'colour',
       'transmission',
       'fuelType',
       'driveType',

@@ -32,6 +32,7 @@ interface MatchRow {
   currency?: string;
   slug?: { current?: string };
   bodyType?: string;
+  colour?: string;
   fuelType?: string;
   transmission?: string;
   year?: number;
@@ -41,6 +42,7 @@ interface MatchRow {
 function renderMatchLine(r: MatchRow, i: number): string {
   const parts: string[] = [];
   if (r.year) parts.push(String(r.year));
+  if (r.colour) parts.push(r.colour);
   if (r.bodyType) parts.push(r.bodyType);
   if (r.fuelType) parts.push(r.fuelType);
   if (r.transmission) parts.push(r.transmission);
@@ -111,6 +113,7 @@ export async function getLiveMatches(kv: KVNamespaceLike | undefined, message: s
         const projection = `{
           title, price, currency, slug,
           "bodyType": vehicleSpecs.bodyType,
+          "colour": vehicleSpecs.colour,
           "fuelType": vehicleSpecs.fuelType,
           "transmission": vehicleSpecs.transmission,
           "year": vehicleSpecs.year,

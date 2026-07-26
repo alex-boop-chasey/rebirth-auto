@@ -43,6 +43,25 @@ export const BODY_TYPE_CODES = [
   'coupe',
   'convertible',
 ] as const;
+// Base colour family codes — mirror the Sanity `vehicleSpecs.colour` enum and
+// `BASE_COLOUR_OPTIONS` (src/lib/listing.ts). These double as the `colour` URL
+// filter value. Single-select (a shopper wants "the red ones"), unlike the
+// multi-select bodyType above.
+export const COLOUR_CODES = [
+  'white',
+  'black',
+  'silver',
+  'grey',
+  'blue',
+  'red',
+  'green',
+  'gold',
+  'brown',
+  'orange',
+  'yellow',
+  'purple',
+  'other',
+] as const;
 export const TRANSMISSION_CODES = ['auto', 'manual'] as const;
 export const FUEL_TYPE_CODES = ['petrol', 'diesel', 'hybrid', 'electric', 'lpg'] as const;
 export const DRIVE_TYPE_CODES = ['2wd', 'awd', '4wd'] as const;
@@ -70,6 +89,8 @@ const SORT_CLAUSES: Record<SortKey, string> = {
 export interface FilterState {
   sort: SortKey;
   bodyType: string[];
+  /** Multi-select base colour families (COLOUR_CODES values), like bodyType. */
+  colour: string[];
   transmission: string[];
   fuelType: string[];
   driveType: string[];
@@ -130,6 +151,7 @@ export function parseFilters(sp: URLSearchParams): FilterState {
   return {
     sort,
     bodyType: parseMulti(sp, 'bodyType', dealerConfig.inventory.bodyTypes),
+    colour: parseMulti(sp, 'colour', COLOUR_CODES),
     transmission: parseMulti(sp, 'transmission', TRANSMISSION_CODES),
     fuelType: parseMulti(sp, 'fuelType', FUEL_TYPE_CODES),
     driveType: parseMulti(sp, 'driveType', DRIVE_TYPE_CODES),
@@ -176,6 +198,7 @@ export function buildListingsFilter(state: FilterState): {
   // every key.)
   const params: Record<string, unknown> = {
     bodyType: state.bodyType.length ? state.bodyType : null,
+    colour: state.colour.length ? state.colour : null,
     transmission: state.transmission.length ? state.transmission : null,
     fuelType: state.fuelType.length ? state.fuelType : null,
     driveType: state.driveType.length ? state.driveType : null,
@@ -195,6 +218,7 @@ export function buildListingsFilter(state: FilterState): {
     // uncomment to scope every query to the current dealer:
     // && dealer._ref == $dealerId
     && (!defined($bodyType) || vehicleSpecs.bodyType in $bodyType)
+    && (!defined($colour) || vehicleSpecs.colour in $colour)
     && (!defined($transmission) || vehicleSpecs.transmission in $transmission)
     && (!defined($fuelType) || vehicleSpecs.fuelType in $fuelType)
     && (!defined($driveType) || vehicleSpecs.driveType in $driveType)
@@ -244,6 +268,7 @@ export function serializeFilters(state: FilterState): string {
   if (state.yearMax != null) sp.set('yearMax', String(state.yearMax));
   if (state.odoMax != null) sp.set('odoMax', String(state.odoMax));
   if (state.bodyType.length) sp.set('bodyType', state.bodyType.join(','));
+  if (state.colour.length) sp.set('colour', state.colour.join(','));
   if (state.transmission.length) sp.set('transmission', state.transmission.join(','));
   if (state.fuelType.length) sp.set('fuelType', state.fuelType.join(','));
   if (state.driveType.length) sp.set('driveType', state.driveType.join(','));
@@ -274,6 +299,7 @@ export function pageHref(state: FilterState, page: number): string {
 
 const DIMENSION_LABELS: Record<string, string> = {
   bodyType: 'Body',
+  colour: 'Colour',
   transmission: 'Transmission',
   fuelType: 'Fuel',
   driveType: 'Drive',
@@ -327,6 +353,7 @@ export function activeChips(state: FilterState): FilterChip[] {
   const chips: FilterChip[] = [];
   const multiDims: { dim: keyof FilterState; labelKey: string }[] = [
     { dim: 'bodyType', labelKey: 'bodyType' },
+    { dim: 'colour', labelKey: 'colour' },
     { dim: 'transmission', labelKey: 'transmission' },
     { dim: 'fuelType', labelKey: 'fuelType' },
     { dim: 'driveType', labelKey: 'driveType' },

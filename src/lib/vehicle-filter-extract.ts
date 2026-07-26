@@ -35,6 +35,23 @@ const BODY_SYNONYMS: Record<string, string> = {
   cabrio: 'convertible',
   cabriolet: 'convertible',
 };
+// Base colour families. Multi-select downstream (FilterState.colour), like
+// bodyType — "red or white" yields both. "gray"/"grey" both map to grey.
+const COLOUR_SYNONYMS: Record<string, string> = {
+  white: 'white',
+  black: 'black',
+  silver: 'silver',
+  grey: 'grey',
+  gray: 'grey',
+  blue: 'blue',
+  red: 'red',
+  green: 'green',
+  gold: 'gold',
+  brown: 'brown',
+  orange: 'orange',
+  yellow: 'yellow',
+  purple: 'purple',
+};
 const TRANSMISSION_SYNONYMS: Record<string, string> = {
   auto: 'auto',
   automatic: 'auto',
@@ -123,6 +140,7 @@ function matchCodes(msg: string, syn: Record<string, string>): string[] {
 export function hasConcreteFilters(state: FilterState): boolean {
   return (
     state.bodyType.length > 0 ||
+    state.colour.length > 0 ||
     state.transmission.length > 0 ||
     state.fuelType.length > 0 ||
     state.driveType.length > 0 ||
@@ -145,6 +163,7 @@ export function extractFilters(message: string): Extraction | null {
   const msg = ` ${message.toLowerCase()} `;
 
   const body = matchCodes(msg, BODY_SYNONYMS);
+  const colour = matchCodes(msg, COLOUR_SYNONYMS);
   const transmission = matchCodes(msg, TRANSMISSION_SYNONYMS);
   const fuelType = matchCodes(msg, FUEL_SYNONYMS);
   const driveType = matchCodes(msg, DRIVE_SYNONYMS);
@@ -152,6 +171,7 @@ export function extractFilters(message: string): Extraction | null {
 
   const sp = new URLSearchParams();
   if (body.length) sp.set('bodyType', body.join(','));
+  if (colour.length) sp.set('colour', colour.join(','));
   if (transmission.length) sp.set('transmission', transmission.join(','));
   if (fuelType.length) sp.set('fuelType', fuelType.join(','));
   if (driveType.length) sp.set('driveType', driveType.join(','));
@@ -232,6 +252,7 @@ export function extractFilters(message: string): Extraction | null {
     // Only trust residuals that weren't consumed as filter vocabulary.
     const known = new Set<string>([
       ...Object.keys(BODY_SYNONYMS),
+      ...Object.keys(COLOUR_SYNONYMS),
       ...Object.keys(TRANSMISSION_SYNONYMS),
       ...Object.keys(FUEL_SYNONYMS),
       ...Object.keys(DRIVE_SYNONYMS),
