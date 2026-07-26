@@ -12,8 +12,9 @@ import { GenerateDescriptionInput } from '../components/GenerateDescriptionInput
  * Core listing document (automotive).
  *
  * The form is organised into document tabs (`groups`) so authoring is clean:
- * Identity, Specs, Registration, Pricing & status, Media, and Description &
- * notes. Most shopper-facing dimensions are now FIRST-CLASS typed fields (with
+ * Identity (which also carries dealer notes + description), Specs, Registration,
+ * Pricing & status, and Media. Most shopper-facing dimensions are now
+ * FIRST-CLASS typed fields (with
  * dropdowns where the value set is fixed) rather than living in the free-form
  * `details[]` array — that array is now just an escape hatch for genuine
  * one-offs. `vehicleSpecs` is untouched (every filter/chatbot/AI query reads
@@ -30,7 +31,6 @@ export const listing = defineType({
     { name: 'registration', title: 'Registration' },
     { name: 'pricing', title: 'Pricing & status' },
     { name: 'media', title: 'Media' },
-    { name: 'content', title: 'Description & notes' },
   ],
   fields: [
     // --- IDENTITY -------------------------------------------------------------
@@ -50,6 +50,33 @@ export const listing = defineType({
       description: 'Auto-generated from the title.',
       options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required(),
+    }),
+    // Dealer notes + description sit right after Title/Slug in the Identity tab.
+    // Dealer notes come FIRST so the author jots shorthand, then generates the
+    // buyer-facing description from it via the on-form "Generate description"
+    // button. dealerNotes is private (NEVER in LISTING_FIELDS / never shown to
+    // buyers); it feeds the AI generator and (future) search/chat grounding.
+    defineField({
+      name: 'dealerNotes',
+      title: 'Dealer notes (for AI)',
+      type: 'text',
+      rows: 4,
+      group: 'identity',
+      description:
+        "Rough shorthand like 'one owner, full service history, tow bar, no accidents'. " +
+        'Not shown to buyers directly. Used by AI description generator, search, and chat.',
+    }),
+    defineField({
+      name: 'description',
+      title: 'Description',
+      type: 'array',
+      group: 'identity',
+      description: 'Rich text description. Use "Generate description" to draft from the notes above.',
+      of: [defineArrayMember({ type: 'block' })],
+      // Sanity's `defineField` doesn't narrow a block array to Portable Text at
+      // the type level (it infers a primitive-array input), so the correctly
+      // typed PortableText input component is bridged here. Runtime is correct.
+      components: { input: GenerateDescriptionInput as unknown as ComponentType<any> },
     }),
     defineField({
       name: 'make',
@@ -409,34 +436,6 @@ export const listing = defineType({
       group: 'media',
       description: 'Multiple images supported. The first image is used as the hero/thumbnail.',
       of: [defineArrayMember({ type: 'image', options: { hotspot: true } })],
-    }),
-
-    // --- DESCRIPTION & NOTES --------------------------------------------------
-    // Dealer notes come FIRST so the author jots shorthand, then generates the
-    // buyer-facing description from it via the on-form "Generate description"
-    // button. dealerNotes is private (NEVER in LISTING_FIELDS / never shown to
-    // buyers); it feeds the AI generator and (future) search/chat grounding.
-    defineField({
-      name: 'dealerNotes',
-      title: 'Dealer notes (for AI)',
-      type: 'text',
-      rows: 4,
-      group: 'content',
-      description:
-        "Rough shorthand like 'one owner, full service history, tow bar, no accidents'. " +
-        'Not shown to buyers directly. Used by AI description generator, search, and chat.',
-    }),
-    defineField({
-      name: 'description',
-      title: 'Description',
-      type: 'array',
-      group: 'content',
-      description: 'Rich text description. Use "Generate description" to draft from the notes above.',
-      of: [defineArrayMember({ type: 'block' })],
-      // Sanity's `defineField` doesn't narrow a block array to Portable Text at
-      // the type level (it infers a primitive-array input), so the correctly
-      // typed PortableText input component is bridged here. Runtime is correct.
-      components: { input: GenerateDescriptionInput as unknown as ComponentType<any> },
     }),
   ],
   preview: {
