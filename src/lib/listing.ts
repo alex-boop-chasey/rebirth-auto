@@ -23,6 +23,11 @@ export interface ListingDetail {
 // lowercase enum codes. All optional — a listing may not know every value.
 export interface VehicleSpecs {
   bodyType?: 'sedan' | 'hatchback' | 'suv' | 'ute' | 'wagon' | 'van' | 'coupe' | 'convertible';
+  // Base colour family — the filterable colour dimension (the manufacturer paint
+  // name lives in the top-level `colour` field for display).
+  colour?:
+    | 'white' | 'black' | 'silver' | 'grey' | 'blue' | 'red' | 'green'
+    | 'gold' | 'brown' | 'orange' | 'yellow' | 'purple' | 'other';
   transmission?: 'auto' | 'manual';
   fuelType?: 'petrol' | 'diesel' | 'hybrid' | 'electric' | 'lpg';
   driveType?: '2wd' | 'awd' | '4wd';
@@ -45,14 +50,55 @@ export interface Listing {
   details?: ListingDetail[];
   vehicleSpecs?: VehicleSpecs;
   listingDate?: string;
+  // First-class, shopper-facing identity/spec fields (promoted out of details[]).
+  // All optional — a listing may not carry every value. Staff-only fields
+  // (registrationPlate, stockNumber, dealerNotes) are deliberately NOT here: they
+  // never reach the public site, so they stay out of the shared projection.
+  make?: string;
+  model?: string;
+  badge?: string;
+  series?: string;
+  /** Manufacturer paint name (display only), e.g. "Snowflake White Pearl". The
+   *  filterable base colour lives in `vehicleSpecs.colour`. */
+  colour?: string;
+  engine?: string;
+  doors?: number;
+  trim?: string;
+  vin?: string;
+  registrationExpiry?: string;
+  buildDate?: string;
+  complianceDate?: string;
 }
 
 // --- Shared GROQ projection --------------------------------------------------
 // The full field set every listing query needs. Kept in one place so the
 // projection can't drift between index.astro, [slug].astro and compare.astro.
+// Staff-only fields (registrationPlate, stockNumber, dealerNotes) are excluded
+// on purpose — they must never reach the public site.
 export const LISTING_FIELDS = `_id, title, slug, description, price, currency, status, images, category,
+  make, model, badge, series, colour, engine, doors, trim,
+  vin, registrationExpiry, buildDate, complianceDate,
   details[]{ _key, label, value, valueType, valueNumber, unit, valueBoolean, valueDate },
-  vehicleSpecs{ bodyType, transmission, fuelType, driveType, seatCount, year, odometer, condition }, listingDate`;
+  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, condition }, listingDate`;
+
+// Broad colour families for the Studio `colourBase` dropdown. A universal vehicle
+// attribute (not dealer-specific), so it lives here rather than in dealer config.
+// `value` is the lowercase stored code; `title` is the display label.
+export const BASE_COLOUR_OPTIONS = [
+  { title: 'White', value: 'white' },
+  { title: 'Black', value: 'black' },
+  { title: 'Silver', value: 'silver' },
+  { title: 'Grey', value: 'grey' },
+  { title: 'Blue', value: 'blue' },
+  { title: 'Red', value: 'red' },
+  { title: 'Green', value: 'green' },
+  { title: 'Gold', value: 'gold' },
+  { title: 'Brown', value: 'brown' },
+  { title: 'Orange', value: 'orange' },
+  { title: 'Yellow', value: 'yellow' },
+  { title: 'Purple', value: 'purple' },
+  { title: 'Other', value: 'other' },
+] as const;
 
 // --- Formatting helpers ------------------------------------------------------
 
@@ -102,6 +148,118 @@ export function detailDisplay(d: ListingDetail): string {
     return d.value ?? d.valueNumber.toString();
   }
   return d.value ?? '';
+}
+
+// --- Spec-row assembly (typed fields, with details[] fallback) ---------------
+// The single source of truth for the shopper-facing spec grid. Prefers the new
+// first-class typed fields and FALLS BACK to the matching `details[]` row when a
+// typed field is empty — so nothing goes blank before the data migration runs.
+// Returns the existing `ListingDetail` shape so the render loops + detailDisplay/
+// detailIconName/isLowerBetter keep working unchanged.
+
+// Enum code → display title. Minimal map (the schema's `options.list` titles);
+// unknown codes fall back to a title-cased version.
+const ENUM_TITLES = {
+  bodyType: {
+    sedan: 'Sedan', hatchback: 'Hatchback', suv: 'SUV', ute: 'Ute',
+    wagon: 'Wagon', van: 'Van', coupe: 'Coupe', convertible: 'Convertible',
+  } as Record<string, string>,
+  transmission: { auto: 'Automatic', manual: 'Manual' } as Record<string, string>,
+  fuelType: {
+    petrol: 'Petrol', diesel: 'Diesel', hybrid: 'Hybrid', electric: 'Electric', lpg: 'LPG',
+  } as Record<string, string>,
+  driveType: { '2wd': '2WD', awd: 'AWD', '4wd': '4WD' } as Record<string, string>,
+};
+
+function enumTitle(map: Record<string, string>, code?: string): string | undefined {
+  if (!code) return undefined;
+  return map[code] ?? code.charAt(0).toUpperCase() + code.slice(1);
+}
+
+// The 21 legacy `details[]` labels that are now promoted to typed fields (plus a
+// couple of spelling variants). Any details row whose label is one of these is
+// skipped when appending "genuine one-offs", to avoid duplicating a typed row.
+const STANDARD_DETAIL_LABELS = new Set(
+  [
+    'make', 'model', 'badge', 'series', 'model year', 'year', 'colour', 'color',
+    'odometer', 'body', 'engine', 'fuel type', 'fuel', 'transmission',
+    'drive type', 'drive', 'doors', 'seats', 'trim', 'vin',
+    'registration plate', 'registration expiry', 'build date', 'compliance date',
+    'stock number',
+  ].map((l) => l.toLowerCase()),
+);
+
+function findDetail(details: ListingDetail[], ...labels: string[]): ListingDetail | undefined {
+  const want = labels.map((l) => l.toLowerCase());
+  return details.find((d) => want.includes((d.label ?? '').toLowerCase()));
+}
+
+function textRow(key: string, label: string, value?: string): ListingDetail | null {
+  const v = (value ?? '').toString().trim();
+  if (!v) return null;
+  return { _key: key, label, value: v, valueType: 'text' };
+}
+
+function numberRow(key: string, label: string, n?: number, unit?: string): ListingDetail | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  return { _key: key, label, value: String(n), valueType: 'number', valueNumber: n, ...(unit ? { unit } : {}) };
+}
+
+function dateRow(key: string, label: string, iso?: string): ListingDetail | null {
+  const v = (iso ?? '').toString().trim();
+  if (!v) return null;
+  return { _key: key, label, value: formatDate(v), valueType: 'date', valueDate: v };
+}
+
+// Use the typed row when present; otherwise fall back to a matching details[] row
+// (only when that row actually renders a value). Returns null when neither has a value.
+function rowOrFallback(
+  typed: ListingDetail | null,
+  details: ListingDetail[],
+  ...fallbackLabels: string[]
+): ListingDetail | null {
+  if (typed) return typed;
+  const d = findDetail(details, ...fallbackLabels);
+  if (d && detailDisplay(d).trim() !== '') return { ...d };
+  return null;
+}
+
+export function buildSpecRows(listing: Listing): ListingDetail[] {
+  const details = listing.details ?? [];
+  const vs = listing.vehicleSpecs ?? {};
+
+  const rows: (ListingDetail | null)[] = [
+    rowOrFallback(textRow('spec-make', 'Make', listing.make), details, 'Make'),
+    rowOrFallback(textRow('spec-model', 'Model', listing.model), details, 'Model'),
+    rowOrFallback(textRow('spec-badge', 'Badge', listing.badge), details, 'Badge'),
+    rowOrFallback(textRow('spec-series', 'Series', listing.series), details, 'Series'),
+    rowOrFallback(numberRow('spec-year', 'Year', vs.year), details, 'Model Year', 'Year'),
+    rowOrFallback(textRow('spec-body', 'Body', enumTitle(ENUM_TITLES.bodyType, vs.bodyType)), details, 'Body'),
+    rowOrFallback(numberRow('spec-odometer', 'Odometer', vs.odometer, 'km'), details, 'Odometer'),
+    rowOrFallback(textRow('spec-transmission', 'Transmission', enumTitle(ENUM_TITLES.transmission, vs.transmission)), details, 'Transmission'),
+    rowOrFallback(textRow('spec-fuel', 'Fuel', enumTitle(ENUM_TITLES.fuelType, vs.fuelType)), details, 'Fuel Type', 'Fuel'),
+    rowOrFallback(textRow('spec-drive', 'Drive', enumTitle(ENUM_TITLES.driveType, vs.driveType)), details, 'Drive Type', 'Drive'),
+    rowOrFallback(numberRow('spec-seats', 'Seats', vs.seatCount), details, 'Seats'),
+    rowOrFallback(numberRow('spec-doors', 'Doors', listing.doors), details, 'Doors'),
+    rowOrFallback(textRow('spec-colour', 'Colour', listing.colour), details, 'Colour', 'Color'),
+    rowOrFallback(textRow('spec-engine', 'Engine', listing.engine), details, 'Engine'),
+    rowOrFallback(textRow('spec-vin', 'VIN', listing.vin), details, 'VIN'),
+    rowOrFallback(dateRow('spec-build', 'Build date', listing.buildDate), details, 'Build Date'),
+    rowOrFallback(dateRow('spec-compliance', 'Compliance date', listing.complianceDate), details, 'Compliance Date'),
+    rowOrFallback(dateRow('spec-rego-expiry', 'Registration expiry', listing.registrationExpiry), details, 'Registration Expiry'),
+  ];
+
+  const out = rows.filter((r): r is ListingDetail => r !== null);
+
+  // Append genuine one-offs: any details[] row that isn't one of the promoted
+  // standard labels and actually renders a value.
+  for (const d of details) {
+    if (STANDARD_DETAIL_LABELS.has((d.label ?? '').toLowerCase())) continue;
+    if (detailDisplay(d).trim() === '') continue;
+    out.push(d);
+  }
+
+  return out;
 }
 
 // --- Inline SVG icon system (no external libraries) --------------------------

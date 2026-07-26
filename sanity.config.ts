@@ -2,7 +2,6 @@ import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
 import { schemaTypes } from './src/sanity/schemaTypes';
 import { listingTemplates } from './src/sanity/templates';
-import { generateDescriptionAction } from './src/sanity/actions/generateDescription';
 
 export default defineConfig({
   name: 'default',
@@ -16,10 +15,7 @@ export default defineConfig({
     // blank "Listing" create option survives alongside the two presets.
     templates: (prev) => [...prev, ...listingTemplates],
   },
-  document: {
-    // Add the "Generate description" action to the listing document only,
-    // alongside Sanity's built-in actions (publish, delete, …).
-    actions: (prev, context) =>
-      context.schemaType === 'listing' ? [...prev, generateDescriptionAction] : prev,
-  },
+  // The "Generate description" trigger now lives on the description field itself
+  // (src/sanity/components/GenerateDescriptionInput.tsx), not as a document
+  // action — so it sits right under the dealer notes it draws from.
 });

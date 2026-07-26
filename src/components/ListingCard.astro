@@ -5,6 +5,7 @@ import {
   detailIconName,
   categoryIconName,
   detailDisplay,
+  buildSpecRows,
   statusConfig,
   formatPrice,
   categoryLabel as categoryLabelFn,
@@ -28,7 +29,12 @@ const heroUrl = listing.images?.[0]
   : null;
 
 const href = `/listings/${listing.slug?.current ?? ''}`;
-const visibleDetails = (listing.details ?? []).slice(0, 4);
+// Curated 4-chip summary from the unified spec rows (typed fields, with
+// details[] fallback), in a fixed order. Missing rows drop out silently.
+const specRows = buildSpecRows(listing);
+const visibleDetails = ['Odometer', 'Transmission', 'Fuel', 'Body']
+  .map((label) => specRows.find((r) => r.label === label))
+  .filter((r): r is (typeof specRows)[number] => Boolean(r));
 const categoryLabel = categoryLabelFn(listing.category);
 const status = statusConfig[listing.status] ?? statusConfig.draft;
 ---

@@ -16,6 +16,7 @@
 import { z } from 'zod';
 import {
   BODY_TYPE_CODES,
+  COLOUR_CODES,
   TRANSMISSION_CODES,
   FUEL_TYPE_CODES,
   DRIVE_TYPE_CODES,
@@ -35,6 +36,7 @@ export type Confidence = (typeof CONFIDENCE_LEVELS)[number];
 // only bad ENUM VALUES are rejected.
 export const AiFiltersSchema = z.object({
   bodyType: z.array(z.enum(BODY_TYPE_CODES)).default([]),
+  colour: z.array(z.enum(COLOUR_CODES)).default([]),
   transmission: z.array(z.enum(TRANSMISSION_CODES)).default([]),
   fuelType: z.array(z.enum(FUEL_TYPE_CODES)).default([]),
   driveType: z.array(z.enum(DRIVE_TYPE_CODES)).default([]),
@@ -81,6 +83,7 @@ export function toFilterState(f: AiFilters): FilterState {
     if (arr.length) sp.set(key, arr.join(','));
   };
   setMulti('bodyType', f.bodyType);
+  setMulti('colour', f.colour);
   setMulti('transmission', f.transmission);
   setMulti('fuelType', f.fuelType);
   setMulti('driveType', f.driveType);
@@ -133,7 +136,7 @@ export function normalizeCurrentFilters(raw: unknown): FilterState {
   if (!raw || typeof raw !== 'object') return emptyFilterState();
   const r = raw as Record<string, unknown>;
   const sp = new URLSearchParams();
-  for (const k of ['bodyType', 'transmission', 'fuelType', 'driveType', 'condition', 'seats']) {
+  for (const k of ['bodyType', 'colour', 'transmission', 'fuelType', 'driveType', 'condition', 'seats']) {
     const v = r[k];
     if (Array.isArray(v)) {
       if (v.length) sp.set(k, v.map(String).join(','));

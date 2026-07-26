@@ -19,6 +19,7 @@ import type { KVNamespaceLike } from '../core';
 interface OverviewRow {
   price?: number;
   bodyType?: string;
+  colour?: string;
   fuelType?: string;
   transmission?: string;
   driveType?: string;
@@ -30,6 +31,7 @@ interface OverviewRow {
 const OVERVIEW_QUERY = `*[_type == "listing" && category == "automotive" && status == "active"]{
   price,
   "bodyType": vehicleSpecs.bodyType,
+  "colour": vehicleSpecs.colour,
   "fuelType": vehicleSpecs.fuelType,
   "transmission": vehicleSpecs.transmission,
   "driveType": vehicleSpecs.driveType,
@@ -95,6 +97,8 @@ function renderOverview(rows: OverviewRow[]): string {
 
   const body = tally(rows, 'bodyType');
   if (body) lines.push(`Body types: ${body}`);
+  const colour = tally(rows, 'colour');
+  if (colour) lines.push(`Colours: ${colour}`);
   const fuel = tally(rows, 'fuelType');
   if (fuel) lines.push(`Fuel: ${fuel}`);
   const trans = tally(rows, 'transmission');

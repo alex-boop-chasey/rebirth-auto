@@ -16,8 +16,16 @@ export interface DescriptionVoice {
 
 export interface DescriptionFacts {
   title: string;
-  /** Make/model/year context as the schema shapes it (listing category). */
+  /** Listing category (e.g. "automotive"). */
   category: string;
+  /** Manufacturer make (title-cased), e.g. "Toyota". May be empty. */
+  make?: string;
+  /** Model, e.g. "RAV4". May be empty. */
+  model?: string;
+  /** Manufacturer paint colour name. May be empty. */
+  colour?: string;
+  /** Engine description. May be empty. */
+  engine?: string;
   /** Typed vehicleSpecs, as-is. Serialised into the untrusted SPECS block. */
   specs: Record<string, unknown>;
   /** Verbatim dealerNotes; may be empty. */
@@ -49,6 +57,16 @@ UNTRUSTED DATA
  */
 export function buildUserText(facts: DescriptionFacts): string {
   const notes = facts.dealerNotes.trim() || '(none)';
+  // Fold the promoted identity fields into the SPECS block so the model sees
+  // make/model/colour/engine alongside the typed vehicleSpecs. Only include
+  // fields that are actually present.
+  const specs: Record<string, unknown> = {
+    ...(facts.make ? { make: facts.make } : {}),
+    ...(facts.model ? { model: facts.model } : {}),
+    ...(facts.colour ? { colour: facts.colour } : {}),
+    ...(facts.engine ? { engine: facts.engine } : {}),
+    ...facts.specs,
+  };
   return `TITLE:
 ${facts.title}
 
@@ -56,7 +74,7 @@ CATEGORY:
 ${facts.category}
 
 <SPECS untrusted-data>
-${JSON.stringify(facts.specs, null, 2)}
+${JSON.stringify(specs, null, 2)}
 </SPECS>
 
 <DEALER_NOTES untrusted-data>

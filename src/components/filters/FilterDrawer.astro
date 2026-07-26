@@ -14,7 +14,7 @@
  * history.pushState + fetch of the /partials/inventory fragment, swapping the
  * results in place. URL is the ONLY state store — no localStorage / client store.
  */
-import { iconSvg } from '../../lib/listing';
+import { iconSvg, BASE_COLOUR_OPTIONS } from '../../lib/listing';
 import {
   codeLabel,
   TRANSMISSION_CODES,
@@ -43,6 +43,9 @@ const priceFmt = new Intl.NumberFormat(locale, { style: 'currency', currency, ma
 const priceOpts = priceOptions.map((n) => ({ value: String(n), label: priceFmt.format(n) }));
 const yearOpts = yearOptions.map((n) => ({ value: String(n), label: String(n) }));
 const odoOpts = odoOptions.map((n) => ({ value: String(n), label: `${n.toLocaleString(locale)} km` }));
+// Colour is a multi-select chip group (like body type — "red or white"). Options
+// reuse the shared base-colour list.
+const colourOpts = BASE_COLOUR_OPTIONS.map((c) => ({ value: c.value, label: c.title }));
 
 // Build the checkbox groups this dealer shows, in config order.
 const opt = (dim: string, codes: readonly (string | number)[]) =>
@@ -52,6 +55,8 @@ type Group = { name: string; legend: string; options: { value: string; label: st
 const groups: Group[] = [];
 if (dimensions.includes('bodyType'))
   groups.push({ name: 'bodyType', legend: 'Body type', options: opt('bodyType', bodyTypes), selected: state.bodyType });
+if (dimensions.includes('colour'))
+  groups.push({ name: 'colour', legend: 'Colour', options: colourOpts, selected: state.colour });
 if (dimensions.includes('transmission'))
   groups.push({ name: 'transmission', legend: 'Transmission', options: opt('transmission', TRANSMISSION_CODES), selected: state.transmission });
 if (dimensions.includes('fuelType'))
@@ -238,7 +243,7 @@ const textInput =
   const form = dialog?.querySelector<HTMLFormElement>('form[data-filter-form]');
   const trigger = dialog?.dataset.trigger ? document.getElementById(dialog.dataset.trigger) : null;
 
-  const MULTI = ['bodyType', 'transmission', 'fuelType', 'driveType', 'seats', 'condition'];
+  const MULTI = ['bodyType', 'colour', 'transmission', 'fuelType', 'driveType', 'seats', 'condition'];
   const RANGES = ['priceMin', 'priceMax', 'yearMin', 'yearMax', 'odoMax'];
   const defaultSort = form?.dataset.defaultSort ?? 'newest';
 

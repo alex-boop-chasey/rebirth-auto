@@ -27,6 +27,7 @@ interface FocusRow {
   currency?: string;
   status?: string;
   bodyType?: string;
+  colour?: string;
   fuelType?: string;
   transmission?: string;
   driveType?: string;
@@ -41,6 +42,7 @@ interface FocusRow {
 const FOCUS_PROJECTION = `{
   _id, title, price, currency, status,
   "bodyType": vehicleSpecs.bodyType,
+  "colour": vehicleSpecs.colour,
   "fuelType": vehicleSpecs.fuelType,
   "transmission": vehicleSpecs.transmission,
   "driveType": vehicleSpecs.driveType,
@@ -53,6 +55,7 @@ const FOCUS_PROJECTION = `{
 function renderFocusLine(r: FocusRow, i: number): string {
   const parts: string[] = [];
   if (r.year) parts.push(String(r.year));
+  if (r.colour) parts.push(r.colour);
   if (r.bodyType) parts.push(r.bodyType);
   if (r.fuelType) parts.push(r.fuelType);
   if (r.transmission) parts.push(r.transmission);

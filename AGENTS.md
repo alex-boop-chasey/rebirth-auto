@@ -20,6 +20,24 @@ proposal that appears to conflict with a lens is a legitimate design conversatio
 violation. For pure execution tickets (bug fixes, refactors, mechanical work), you don't need to
 read LENSES.md unless the ticket references it.
 
+## Communicating with the owner (dual-channel)
+
+Mirror **every substantive communication to BOTH channels**: the main Claude Code CLI chat here
+**and** the owner's Telegram (`reply` tool, `chat_id` `7616953556`). The owner moves between
+devices and wants to pick up where you left off on either one, so anything that matters must land
+in both places:
+
+- **Status updates, milestones, and completion reports** — post in the CLI and send the same to Telegram.
+- **Questions and decision points** — put the options in the CLI and send them to Telegram too, phrased
+  so the owner can answer from a phone (numbered/lettered choices with a recommendation). Wait for the
+  reply on whichever channel it comes back on.
+- **Anything the owner is waiting on** — never leave it in only one channel.
+
+Keep the Telegram copy concise (it's a phone); the CLI copy can carry the fuller detail and any
+tables/diffs. Trivial conversational back-and-forth doesn't need mirroring — this rule is about the
+substantive updates, questions, and results the owner needs to act on. If the Telegram channel/token
+isn't configured in the current environment, post to the CLI and skip Telegram silently.
+
 ## How the three project docs work together
 
 - **DECISION.md** — *why* things are the way they are. Architectural choices and their reasoning.

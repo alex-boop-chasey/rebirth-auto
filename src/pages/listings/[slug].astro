@@ -14,6 +14,7 @@ import {
   detailIconName,
   categoryIconName,
   detailDisplay,
+  buildSpecRows,
   statusConfig,
   formatPrice,
   categoryLabel,
@@ -53,7 +54,7 @@ const mainImage = images[0]
 const status = statusConfig[listing.status] ?? statusConfig.draft;
 const categoryName = categoryLabel(listing.category);
 const priceLabel = formatPrice(listing.price, listing.currency);
-const details = listing.details ?? [];
+const details = buildSpecRows(listing);
 
 const year = new Date().getFullYear();
 

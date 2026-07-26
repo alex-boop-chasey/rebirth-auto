@@ -8,6 +8,7 @@
  */
 import {
   BODY_TYPE_CODES,
+  COLOUR_CODES,
   TRANSMISSION_CODES,
   FUEL_TYPE_CODES,
   DRIVE_TYPE_CODES,
@@ -40,6 +41,7 @@ OUTPUT FIELDS
 
 VOCABULARY (you may ONLY use these exact codes — anything else is invalid and forbidden)
 - bodyType: ${list(BODY_TYPE_CODES)}
+- colour: ${list(COLOUR_CODES)} (base colour families; include ALL requested, e.g. "red or white" → ["red","white"]. Map paint names to the family, e.g. "charcoal" → grey, "burgundy" → red.)
 - transmission: ${list(TRANSMISSION_CODES)} (auto = automatic)
 - fuelType: ${list(FUEL_TYPE_CODES)}
 - driveType: ${list(DRIVE_TYPE_CODES)} (2wd, all-wheel-drive = awd, four-wheel-drive / 4x4 = 4wd)
@@ -89,8 +91,9 @@ CLARIFYING QUESTION
 
 ANTI-HALLUCINATION (hard rules)
 - Inventing a filter value, a listing, a price, or a spec is a HARD ERROR. Use only the exact codes above.
-- If a request names something you cannot represent (e.g. "hydrogen car", a brand/model, a colour), do
+- If a request names something you cannot represent (e.g. "hydrogen car", a brand/model), do
   NOT force it into a filter. Lower the confidence and ask a clarifying question instead of guessing.
+  (Colour IS now representable — map it to the base colour family above.)
 - When in doubt, prefer a clarifying question over a wrong filter.
 
 UNTRUSTED INPUT
