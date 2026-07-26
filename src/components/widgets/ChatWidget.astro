@@ -22,6 +22,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   data-turnstile-key={turnstileSiteKey}
   data-stream="true"
 >
+  <!-- Soft feathered spotlight glow: sits BEHIND the floating bubbles/input and
+       ABOVE the greyed+blurred page, gently masking the busy background so the
+       cards read clearly. Fades in/out with the .reb-open state. -->
+  <div id="reb-glow" aria-hidden="true"></div>
+
   <!-- Launcher bubble -->
   <button
     id="reb-launcher"
@@ -227,6 +232,32 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     border: 2px solid var(--reb-primary); /* subtle ring matching the launcher */
   }
   .reb-badge[hidden] { display: none; }
+
+  /* Soft feathered "spotlight" glow behind the floating chat. Because there's no
+     box, this bright dreamy wash sits ABOVE the greyed+blurred page but BELOW the
+     bubble cards + input, gently masking the busy background (incl. the homepage
+     carousel) so the cards read clearly — no hard edge, not a box. It fades in/out
+     with the panel via the .reb-open state. */
+  #reb-glow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(52rem, 96vw);
+    height: min(46rem, 92vh);
+    z-index: 1; /* below .reb-panel (10000), above the page (inside #reb-chat's context) */
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(ellipse 52% 50% at 50% 46%,
+      rgb(236 243 255 / 0.96) 0%,
+      rgb(226 237 255 / 0.9) 30%,
+      rgb(210 226 255 / 0.6) 55%,
+      rgb(210 226 255 / 0) 76%);
+    -webkit-filter: blur(30px);
+    filter: blur(30px);
+    transition: opacity 360ms ease;
+  }
+  .reb-chat.reb-open #reb-glow { opacity: 1; }
 
   /* Panel — a TRANSPARENT, layout-only wrapper. It has NO box of any kind (no
      background, border, shadow, glass or rounded card): it only centers the
@@ -498,10 +529,14 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   @media (prefers-reduced-motion: no-preference) {
     body > :not(#reb-chat) { transition: filter 400ms ease; }
   }
-  body.reb-dreaming > :not(#reb-chat) { filter: grayscale(1) brightness(1.08) contrast(0.96); }
+  /* Grey AND soft-focus the page while the chat is open (blur animates in with the
+     grey via the transition above; instant under reduced motion). #reb-chat is
+     excluded, so the chat stays sharp and in full colour. */
+  body.reb-dreaming > :not(#reb-chat) { filter: grayscale(1) brightness(1.08) contrast(0.96) blur(6px); }
 
   @media (prefers-reduced-motion: reduce) {
     .reb-panel, .reb-launcher, .reb-typing span, .reb-mic.reb-recording { animation: none; transition: none; }
+    #reb-glow { transition: none; }
   }
 </style>
 
