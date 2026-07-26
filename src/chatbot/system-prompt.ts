@@ -33,6 +33,14 @@ export interface GroundingContext {
    * when inventory grounding is off.
    */
   focus?: string | null;
+  /**
+   * Rendered VISITOR JOURNEY block (the visitor's recent breadcrumb trail —
+   * searches, listings viewed, compares), or null/undefined when there's no
+   * journey to fold. CONTEXT ONLY: it is placed BEFORE the inventory/focus blocks
+   * so live inventory and the primed focus keep last-word authority, and it
+   * carries no prices/specs (built in grounding/journey.ts).
+   */
+  journey?: string | null;
 }
 
 const DEGRADED_INVENTORY =
@@ -74,10 +82,23 @@ function renderFocusSection(ctx: GroundingContext): string {
 ${ctx.focus}`;
 }
 
+/**
+ * Render the VISITOR JOURNEY section. Empty (byte-identical no-op) when there's
+ * no journey — the block carries its own delimiters and "context only" framing
+ * (built in grounding/journey.ts). Mirrors renderFocusSection.
+ */
+function renderJourneySection(ctx: GroundingContext): string {
+  if (!ctx.journey) return '';
+  return `
+
+${ctx.journey}`;
+}
+
 export function buildSystemPrompt(ctx: GroundingContext = {}): string {
   const businessFacts = ctx.businessFacts ?? BUSINESS_KNOWLEDGE;
   const inventorySection = renderInventorySection(ctx);
   const focusSection = renderFocusSection(ctx);
+  const journeySection = renderJourneySection(ctx);
   return `You are "Rebi", the friendly AI assistant on the Rebirth Auto website
 (https://rebirthauto.com.au). Rebirth Auto is a local car dealership. You help visitors —
 mostly people looking to buy, finance, service, or trade in a vehicle —
@@ -207,7 +228,7 @@ afterwards, just carry on normally.
 
 # KNOWLEDGE BASE (your only source of truth for business facts)
 ${businessFacts}
-${inventorySection}${focusSection}
+${journeySection}${inventorySection}${focusSection}
 
 Now help the visitor. Keep it friendly, useful, and short.`;
 }

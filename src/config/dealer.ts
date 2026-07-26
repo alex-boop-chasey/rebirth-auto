@@ -190,6 +190,28 @@ export interface DealerConfig {
       cacheTtlSeconds: number;
     };
     /**
+     * Continuity journey — server-persisted, opaque per-visitor breadcrumb trail
+     * (searches, listings viewed, compares, chats) that Rebi folds into its
+     * replies for a "picks up where you left off" feel. Fully fail-open: if D1,
+     * the table, or the cookie is missing/errors, Rebi behaves exactly as today.
+     * Every knob is dealer-tunable. The `enabled` default is safe even before the
+     * prod table exists — fail-open covers the not-yet-migrated database.
+     */
+    journey: {
+      /** Master on/off. When false, no cookie is minted and nothing is folded. */
+      enabled: boolean;
+      /** Name of the opaque visitor-id cookie (no PII — just a random UUID). */
+      cookieName: string;
+      /** Cookie lifetime (seconds). */
+      cookieMaxAgeSeconds: number;
+      /** How far back journey events are considered (seconds). */
+      retentionSeconds: number;
+      /** Hard cap on how many recent events are folded into a prompt. */
+      maxEventsFolded: number;
+      /** Hard cap on the character length of a stored/rendered event label. */
+      maxLabelLength: number;
+    };
+    /**
      * Rebi-fronted natural-language search (the homepage search dock + the
      * `/api/search` endpoint). Deterministic pre-pass → structured-tier LLM only
      * on a miss; fail-open. Front-of-house copy (placeholders, typewriter timings)
@@ -417,6 +439,14 @@ export const dealerConfig: DealerConfig = {
       // (the URL contract's dimensions can't realistically exceed it).
       maxRefLength: 512,
       cacheTtlSeconds: 120, // a focused vehicle's price/status shifts slowly
+    },
+    journey: {
+      enabled: true,
+      cookieName: 'reb_vid',
+      cookieMaxAgeSeconds: 15552000, // 180 days
+      retentionSeconds: 15552000, // 180 days
+      maxEventsFolded: 8,
+      maxLabelLength: 80,
     },
     search: {
       enabled: true,

@@ -45,6 +45,8 @@ import {
   closeStaleSessions,
 } from './state';
 import { sendToTelegram, sendFollowUpToTelegram } from './telegram';
+import { resolveVisitor, withCookie } from './visitor';
+import { recordJourneyEvent } from './journey';
 
 /**
  * Minimal subset of the Cloudflare KV API we use. Declared locally so `core.ts`
@@ -584,6 +586,11 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
 
   const db = env.CHAT_DB;
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  // Resolve the opaque continuity-journey visitor id (fail-open: {id:null} when
+  // disabled or unparseable). `setCookie`, when present, must ride on EVERY
+  // outgoing Response so the cookie sticks — applied mechanically via withCookie
+  // at each return path below (incl. the SSE response).
+  const { id: visitorId, setCookie } = resolveVisitor(request, getDealerConfig().chat.journey);
   let sessionId = typeof body.sessionId === 'string' ? body.sessionId : undefined;
   const contact = typeof body.contact === 'string' ? body.contact.trim().slice(0, 200) : '';
   const hasMessages = Array.isArray(body.messages) && (body.messages as unknown[]).length > 0;
@@ -600,7 +607,7 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
         console.error('[chatbot] Storing contact failed', err);
       }
     }
-    return json({ sessionId, status });
+    return withCookie(json({ sessionId, status }), setCookie);
   }
 
   // --- Normal message submission ---
@@ -608,7 +615,7 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   try {
     history = parseHistory(body.messages);
   } catch (err) {
-    return json({ error: (err as Error).message }, 400);
+    return withCookie(json({ error: (err as Error).message }, 400), setCookie);
   }
 
   // Per-IP message rate limiting (before any upstream call). Skipped if KV unbound.
@@ -617,10 +624,13 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
       const rl = await checkLimit(env.RATE_LIMIT_KV, `rl:${ip}`, RATE_LIMIT_MAX);
       if (!rl.allowed) {
         console.log(`[chatbot] Rate limit exceeded for ${ip} (retry in ${rl.retryAfterSeconds}s)`);
-        return json(
-          { error: "You've reached the chat limit — try again later or get in touch via https://rebirthauto.com.au/contact." },
-          429,
-          { 'Retry-After': String(rl.retryAfterSeconds) }
+        return withCookie(
+          json(
+            { error: "You've reached the chat limit — try again later or get in touch via https://rebirthauto.com.au/contact." },
+            429,
+            { 'Retry-After': String(rl.retryAfterSeconds) }
+          ),
+          setCookie
         );
       }
     } catch (err) {
@@ -657,7 +667,7 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   if (TURNSTILE_ENABLED && !isLocalhost && env.CHATBOT_TURNSTILE_SECRET_KEY && isNewVisitor) {
     const token = typeof body.turnstileToken === 'string' ? body.turnstileToken : '';
     if (!token || !(await verifyTurnstile(env.CHATBOT_TURNSTILE_SECRET_KEY, token, ip))) {
-      return json({ error: 'Please complete the verification and try again.' }, 403);
+      return withCookie(json({ error: 'Please complete the verification and try again.' }, 403), setCookie);
     }
   }
 
@@ -683,10 +693,10 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
     try {
       const vid = await appendMessage(db, sessionId, 'visitor', latestUserMessage.content);
       await sendFollowUpToTelegram(env, sessionId, latestUserMessage.content);
-      return json({ sessionId, status: meta.status, lastId: vid });
+      return withCookie(json({ sessionId, status: meta.status, lastId: vid }), setCookie);
     } catch (err) {
       console.error('[chatbot] Forwarding to human failed', err);
-      return json({ sessionId, status: meta.status });
+      return withCookie(json({ sessionId, status: meta.status }), setCookie);
     }
   }
 
@@ -718,7 +728,10 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   // scrub (the static prompt carries no live inventory, so nothing to firewall).
   let groundingFacts: GroundingFacts | null = null;
   try {
-    const grounded = await buildGroundedSystemPrompt(env.GROUNDING_KV, latestUserMessage.content, context);
+    const grounded = await buildGroundedSystemPrompt(env.GROUNDING_KV, latestUserMessage.content, context, {
+      db,
+      visitorId,
+    });
     if (grounded) {
       groundedSystemMessage = { role: 'system' as const, content: grounded.prompt };
       groundingFacts = grounded.facts;
@@ -726,6 +739,11 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   } catch (err) {
     console.error('[chatbot] Grounding failed (using static prompt)', err);
   }
+
+  // Record this turn as a `chat` journey event (fail-open, best-effort). Done
+  // AFTER the prompt is built so the current turn is never folded into its own
+  // prompt — it surfaces as continuity on later turns / future visits instead.
+  await recordJourneyEvent(db, visitorId, 'chat', sessionId ?? null, null, sessionId ?? null);
 
   // Build the fail-open reply firewall from this turn's facts (null → disabled/none).
   const scrub = makeScrubber(groundingFacts);
@@ -755,16 +773,19 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   // and on a primary failure emits `{type:'error'}` so the widget retries with
   // stream:false (this JSON path below, which runs the full failsafe).
   if (body.stream === true) {
-    return streamChatResponse({
-      messages,
-      env,
-      db,
-      sessionId,
-      ip,
-      visitorText: latestUserMessage.content,
-      scrub,
-      bufferInventory,
-    });
+    return withCookie(
+      streamChatResponse({
+        messages,
+        env,
+        db,
+        sessionId,
+        ip,
+        visitorText: latestUserMessage.content,
+        scrub,
+        bufferInventory,
+      }),
+      setCookie
+    );
   }
 
   // chat-cheap tier: primary → fallback, via the AI layer (see generateReply).
@@ -782,7 +803,7 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
         console.error('[chatbot] Persist on both-failed failed', err);
       }
     }
-    return json({ reply: BOTH_FAILED_REPLY, sessionId, status: 'ai_active' });
+    return withCookie(json({ reply: BOTH_FAILED_REPLY, sessionId, status: 'ai_active' }), setCookie);
   }
 
   const rawReply = result.reply;
@@ -792,10 +813,10 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
     if (await escalationAllowed(env, ip)) {
       try {
         const sysId = await performEscalation(env, db, sessionId, latestUserMessage.content);
-        return json({ sessionId, status: 'escalated', lastId: sysId });
+        return withCookie(json({ sessionId, status: 'escalated', lastId: sysId }), setCookie);
       } catch (err) {
         console.error('[chatbot] Escalation failed — falling back to a normal reply', err);
-        return json({ reply: stripMarkers(rawReply) || BOTH_FAILED_REPLY, sessionId, status: 'ai_active' });
+        return withCookie(json({ reply: stripMarkers(rawReply) || BOTH_FAILED_REPLY, sessionId, status: 'ai_active' }), setCookie);
       }
     }
     console.log('[chatbot] Escalation rate-limited for', ip);
@@ -812,7 +833,7 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   if (scrub) reply = scrub(reply).text;
 
   const lastId = db && sessionId ? await persistExchange(db, sessionId, latestUserMessage.content, reply, result.model) : undefined;
-  return json({ reply, sessionId, status: 'ai_active', lastId, resolved });
+  return withCookie(json({ reply, sessionId, status: 'ai_active', lastId, resolved }), setCookie);
 }
 
 /* ==================================================================

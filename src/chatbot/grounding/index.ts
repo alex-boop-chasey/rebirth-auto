@@ -18,9 +18,11 @@ import { getBusinessFacts } from './business-facts';
 import { getInventoryOverview } from './overview';
 import { getLiveMatches } from './lookup';
 import { resolveFocus } from './context';
+import { resolveJourney } from './journey';
 import { CAR_MAKES, extractPriceValues, findKnownMakes, type GroundingFacts } from './verify';
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
+import type { D1Like } from '../state';
 
 export type { GroundingFacts } from './verify';
 
@@ -51,8 +53,21 @@ export async function buildGroundedSystemPrompt(
   kv: KVNamespaceLike | undefined,
   userMessage: string,
   context?: ConversationContext | null,
+  opts?: { db?: D1Like; visitorId?: string | null },
 ): Promise<GroundedPrompt | null> {
   const cfg = getDealerConfig().chat;
+
+  // Continuity journey — resolved INDEPENDENTLY of inventory grounding and focus,
+  // in its own try/catch so a journey hiccup can never affect grounding. It is
+  // CONTEXT ONLY (no prices/specs), folded before the inventory/focus blocks.
+  let journey: string | null = null;
+  try {
+    if (cfg.journey.enabled && opts?.db && opts?.visitorId) {
+      journey = await resolveJourney(opts.db, opts.visitorId, cfg.journey);
+    }
+  } catch (err) {
+    console.error('[grounding] Journey fold failed (omitting journey)', err);
+  }
 
   // Conversation focus is resolved INDEPENDENTLY of inventory grounding: a chat
   // primed from a listing should still be grounded on that vehicle even if the
@@ -63,14 +78,16 @@ export async function buildGroundedSystemPrompt(
   }
 
   // Inventory grounding off: fall through to the static prompt, UNLESS a focus
-  // was resolved — then produce a focus-only prompt (today's static base + the
-  // primed vehicle). Returning null here would suppress priming (the bug the
-  // critic flagged), so we key that decision on `focus`, not on grounding.
+  // OR a journey was resolved — then produce a focus/journey-only prompt (today's
+  // static base + the primed vehicle and/or the continuity trail). Returning null
+  // here would suppress priming (the bug the critic flagged) and would also drop
+  // continuity when inventory grounding is off, so we key on focus OR journey.
   if (!cfg.grounding.enabled) {
-    if (!focus) return null;
-    const prompt = buildSystemPrompt({ focus });
-    // A resolved focus is a specific-vehicle block → inventory-bearing.
-    return { prompt, facts: buildFacts(prompt, true) };
+    if (!focus && !journey) return null;
+    const prompt = buildSystemPrompt({ focus, journey });
+    // A resolved focus is a specific-vehicle block → inventory-bearing; a
+    // journey alone carries no prices/specs, so it is NOT inventory-bearing.
+    return { prompt, facts: buildFacts(prompt, focus !== null) };
   }
 
   const g = cfg.grounding;
@@ -94,7 +111,7 @@ export async function buildGroundedSystemPrompt(
   // came back null (fetch errors), the prompt shows the degraded sentinel.
   const available = overview !== null || matches !== null;
 
-  const prompt = buildSystemPrompt({ businessFacts, overview, matches, available, focus });
+  const prompt = buildSystemPrompt({ businessFacts, overview, matches, available, focus, journey });
 
   // Inventory-bearing (→ the streaming path BUFFERS the whole reply before any of
   // it reaches the browser). True when either:

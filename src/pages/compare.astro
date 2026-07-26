@@ -504,6 +504,42 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
       <script type="application/json" id="vboard-data" is:inline set:html={JSON.stringify(cars)} />
     )}
 
+    <!-- Continuity-journey beacon: record this comparison (fail-open, best-effort). -->
+    {canCompare && (
+      <script
+        is:inline
+        define:vars={{
+          payload: {
+            kind: 'compare',
+            ref: ids.join(','),
+            label: listings.map((l) => l.title).join(', '),
+          },
+        }}
+      >
+        (function () {
+          try {
+            var data = JSON.stringify(payload);
+            var url = '/api/journey';
+            var sent = false;
+            if (navigator.sendBeacon) {
+              sent = navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
+            }
+            if (!sent) {
+              fetch(url, {
+                method: 'POST',
+                body: data,
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                credentials: 'same-origin',
+              }).catch(function () {});
+            }
+          } catch (e) {
+            /* fail-open — the beacon never affects the page */
+          }
+        })();
+      </script>
+    )}
+
     <!-- Floating AI chat assistant (Rebi) -->
     <ChatWidget />
 

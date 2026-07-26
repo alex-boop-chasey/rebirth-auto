@@ -373,5 +373,30 @@ const canonicalURL = new URL(
       });
       renderSaved();
     </script>
+
+    <!-- Continuity-journey beacon: record this listing view (fail-open, best-effort). -->
+    <script is:inline define:vars={{ payload: { kind: 'listing', ref: listing._id, label: listing.title } }}>
+      (function () {
+        try {
+          var data = JSON.stringify(payload);
+          var url = '/api/journey';
+          var sent = false;
+          if (navigator.sendBeacon) {
+            sent = navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
+          }
+          if (!sent) {
+            fetch(url, {
+              method: 'POST',
+              body: data,
+              headers: { 'Content-Type': 'application/json' },
+              keepalive: true,
+              credentials: 'same-origin',
+            }).catch(function () {});
+          }
+        } catch (e) {
+          /* fail-open — the beacon never affects the page */
+        }
+      })();
+    </script>
   </body>
 </html>
