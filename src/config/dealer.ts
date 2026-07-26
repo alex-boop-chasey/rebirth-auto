@@ -234,6 +234,38 @@ export interface DealerConfig {
         /** Label for the "start over" button shown in the results state. */
         newSearchLabel: string;
       };
+      /**
+       * Rebi's opening greeting on the Focus Stage. When `showOnLoad` is true the
+       * stage seats this card immediately so the shopper is greeted before typing.
+       */
+      greeting: { showOnLoad: boolean; text: string };
+      /**
+       * Notification-sound behaviour for the Focus Stage. `enabled` is the master
+       * switch (a tenant can ship silent); `defaultMuted` is the initial toggle
+       * state before the visitor's own `localStorage` preference (if any) wins.
+       */
+      sounds: { enabled: boolean; defaultMuted: boolean };
+      /**
+       * Front-of-house labels and hints for the Focus Stage chrome. Kept in config
+       * so a tenant restyles the surface's copy (and its accessible names) without
+       * a code edit — the component hardcodes no dealer-facing string.
+       */
+      stage: {
+        /** Submit button + stage aria-label ("Ask Rebi"). */
+        askLabel: string;
+        /** Tiny label on the frosted shelf where older turns tuck away. */
+        shelfLabel: string;
+        /** One-line helper under the entry field. */
+        hint: string;
+        /** Label for the "open the classic filters drawer" link. */
+        refineManualLabel: string;
+        /** Accessible label for the free-text entry input. */
+        inputAriaLabel: string;
+        /** Accessible label/title for the sound toggle when sounds are ON. */
+        muteLabel: string;
+        /** Accessible label/title for the sound toggle when sounds are muted. */
+        unmuteLabel: string;
+      };
     };
   };
 }
@@ -431,6 +463,20 @@ export const dealerConfig: DealerConfig = {
         unclear:
           "I couldn't quite pin that down — try adding a budget, body type, or fuel type.",
         newSearchLabel: 'New search',
+      },
+      greeting: {
+        showOnLoad: true,
+        text: "G'day — I'm Rebi. Tell me what you're after and I'll comb the lot for you.",
+      },
+      sounds: { enabled: true, defaultMuted: false },
+      stage: {
+        askLabel: 'Ask Rebi',
+        shelfLabel: 'earlier',
+        hint: 'Ask in plain English — Rebi reads your search and lines up the matches.',
+        refineManualLabel: 'Refine manually',
+        inputAriaLabel: "Describe the car you're looking for",
+        muteLabel: 'Mute notification sounds',
+        unmuteLabel: 'Unmute notification sounds',
       },
     },
   },
