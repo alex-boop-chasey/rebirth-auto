@@ -3,7 +3,7 @@
  * ------------------------------------------------------------------
  * Framework-free, client-only. Extracted VERBATIM from SearchDock (same timings,
  * easing and depth-model constants) so the same receding-card stage can be reused
- * by other surfaces (e.g. the corner chat widget). It owns the turn stack + the
+ * by other surfaces (the corner Rebi chat widget). It owns the turn stack + the
  * depth/lift/scale/blur/opacity model; the host wires in the card-column
  * container, the aria-live element, reduced-motion, the "new search" handler and
  * a reply-sound hook via `opts`.
@@ -12,10 +12,30 @@
  * methods — so it is safe to `import` from a client `<script>` (SSR never runs it).
  * The `.turn`/`.card`/`.bubble`/… styling comes from `stage.css`, namespaced
  * under `.focus-stage` (the class the host must put on the card-column container).
+ *
+ * Two hosts, two personalities:
+ *   - SearchDock uses the descriptor pipeline (appendRebi/showTyping/landReply)
+ *     and lets old cards retire past depth 4 (`retire` defaults true).
+ *   - The ChatWidget passes `retire:false` (nothing is ever destroyed — cards
+ *     stack) and drives the stage through the free-form card builders
+ *     (addRebiCard/addHumanCard/addSystemCard/openStreamingRebiCard/addActionCard/
+ *     addPinnedCard) so it can render an arbitrary conversation as focus cards.
  */
 
 export type ReplyKind = 'greeting' | 'results' | 'nomatch' | 'unclear';
 export type Descriptor = { kind: ReplyKind; text: string; count: number };
+
+/** One button inside an action card (wrap-up / resolved prompt). */
+export interface StageAction {
+  label: string;
+  onClick: () => void | Promise<void>;
+  primary?: boolean;
+}
+export interface ActionCardSpec {
+  title: string;
+  sub?: string;
+  actions: StageAction[];
+}
 
 export interface FocusStageOptions {
   /** The card-column container cards are appended to (must carry `.focus-stage`). */
@@ -28,8 +48,14 @@ export interface FocusStageOptions {
   newSearchLabel: string;
   /** Invoked when the "New search" button in a results reply is clicked. */
   onNewSearch: () => void;
-  /** Sound hook fired the moment a reply lands (Rebi chime). Optional. */
+  /** Sound hook fired the moment a descriptor reply lands (Rebi chime). Optional. */
   onReply?: () => void;
+  /**
+   * Retire cards once they recede past depth 4 (DOM + turns[] cleanup). Defaults
+   * to `true` (SearchDock). The chat passes `false` so nothing is destroyed and
+   * the whole conversation stays stacked (scroll-back UX is a later phase).
+   */
+  retire?: boolean;
 }
 
 export interface FocusStage {
@@ -37,11 +63,34 @@ export interface FocusStage {
   readonly turns: HTMLElement[];
   layout: () => void;
   retire: (node: HTMLElement) => void;
+  /** Seat a user turn; returns the card's mutable `.bubble` body element. */
   addUserTurn: (text: string) => HTMLElement;
   appendRebi: (d: Descriptor) => HTMLElement;
   showTyping: () => HTMLElement;
   landReply: (typing: HTMLElement, d: Descriptor) => void;
   clearStack: () => void;
+  /** Seat a Rebi card from ready HTML; returns the mutable `.body` element. */
+  addRebiCard: (html: string, isError?: boolean) => HTMLElement;
+  /** Seat a Team (human) card from ready HTML; returns the mutable `.body` element. */
+  addHumanCard: (html: string) => HTMLElement;
+  /** Seat a centered, avatarless system notice; returns the mutable body element. */
+  addSystemCard: (html: string) => HTMLElement;
+  /**
+   * Seat an empty Rebi card for streaming. `el` is the `.body` element the caller
+   * fills via innerHTML per delta; `finalize` writes the complete text to the
+   * aria-live region (and stops the debounced live mirror).
+   */
+  openStreamingRebiCard: () => { el: HTMLElement; finalize: (plainText: string) => void };
+  /** Seat a wrap-up card (title + sub + action buttons) reusing the .actions/.newsearch visuals. */
+  addActionCard: (spec: ActionCardSpec) => HTMLElement;
+  /**
+   * Pin an arbitrary element as a focal card that does NOT recede while active
+   * (used for contact capture). Replaces any existing pinned card. Returns the
+   * pinned turn element.
+   */
+  addPinnedCard: (content: HTMLElement) => HTMLElement;
+  /** Remove the pinned card (its content element is detached, not destroyed). */
+  unpinCard: () => void;
 }
 
 export function createFocusStage(opts: FocusStageOptions): FocusStage {
@@ -53,6 +102,7 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     onNewSearch,
     onReply,
   } = opts;
+  const RETIRE = opts.retire !== false; // default true (SearchDock); chat passes false
 
   // ================= The Focus Stage depth engine =================
   // Newest card = depth 0 (front, sharp, at the bottom). Older cards recede
@@ -70,12 +120,21 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     '<path d="M2.6 10.6v2.8"></path>' +
     '<path d="M21.4 10.6v2.8"></path>' +
     '</svg></span>';
+  // Team (human) avatar — a simple person, green accent applied via `.human` CSS.
+  const PERSON =
+    '<span class="avatar human" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="8" r="3.6"></circle>' +
+    '<path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6"></path>' +
+    '</svg></span>';
   const REFRESH_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M3 2v6h6"></path><path d="M3.5 8a9 9 0 1 1-1 5"></path></svg>';
 
   const turns: HTMLElement[] = []; // newest last
+  let pinned: HTMLElement | null = null; // the focal card that never recedes
 
   // Remove a card from the DOM AND from turns[] atomically (guards double-splice
   // so turns[] never leaks detached nodes — the design-critic fix).
@@ -105,8 +164,9 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
       }
       el.style.opacity = String(op);
       el.style.zIndex = String(100 + i);
-      // once fully receded, retire it (DOM + turns[]) to stay light
-      if (op === 0 && depth > 4) {
+      // once fully receded, retire it (DOM + turns[]) to stay light — but only when
+      // the host opted in (SearchDock). The chat keeps every card (retire:false).
+      if (RETIRE && op === 0 && depth > 4) {
         const node = el;
         setTimeout(() => retire(node), REDUCED_MOTION ? 220 : 620);
       }
@@ -128,6 +188,14 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
   const birth = (turn: HTMLElement) => {
     void turn.offsetWidth;
     requestAnimationFrame(() => requestAnimationFrame(layout));
+  };
+
+  // Append → track → born → settle. Shared by every card builder.
+  const seatTurn = (turn: HTMLElement) => {
+    column.appendChild(turn);
+    turns.push(turn);
+    seatEnter(turn);
+    birth(turn);
   };
 
   // ---- reply descriptor → safe DOM (never raw innerHTML for dynamic text) ----
@@ -171,7 +239,7 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     return { wordSpans, plain };
   };
 
-  const makeTurn = (kind: 'rebi' | 'user'): { turn: HTMLElement; card: HTMLElement } => {
+  const makeTurn = (kind: 'rebi' | 'user' | 'human' | 'system'): { turn: HTMLElement; card: HTMLElement } => {
     const turn = document.createElement('div');
     turn.className = 'turn ' + kind;
     const card = document.createElement('div');
@@ -213,10 +281,7 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
   // Seat a Rebi reply card onto the stack (append → born → reveal → announce).
   const appendRebi = (d: Descriptor): HTMLElement => {
     const built = buildRebiCard(d);
-    column.appendChild(built.turn);
-    turns.push(built.turn);
-    seatEnter(built.turn);
-    birth(built.turn);
+    seatTurn(built.turn);
     if (!REDUCED_MOTION) revealWords(built.wordSpans);
     live.textContent = built.plain;
     return built.turn;
@@ -228,11 +293,8 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     bub.className = 'bubble';
     bub.textContent = text; // user text = plain, always textContent
     card.appendChild(bub);
-    column.appendChild(turn);
-    turns.push(turn);
-    seatEnter(turn);
-    birth(turn);
-    return turn;
+    seatTurn(turn);
+    return bub;
   };
 
   // word-by-word reveal (motion only; skipped under reduced motion)
@@ -254,10 +316,7 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     dots.innerHTML = '<i></i><i></i><i></i>';
     bub.appendChild(dots);
     card.appendChild(bub);
-    column.appendChild(turn);
-    turns.push(turn);
-    seatEnter(turn);
-    birth(turn);
+    seatTurn(turn);
     return turn;
   };
 
@@ -282,12 +341,191 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     appendRebi(d);
   };
 
+  // ================= Free-form card builders (chat host) =================
+  // These drive an arbitrary conversation. Content arrives as ready HTML (the
+  // chat pre-formats + escapes it), so it goes in via innerHTML on the body; the
+  // COMPLETE plain text is announced once via the shared live region.
+
+  const announce = (el: HTMLElement) => { live.textContent = el.textContent || ''; };
+
+  const addRebiCard = (html: string, isError = false): HTMLElement => {
+    const { turn, card } = makeTurn('rebi');
+    card.insertAdjacentHTML('afterbegin', AVATAR);
+    const bub = document.createElement('div');
+    bub.className = 'bubble' + (isError ? ' is-error' : '');
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = 'Rebi';
+    const body = document.createElement('span');
+    body.className = 'body';
+    body.innerHTML = html;
+    bub.appendChild(name);
+    bub.appendChild(body);
+    card.appendChild(bub);
+    seatTurn(turn);
+    announce(body);
+    return body;
+  };
+
+  const addHumanCard = (html: string): HTMLElement => {
+    const { turn, card } = makeTurn('human');
+    card.insertAdjacentHTML('afterbegin', PERSON);
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = 'Team';
+    const body = document.createElement('span');
+    body.className = 'body';
+    body.innerHTML = html;
+    bub.appendChild(name);
+    bub.appendChild(body);
+    card.appendChild(bub);
+    seatTurn(turn);
+    announce(body);
+    return body;
+  };
+
+  const addSystemCard = (html: string): HTMLElement => {
+    const { turn, card } = makeTurn('system');
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    const body = document.createElement('span');
+    body.className = 'body';
+    body.innerHTML = html;
+    bub.appendChild(body);
+    card.appendChild(bub);
+    seatTurn(turn);
+    announce(body);
+    return body;
+  };
+
+  // Empty Rebi card whose body the caller fills per streamed delta. A debounced
+  // MutationObserver mirrors the settled text into the live region so the reply is
+  // announced ONCE after streaming quiesces (no per-delta spam); `finalize` forces
+  // the announcement immediately and stops the observer.
+  const openStreamingRebiCard = (): { el: HTMLElement; finalize: (plainText: string) => void } => {
+    const { turn, card } = makeTurn('rebi');
+    card.insertAdjacentHTML('afterbegin', AVATAR);
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = 'Rebi';
+    const body = document.createElement('span');
+    body.className = 'body';
+    bub.appendChild(name);
+    bub.appendChild(body);
+    card.appendChild(bub);
+    seatTurn(turn);
+
+    let settle: ReturnType<typeof setTimeout> | null = null;
+    const obs = new MutationObserver(() => {
+      if (settle) clearTimeout(settle);
+      settle = setTimeout(() => { live.textContent = body.textContent || ''; }, 500);
+    });
+    obs.observe(body, { childList: true, subtree: true, characterData: true });
+
+    const finalize = (plainText: string) => {
+      if (settle) { clearTimeout(settle); settle = null; }
+      obs.disconnect();
+      live.textContent = plainText || body.textContent || '';
+    };
+    return { el: body, finalize };
+  };
+
+  // A centered wrap-up card: title + optional sub + action buttons, reusing the
+  // .actions/.newsearch visuals. Async onClick handlers auto-disable every button
+  // for the duration (double-tap guard), re-enabling only if the card survives.
+  const addActionCard = (spec: ActionCardSpec): HTMLElement => {
+    const { turn, card } = makeTurn('system');
+    turn.setAttribute('data-action-card', '1');
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+
+    const h = document.createElement('span');
+    h.className = 'action-title';
+    h.textContent = spec.title;
+    bub.appendChild(h);
+    if (spec.sub) {
+      const s = document.createElement('span');
+      s.className = 'action-sub';
+      s.textContent = spec.sub;
+      bub.appendChild(s);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const btns: HTMLButtonElement[] = [];
+    spec.actions.forEach((a) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'newsearch' + (a.primary ? '' : ' ghost');
+      btn.textContent = a.label;
+      btn.addEventListener('click', async () => {
+        btns.forEach((b) => { b.disabled = true; });
+        try {
+          await a.onClick();
+        } finally {
+          btns.forEach((b) => { if (b.isConnected) b.disabled = false; });
+        }
+      });
+      actions.appendChild(btn);
+      btns.push(btn);
+    });
+    bub.appendChild(actions);
+
+    card.appendChild(bub);
+    seatTurn(turn);
+    live.textContent = spec.sub ? spec.title + '. ' + spec.sub : spec.title;
+    return turn;
+  };
+
+  // Pin an element as the focal card that never recedes (contact capture). It is
+  // NOT part of turns[], so layout() leaves it alone; it sits at the front slot
+  // (opacity 1, no transform) above the receding stack.
+  const addPinnedCard = (content: HTMLElement): HTMLElement => {
+    unpinCard();
+    const { turn, card } = makeTurn('system');
+    turn.setAttribute('data-pinned', '1');
+    card.appendChild(content);
+    turn.style.opacity = '1';
+    turn.style.transform = 'none';
+    turn.style.filter = 'none';
+    turn.style.zIndex = '900';
+    column.appendChild(turn);
+    pinned = turn;
+    return turn;
+  };
+
+  const unpinCard = () => {
+    if (pinned && pinned.parentNode) pinned.parentNode.removeChild(pinned);
+    pinned = null;
+  };
+
   // Clear every card from the stack (turns[] + DOM) and reset the live region.
   const clearStack = () => {
     turns.splice(0, turns.length);
+    pinned = null;
     while (column.firstChild) column.removeChild(column.firstChild);
     live.textContent = '';
   };
 
-  return { turns, layout, retire, addUserTurn, appendRebi, showTyping, landReply, clearStack };
+  return {
+    turns,
+    layout,
+    retire,
+    addUserTurn,
+    appendRebi,
+    showTyping,
+    landReply,
+    clearStack,
+    addRebiCard,
+    addHumanCard,
+    addSystemCard,
+    openStreamingRebiCard,
+    addActionCard,
+    addPinnedCard,
+    unpinCard,
+  };
 }

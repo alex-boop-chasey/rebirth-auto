@@ -20,6 +20,8 @@
 }
 .focus-stage .turn.rebi { justify-content: flex-start; }
 .focus-stage .turn.user { justify-content: flex-end; }
+.focus-stage .turn.human { justify-content: flex-start; }
+.focus-stage .turn.system { justify-content: center; }
 
 .focus-stage .card {
   position: relative;
@@ -56,7 +58,8 @@
   color: var(--ink);
   box-shadow: 0 18px 40px -20px rgb(1 97 239 / 0.35), 0 2px 6px -2px rgb(15 23 42 / 0.08);
 }
-.focus-stage .turn.rebi .name {
+.focus-stage .turn.rebi .name,
+.focus-stage .turn.human .name {
   display: block;
   font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em;
   text-transform: uppercase; color: var(--rebi-blue);
@@ -70,6 +73,66 @@
   box-shadow: 0 16px 34px -18px rgb(1 97 239 / 0.6);
 }
 .focus-stage .bubble .count { font-weight: 800; }
+
+/* Team (human handoff) card — green avatar + accent ring, "Team" label. */
+.focus-stage .avatar.human {
+  background: linear-gradient(135deg, rgb(16 185 129), rgb(4 120 87));
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.92), 0 8px 20px -8px rgb(4 120 87 / 0.55);
+}
+.focus-stage .turn.human .bubble {
+  background: rgb(240 253 249 / 0.96);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid rgb(16 122 87 / 0.28);
+  border-bottom-left-radius: 0.4rem;
+  color: var(--ink);
+  box-shadow: 0 18px 40px -20px rgb(4 120 87 / 0.35), 0 2px 6px -2px rgb(15 23 42 / 0.08);
+}
+.focus-stage .turn.human .name { color: rgb(4 120 87); }
+
+/* System notice — centered, avatarless, muted glass. */
+.focus-stage .turn.system .bubble {
+  background: rgb(248 250 252 / 0.85);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid rgb(148 163 184 / 0.28);
+  border-radius: 0.9rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+  box-shadow: 0 10px 24px -16px rgb(15 23 42 / 0.3);
+}
+
+/* Rebi error bubble — red-tinted variant of the Rebi card. */
+.focus-stage .turn.rebi .bubble.is-error {
+  background: rgb(254 242 242 / 0.96);
+  border-color: rgb(220 38 38 / 0.4);
+  color: rgb(153 27 27);
+}
+.focus-stage .turn.rebi .bubble.is-error .name { color: rgb(185 28 28); }
+
+/* Action / wrap-up card (resolved prompt) — title + sub above the buttons. */
+.focus-stage .action-title {
+  display: block; font-weight: 700; font-size: 0.98rem; color: var(--ink);
+  margin-bottom: 0.2rem;
+}
+.focus-stage .action-sub {
+  display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.1rem;
+}
+.focus-stage .turn.system .action-title,
+.focus-stage .turn.system .action-sub { text-align: center; }
+
+/* Pinned focal card (contact capture) — holds the front slot, never recedes. */
+.focus-stage .turn[data-pinned] { justify-content: center; }
+.focus-stage .turn[data-pinned] .card {
+  max-width: 100%;
+  width: 100%;
+  background: rgb(255 255 255 / 0.96);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid rgb(1 97 239 / 0.28);
+  border-radius: 1rem;
+  padding: 0.85rem 0.95rem;
+  box-shadow: 0 20px 44px -22px rgb(1 97 239 / 0.4), 0 2px 6px -2px rgb(15 23 42 / 0.1);
+  display: block;
+}
 
 /* word-by-word reveal */
 .focus-stage .word {
@@ -105,6 +168,13 @@
 .focus-stage .newsearch:hover { background: rgb(1 84 207); transform: translateY(-1px); }
 .focus-stage .newsearch:focus-visible { outline: 2px solid rgb(109 40 217); outline-offset: 2px; }
 .focus-stage .newsearch svg { width: 0.95rem; height: 0.95rem; }
+.focus-stage .newsearch:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+/* Ghost (secondary) action button — outlined, not filled. */
+.focus-stage .newsearch.ghost {
+  background: transparent; color: var(--rebi-blue);
+  border: 1px solid rgb(1 97 239 / 0.4); box-shadow: none;
+}
+.focus-stage .newsearch.ghost:hover { background: rgb(1 97 239 / 0.08); }
 
 @media (max-width: 420px) {
   .focus-stage .bubble { font-size: 0.96rem; padding: 0.7rem 0.9rem; }
