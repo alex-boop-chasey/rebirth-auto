@@ -46,7 +46,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     id="reb-panel"
     class="reb-panel"
     role="dialog"
-    aria-modal="false"
+    aria-modal="true"
     aria-label="Chat with Rebirth Auto"
     hidden
   >
@@ -59,6 +59,17 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         </div>
       </div>
       <div class="reb-head-actions">
+        <button id="reb-speaker" class="reb-close reb-speaker" type="button" aria-pressed="false" aria-label="Mute message tones" title="Mute message tones">
+          <svg class="reb-ico-sound-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+            <path d="M16.5 8.5a5 5 0 0 1 0 7"></path>
+            <path d="M19 6a8 8 0 0 1 0 12"></path>
+          </svg>
+          <svg class="reb-ico-sound-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+            <path d="M17 9l4 6M21 9l-4 6"></path>
+          </svg>
+        </button>
         <button id="reb-minimise" class="reb-close" type="button" aria-label="Minimise chat" title="Minimise">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -203,28 +214,33 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   }
   .reb-badge[hidden] { display: none; }
 
-  /* Panel */
+  /* Panel — viewport-centered modal surface */
   .reb-panel {
-    position: absolute;
-    right: 0;
-    bottom: 4.25rem;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    z-index: 10000;
     display: flex;
     flex-direction: column;
-    width: min(24rem, calc(100vw - 2rem));
-    height: min(32rem, calc(100vh - 6rem));
+    width: min(30rem, calc(100vw - 2rem));
+    height: min(38rem, calc(100vh - 4rem));
     background: var(--reb-panel-bg);
     border: 1px solid var(--reb-panel-border);
     border-radius: 1rem;
     box-shadow: 0 25px 50px -12px rgb(0 0 0 / 60%);
     overflow: hidden;
     color: var(--reb-text);
-    transform-origin: bottom right;
-    animation: reb-pop 0.18s ease-out;
+    animation: reb-rise 0.35s ease-out;
   }
   .reb-panel[hidden] { display: none; }
-  @keyframes reb-pop {
-    from { opacity: 0; transform: scale(0.96) translateY(8px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+  /* Entrance: fade + gentle scale, gaining colour (grayscale 1→0) as the page
+     behind it desaturates. translate(-50%,-50%) held in EVERY frame so the panel
+     stays centered throughout. */
+  @keyframes reb-rise {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); filter: grayscale(1); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: grayscale(0); }
   }
 
   /* Header */
@@ -244,6 +260,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   .reb-close { background: transparent; border: none; color: #fff; cursor: pointer; padding: 0.25rem; border-radius: 0.4rem; display: flex; }
   .reb-close:hover { background: rgb(255 255 255 / 18%); }
   .reb-close svg { width: 1.15rem; height: 1.15rem; }
+
+  /* Speaker toggle (message tones) — icon swaps on the .muted class */
+  .reb-speaker .reb-ico-sound-off { display: none; }
+  .reb-speaker.muted .reb-ico-sound-on { display: none; }
+  .reb-speaker.muted .reb-ico-sound-off { display: block; }
 
   /* Action buttons — shared by the end-chat dialog and the inline wrap-up card */
   .reb-actions { display: flex; gap: 0.5rem; margin: 0.1rem 0 0.3rem; }
@@ -410,6 +431,15 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   /* Inline wrap-up card: identical to the dialog card, just spaced inside the log. */
   #reb-resolved { margin-top: 0.5rem; }
 
+  /* Greyscale-"dream": when the panel is open the rest of the page desaturates and
+     brightens, so the centered chat becomes the sole point of colour. Filter the
+     body's CHILDREN except #reb-chat (never <body> itself) — that keeps the chat
+     full colour and avoids clipping fixed positioning. */
+  @media (prefers-reduced-motion: no-preference) {
+    body > :not(#reb-chat) { transition: filter 400ms ease; }
+  }
+  body.reb-dreaming > :not(#reb-chat) { filter: grayscale(1) brightness(1.08) contrast(0.96); }
+
   @media (prefers-reduced-motion: reduce) {
     .reb-panel, .reb-launcher, .reb-typing span, .reb-mic.reb-recording { animation: none; transition: none; }
   }
@@ -507,6 +537,10 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // Assigned by the voice-dictation feature block below when the Web Speech API
     // is available; a no-op otherwise so close/submit paths can always call it.
     let stopDictation: () => void = () => {};
+    // Message-tone players, assigned by the Web Audio module appended at the end of
+    // this block. No-ops until then so the tone-call insertions are always safe.
+    let soundSend: () => void = () => {};
+    let soundRebi: () => void = () => {};
 
     // Handoff state.
     type Status = 'ai_active' | 'escalated' | 'human_active' | 'closed' | null;
@@ -930,6 +964,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         if (m.id > lastId) lastId = m.id;
         if (m.role === 'human') { humanArrived = true; escDeadline = 0; }
         addBubble(serverRole(m.role), format(m.content));
+        if (m.role === 'human' || m.role === 'ai') soundRebi(); // incoming message tone (team/AI only)
       }
       if (status === 'closed') {
         addSystem('This chat has been closed. Send a message to start a new one.');
@@ -1009,6 +1044,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         const ts = Date.now();
         history.push({ role: 'assistant', content: data.reply, ts });
         addBubble('assistant', format(data.reply), ts);
+        soundRebi(); // assistant reply arrival tone
         save();
         if (data.resolved) showResolvedPrompt();
       } else if (data.error) {
@@ -1043,7 +1079,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
           applySession(evt.sessionId);
           if (typeof evt.lastId === 'number') { lastId = Math.max(lastId, evt.lastId); seen.add(evt.lastId); }
           if (evt.status) status = evt.status;
-          if (acc) { history.push({ role: 'assistant', content: acc, ts: Date.now() }); save(); }
+          if (acc) { history.push({ role: 'assistant', content: acc, ts: Date.now() }); save(); soundRebi(); } // reply-complete tone (once, not per-delta)
           if (evt.resolved) showResolvedPrompt();
         } else if (evt.type === 'escalate') {
           finished = true;
@@ -1297,6 +1333,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     };
 
     const openPanel = () => {
+      document.body.classList.add('reb-dreaming');
       clearGreetingTimer(); // clear any stale timer if openPanel is re-entered before it fired
       panel.hidden = false;
       root.classList.add('reb-open');
@@ -1313,6 +1350,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       setTimeout(() => input.focus(), 50);
     };
     const closePanel = () => {
+      document.body.classList.remove('reb-dreaming');
       // Cancel a pending typing→greeting reveal and clear any lingering dots so we
       // never leave a dangling indicator or pop a greeting into the closed panel.
       clearGreetingTimer();
@@ -1409,6 +1447,30 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       if (!panel.hidden) closePanel();
     });
 
+    // --- Focus trap (modal semantics) ---
+    // Active only while the panel is open. Keeps Tab/Shift+Tab within the panel;
+    // when the confirm overlay is open it scopes to that card instead (the confirm
+    // already drives its own initial focus — this just fences the loop, no double
+    // management). ESC is handled above; this is Tab-only.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || panel.hidden) return;
+      const scope = confirmEl && !confirmEl.hidden ? confirmEl : panel;
+      const focusable = Array.from(
+        scope.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || !scope.contains(active)) { e.preventDefault(); last.focus(); }
+      } else {
+        if (active === last || !scope.contains(active)) { e.preventDefault(); first.focus(); }
+      }
+    });
+
     updateBadge(); // returning visitor: show the badge on page load
 
     // Resume polling promptly when the tab returns to the foreground.
@@ -1435,6 +1497,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       stopDictation(); // finalise/stop the mic when the message is sent
       const text = input.value.trim();
       if (!text) return;
+      soundSend(); // "sent" blip (message tones — muteable via #reb-speaker)
       input.value = '';
       autogrow();
       send(text);
@@ -1536,6 +1599,85 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       });
 
       micBtn.hidden = false; // reveal only where the API exists
+    }
+
+    // --- Message tones (Web Audio) — ported from the SearchDock sound module ---
+    // No audio files: every tone is synthesised from oscillators. A bright rising
+    // blip when YOU send, a warm rounded ping when a reply arrives. The
+    // AudioContext is created/resumed lazily on the first gesture (submit or the
+    // speaker toggle) — never on load. Mute state persists in localStorage under a
+    // key distinct from the search dock's, so the two toggles don't collide.
+    {
+      type Note = { f: number; type?: OscillatorType; t?: number; dur?: number; gain?: number; slideTo?: number };
+      const speakerBtn = document.getElementById('reb-speaker');
+      const MUTE_KEY = 'rebi:chat:muted';
+      let audioCtx: AudioContext | null = null;
+      let muted = false;
+      try {
+        const stored = localStorage.getItem(MUTE_KEY);
+        if (stored !== null) muted = stored === '1';
+      } catch { /* private mode / no storage — default unmuted */ }
+
+      const ac = (): AudioContext | null => {
+        if (!audioCtx) {
+          const AC = window.AudioContext || (window as any).webkitAudioContext;
+          if (AC) { try { audioCtx = new AC(); } catch { audioCtx = null; } }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        return audioCtx;
+      };
+      const blip = (notes: Note[]) => {
+        if (muted) return; // user mute
+        let ctx: AudioContext | null = null;
+        try { ctx = ac(); } catch { ctx = null; }
+        if (!ctx) return;
+        try {
+          const now = ctx.currentTime;
+          notes.forEach((n) => {
+            const start = now + (n.t || 0);
+            const dur = n.dur || 0.14;
+            const peak = n.gain == null ? 0.12 : n.gain;
+            const osc = ctx!.createOscillator();
+            const g = ctx!.createGain();
+            osc.type = n.type || 'sine';
+            osc.frequency.setValueAtTime(n.f, start);
+            if (n.slideTo) osc.frequency.exponentialRampToValueAtTime(n.slideTo, start + dur);
+            g.gain.setValueAtTime(0.0001, start);
+            g.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+            g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+            osc.connect(g); g.connect(ctx!.destination);
+            osc.start(start);
+            osc.stop(start + dur + 0.04);
+          });
+        } catch { /* unsupported browser — degrade silently */ }
+      };
+      // YOU send: bright, snappy, rising fifth + shimmer — "sent!"
+      soundSend = () => blip([
+        { f: 523.25, type: 'triangle', t: 0.0, dur: 0.11, gain: 0.13, slideTo: 783.99 }, // C5 → G5
+        { f: 1046.5, type: 'sine', t: 0.03, dur: 0.09, gain: 0.05 },                       // C6 shimmer
+      ]);
+      // A reply arrives: warm rounded two-note ping with a soft undertone — "incoming"
+      soundRebi = () => blip([
+        { f: 174.61, type: 'sine', t: 0.0, dur: 0.34, gain: 0.05 }, // F3 warm body
+        { f: 659.25, type: 'sine', t: 0.0, dur: 0.20, gain: 0.11 }, // E5
+        { f: 987.77, type: 'sine', t: 0.12, dur: 0.24, gain: 0.10 }, // B5 (lifts a fifth)
+      ]);
+
+      const reflectMute = () => {
+        if (!speakerBtn) return;
+        speakerBtn.classList.toggle('muted', muted);
+        speakerBtn.setAttribute('aria-pressed', String(muted));
+        const label = muted ? 'Unmute message tones' : 'Mute message tones';
+        speakerBtn.setAttribute('aria-label', label);
+        speakerBtn.setAttribute('title', label);
+      };
+      reflectMute();
+      speakerBtn?.addEventListener('click', () => {
+        muted = !muted;
+        try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch { /* ignore */ }
+        reflectMute();
+        if (!muted) { ac(); soundRebi(); } // this click is a gesture: unlock + preview
+      });
     }
   }
 </script>
