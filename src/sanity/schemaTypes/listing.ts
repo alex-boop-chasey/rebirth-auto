@@ -12,9 +12,9 @@ import { GenerateDescriptionInput } from '../components/GenerateDescriptionInput
  * Core listing document (automotive).
  *
  * The form is organised into document tabs (`groups`) so authoring is clean:
- * Identity (which also carries dealer notes + description), Specs, Registration,
- * Pricing & status, and Media. Most shopper-facing dimensions are now
- * FIRST-CLASS typed fields (with
+ * Details (identity + specs merged), Registration, Pricing & status, Media, and
+ * Description & notes (dealer notes + description, last). Most shopper-facing
+ * dimensions are now FIRST-CLASS typed fields (with
  * dropdowns where the value set is fixed) rather than living in the free-form
  * `details[]` array — that array is now just an escape hatch for genuine
  * one-offs. `vehicleSpecs` is untouched (every filter/chatbot/AI query reads
@@ -26,19 +26,20 @@ export const listing = defineType({
   type: 'document',
   icon: DocumentIcon,
   groups: [
-    { name: 'identity', title: 'Identity', default: true },
-    { name: 'specs', title: 'Specs' },
+    { name: 'details', title: 'Details', default: true },
     { name: 'registration', title: 'Registration' },
     { name: 'pricing', title: 'Pricing & status' },
     { name: 'media', title: 'Media' },
+    { name: 'content', title: 'Description & notes' },
   ],
   fields: [
-    // --- IDENTITY -------------------------------------------------------------
+    // --- DETAILS --------------------------------------------------------------
+    // Identity + specs are consolidated into one "Details" tab.
     defineField({
       name: 'title',
       title: 'Title',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'The listing name (e.g. "2021 Toyota RAV4 GXL").',
       validation: (Rule) => Rule.required(),
     }),
@@ -46,43 +47,16 @@ export const listing = defineType({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
-      group: 'identity',
+      group: 'details',
       description: 'Auto-generated from the title.',
       options: { source: 'title', maxLength: 96 },
       validation: (Rule) => Rule.required(),
-    }),
-    // Dealer notes + description sit right after Title/Slug in the Identity tab.
-    // Dealer notes come FIRST so the author jots shorthand, then generates the
-    // buyer-facing description from it via the on-form "Generate description"
-    // button. dealerNotes is private (NEVER in LISTING_FIELDS / never shown to
-    // buyers); it feeds the AI generator and (future) search/chat grounding.
-    defineField({
-      name: 'dealerNotes',
-      title: 'Dealer notes (for AI)',
-      type: 'text',
-      rows: 4,
-      group: 'identity',
-      description:
-        "Rough shorthand like 'one owner, full service history, tow bar, no accidents'. " +
-        'Not shown to buyers directly. Used by AI description generator, search, and chat.',
-    }),
-    defineField({
-      name: 'description',
-      title: 'Description',
-      type: 'array',
-      group: 'identity',
-      description: 'Rich text description. Use "Generate description" to draft from the notes above.',
-      of: [defineArrayMember({ type: 'block' })],
-      // Sanity's `defineField` doesn't narrow a block array to Portable Text at
-      // the type level (it infers a primitive-array input), so the correctly
-      // typed PortableText input component is bridged here. Runtime is correct.
-      components: { input: GenerateDescriptionInput as unknown as ComponentType<any> },
     }),
     defineField({
       name: 'make',
       title: 'Make',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'Manufacturer. Choose from the list.',
       options: {
         list: CAR_MAKE_OPTIONS.map((m) => ({ title: m, value: m })),
@@ -92,63 +66,62 @@ export const listing = defineType({
       name: 'model',
       title: 'Model',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'e.g. "RAV4", "Ranger".',
     }),
     defineField({
       name: 'badge',
       title: 'Badge',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'Variant/grade, e.g. "GXL", "Wildtrak".',
     }),
     defineField({
       name: 'series',
       title: 'Series',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'Model series/code, e.g. "PX III", "MZEA12R".',
     }),
     defineField({
       name: 'colour',
       title: 'Paint colour',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: "The manufacturer's paint name, e.g. 'Snowflake White Pearl'.",
     }),
     defineField({
       name: 'engine',
       title: 'Engine',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'e.g. "2.0L 4cyl petrol", "2.8L turbo-diesel".',
     }),
     defineField({
       name: 'doors',
       title: 'Doors',
       type: 'number',
-      group: 'identity',
+      group: 'details',
       options: { list: [2, 3, 4, 5] },
     }),
     defineField({
       name: 'trim',
       title: 'Trim / interior',
       type: 'string',
-      group: 'identity',
+      group: 'details',
       description: 'Interior trim/upholstery, e.g. "Black leather".',
     }),
 
-    // --- SPECS ----------------------------------------------------------------
-    // Typed automotive spec fields. Unlike the free-form `details` array below,
-    // these are first-class enums/numbers so the search + filter feature can
-    // query them reliably (URL params use the lowercase enum codes). DO NOT
-    // rename or move these sub-fields — every filter/chatbot/AI query reads
-    // `vehicleSpecs.<field>`.
+    // Typed automotive spec fields (part of the Details tab). Unlike the
+    // free-form `details` array below, these are first-class enums/numbers so
+    // the search + filter feature can query them reliably (URL params use the
+    // lowercase enum codes). DO NOT rename or move these sub-fields — every
+    // filter/chatbot/AI query reads `vehicleSpecs.<field>`.
     defineField({
       name: 'vehicleSpecs',
       title: 'Vehicle specs',
       type: 'object',
-      group: 'specs',
+      group: 'details',
       description: 'Typed, filterable automotive dimensions.',
       options: { collapsible: false },
       fields: [
@@ -265,7 +238,7 @@ export const listing = defineType({
       name: 'details',
       title: 'Extra details',
       type: 'array',
-      group: 'specs',
+      group: 'details',
       description:
         'Rare one-offs only (sunroof, tow bar, service history). The standard ' +
         'specs now have their own fields above — use those first.',
@@ -436,6 +409,35 @@ export const listing = defineType({
       group: 'media',
       description: 'Multiple images supported. The first image is used as the hero/thumbnail.',
       of: [defineArrayMember({ type: 'image', options: { hotspot: true } })],
+    }),
+
+    // --- DESCRIPTION & NOTES --------------------------------------------------
+    // Final tab. Dealer notes come FIRST so the author jots shorthand, then
+    // generates the buyer-facing description from it via the on-form "Generate
+    // description" button. dealerNotes is private (NEVER in LISTING_FIELDS /
+    // never shown to buyers); it feeds the AI generator and (future)
+    // search/chat grounding.
+    defineField({
+      name: 'dealerNotes',
+      title: 'Dealer notes (for AI)',
+      type: 'text',
+      rows: 4,
+      group: 'content',
+      description:
+        "Rough shorthand like 'one owner, full service history, tow bar, no accidents'. " +
+        'Not shown to buyers directly. Used by AI description generator, search, and chat.',
+    }),
+    defineField({
+      name: 'description',
+      title: 'Description',
+      type: 'array',
+      group: 'content',
+      description: 'Rich text description. Use "Generate description" to draft from the notes above.',
+      of: [defineArrayMember({ type: 'block' })],
+      // Sanity's `defineField` doesn't narrow a block array to Portable Text at
+      // the type level (it infers a primitive-array input), so the correctly
+      // typed PortableText input component is bridged here. Runtime is correct.
+      components: { input: GenerateDescriptionInput as unknown as ComponentType<any> },
     }),
   ],
   preview: {
