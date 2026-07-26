@@ -23,19 +23,39 @@
  * NOTE: icons are imported from their `@sanity/icons` SUBPATH — importing from
  * the package root type-checks but crashes the Studio at runtime under v5.
  */
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   getPublishedId,
   useDocumentOperation,
   useValidationStatus,
   type ObjectInputProps,
 } from 'sanity';
-import { Box, Button, Card, Flex, useToast } from '@sanity/ui';
+import { Box, Button, Flex, useToast } from '@sanity/ui';
 import { ArrowRightIcon } from '@sanity/icons/ArrowRight';
 import { PublishIcon } from '@sanity/icons/Publish';
 
+/**
+ * Walk up from `el` to the nearest vertically-scrollable ancestor and pin it to
+ * the top. Used as a hedge after a tab switch: focusing the next group's first
+ * field should scroll it into view, but some layouts don't — this guarantees
+ * the new tab starts at the top. Both mechanisms target the top, so they
+ * reinforce rather than fight each other.
+ */
+function scrollAncestorToTop(el: HTMLElement | null): void {
+  let node: HTMLElement | null = el?.parentElement ?? null;
+  while (node) {
+    const overflowY = window.getComputedStyle(node).overflowY;
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      node.scrollTop = 0;
+      return;
+    }
+    node = node.parentElement;
+  }
+}
+
 export function ListingFormFooter(props: ObjectInputProps) {
   const toast = useToast();
+  const footerRef = useRef<HTMLDivElement | null>(null);
 
   // The root form node's `id` is the literal string 'root', NOT the document
   // id — read the id off the document value instead.
@@ -70,13 +90,32 @@ export function ListingFormFooter(props: ObjectInputProps) {
   const isFinalTab = groups.length > 0 && !nextGroup;
 
   const handleNext = useCallback(() => {
-    if (nextGroup) props.onFieldGroupSelect(nextGroup.name);
+    if (!nextGroup) return;
+    const firstFieldName = nextGroup.fields?.[0]?.name;
+    if (firstFieldName) {
+      // Focusing a field inside a group auto-selects that group AND scrolls the
+      // field into view. Since it's the group's FIRST field, this lands the new
+      // tab at the top — one call yields both the switch and the top position.
+      props.onPathFocus([firstFieldName]);
+    } else {
+      // Fallback: no derivable field on the next group — just switch the tab.
+      props.onFieldGroupSelect(nextGroup.name);
+    }
+    // Hedge for layouts where focus alone doesn't scroll to the top.
+    requestAnimationFrame(() => scrollAncestorToTop(footerRef.current));
   }, [nextGroup, props]);
 
   return (
     <Box>
       {props.renderDefault(props)}
-      <Card marginTop={4} paddingTop={4} borderTop tone="transparent">
+      {/* Plain Box (no Card) so the footer inherits the form background exactly
+          — only a subtle top border separates it. No dark band. */}
+      <Box
+        ref={footerRef}
+        marginTop={4}
+        paddingTop={4}
+        style={{ borderTop: '1px solid var(--card-border-color)' }}
+      >
         <Flex justify="flex-end">
           {isFinalTab ? (
             <Button
@@ -97,7 +136,7 @@ export function ListingFormFooter(props: ObjectInputProps) {
             />
           )}
         </Flex>
-      </Card>
+      </Box>
     </Box>
   );
 }
