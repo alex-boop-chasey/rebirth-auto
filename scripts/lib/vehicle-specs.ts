@@ -185,13 +185,24 @@ const BASE_COLOUR_MATCHERS: ReadonlyArray<{ code: string; patterns: string[] }> 
   { code: 'purple', patterns: ['purple'] },
 ];
 
+// Owner-confirmed overrides for specific manufacturer paint names that carry NO
+// base-colour word (so the word matchers below would WARN). Keyed by the exact
+// lowercased paint name; the human decision wins, so these are checked first.
+// Extend as new such names surface.
+const PAINT_NAME_OVERRIDES: Readonly<Record<string, string>> = {
+  'gun metallic': 'grey',
+  'metal ash': 'grey',
+  'river rock pearl': 'brown',
+};
+
 /**
  * Map a manufacturer paint name to a base colour code (a COLOUR_CODES value), or
  * null when no recognised base-colour word is present (caller should WARN + skip).
  */
 export function matchBaseColour(paintName: string | undefined | null): string | null {
   if (!paintName) return null;
-  const p = paintName.toLowerCase();
+  const p = paintName.toLowerCase().trim();
+  if (PAINT_NAME_OVERRIDES[p]) return PAINT_NAME_OVERRIDES[p];
   for (const { code, patterns } of BASE_COLOUR_MATCHERS) {
     if (patterns.some((n) => p.includes(n))) return code;
   }
