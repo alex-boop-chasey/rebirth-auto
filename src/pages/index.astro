@@ -96,23 +96,33 @@ const canonicalURL = new URL(
       <main id="main-content" tabindex="-1">
         <!-- Hero -->
         <section class="mx-auto max-w-3xl pt-16 pb-8 text-center md:pt-24 md:pb-10">
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
-          >
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            In stock now
-          </span>
-          <h1 class="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
-            Your next car is waiting.
-          </h1>
-          <p id="hero-subhead" class="mx-auto mt-5 max-w-2xl text-lg text-slate-600">
-            Browse the current range at Rebirth Auto — quality vehicles, full specs,
-            and a team ready to help you drive away happy.
-          </p>
+          {/* On ≥sm the heading rides ON TOP of the Focus Stage (the "carousel"
+              space where Rebi's cards recede) as a higher stacking layer, so the
+              AI search bar sits a comfortable distance below the heading rather
+              than being pushed down by a full-height heading band above the
+              stage. On small screens the two stack normally — a tall mobile
+              heading has no room to overlay the stage. */}
+          <div class="hero-stack">
+            <div class="hero-copy">
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                In stock now
+              </span>
+              <h1 class="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
+                Your next car is waiting.
+              </h1>
+              <p id="hero-subhead" class="mx-auto mt-5 max-w-2xl text-lg text-slate-600">
+                Browse the current range at Rebirth Auto — quality vehicles, full specs,
+                and a team ready to help you drive away happy.
+              </p>
+            </div>
 
-          {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
-              drawer below stays the no-JS fallback). */}
-          <SearchDock />
+            {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
+                drawer below stays the no-JS fallback). */}
+            <SearchDock />
+          </div>
         </section>
 
         {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
@@ -161,5 +171,46 @@ const canonicalURL = new URL(
         document.getElementById('reb-launcher')?.click();
       });
     </script>
+
+    <style>
+      /* Hero layering: put the heading on a layer ON TOP of the Focus Stage (the
+         "carousel" space where Rebi's message cards recede). The heading block
+         (.hero-copy) and the SearchDock (#search-dock) share one grid cell; the
+         heading rides the top as the upper layer while the cards animate in the
+         space behind and below it, and the AI search bar — anchored to the bottom
+         of the stage — ends up a comfortable distance below the heading instead
+         of being shoved down by a full-height heading band stacked above.
+
+         #search-dock is given its own stacking context so its internal z-indexed
+         cards (z-index ~100) stay BEHIND the heading. Below the sm breakpoint the
+         two fall back to a normal vertical stack — a full-height mobile heading
+         would collide with the shorter stage if overlaid. */
+      @media (min-width: 640px) {
+        .hero-stack {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .hero-stack > .hero-copy {
+          grid-column: 1;
+          grid-row: 1;
+          position: relative;
+          z-index: 2;
+          align-self: start;      /* heading rides the top of the stage */
+          pointer-events: none;   /* clicks fall through to the stage/cards behind */
+        }
+        .hero-stack > .hero-copy a,
+        .hero-stack > .hero-copy button {
+          pointer-events: auto;   /* future-proof: keep any heading control clickable */
+        }
+        .hero-stack > :global(#search-dock) {
+          grid-column: 1;
+          grid-row: 1;
+          position: relative;
+          z-index: 1;             /* own stacking context: cards stay behind the heading */
+          align-self: stretch;
+          margin: 0 auto;         /* drop the stack-mode top margin; keep it centred */
+        }
+      }
+    </style>
   </body>
 </html>

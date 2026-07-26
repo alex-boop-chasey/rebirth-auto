@@ -846,10 +846,71 @@ const dockConfig = JSON.stringify({
       return m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
     };
 
+    // ================= Grid fade choreography =================
+    // The 4-step "watch the AI work" sequence pivots on the inventory grid:
+    //   submit → old grid fades out + dots  → reply message  → new grid fades in.
+    // Motion-safe: under reduced motion these are all no-ops (instant swap), so
+    // the message still shows but nothing translates or dissolves.
+    const GRID_FADE_MS = 260; // fade out / fade in duration
+    const MIN_BEAT_MS = 650; // guaranteed "thinking" beat so the dots always read
+    const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+    const grid = (): HTMLElement | null => document.getElementById('inventory-results');
+
+    // Step 2a — the current list recedes (opacity + a small lift), clearing the
+    // stage while Rebi "thinks". Layout is preserved (opacity/transform only).
+    const fadeGridOut = () => {
+      if (REDUCED_MOTION) return;
+      const g = grid();
+      if (!g) return;
+      g.style.transition = `opacity ${GRID_FADE_MS}ms ease, transform ${GRID_FADE_MS}ms ease`;
+      g.style.willChange = 'opacity, transform';
+      void g.offsetWidth; // commit the current (visible) state before transitioning
+      g.style.opacity = '0';
+      g.style.transform = 'translateY(0.75rem)';
+    };
+
+    // applyFilterUrl replaces #inventory-results with a fresh (opacity:1) node.
+    // Called synchronously right after the swap — before the browser paints — so
+    // the new results start hidden and their fade-in reads as a distinct step.
+    const primeGridHidden = () => {
+      if (REDUCED_MOTION) return;
+      const g = grid();
+      if (!g) return;
+      g.style.transition = 'none';
+      g.style.opacity = '0';
+      g.style.transform = 'translateY(0.75rem)';
+    };
+
+    // Step 4 — the new (or, on a no-op search, restored) grid fades into view,
+    // then its inline styles are stripped so nothing lingers on the node.
+    const fadeGridIn = () => {
+      const g = grid();
+      if (!g) return;
+      if (REDUCED_MOTION) {
+        g.style.opacity = '';
+        g.style.transform = '';
+        return;
+      }
+      void g.offsetWidth;
+      g.style.transition = `opacity ${GRID_FADE_MS}ms ease, transform ${GRID_FADE_MS}ms ease`;
+      g.style.opacity = '1';
+      g.style.transform = 'translateY(0)';
+      setTimeout(() => {
+        const gg = grid();
+        if (gg) {
+          gg.style.transition = '';
+          gg.style.willChange = '';
+          gg.style.transform = '';
+          gg.style.opacity = '';
+        }
+      }, GRID_FADE_MS + 40);
+    };
+
     // Runs the search, builds a reply descriptor from cfg.messages.* + the server
     // interpretation/clarifyingQuestion (exactly as before), then lands the reply.
     const runSearch = async (query: string, typing: HTMLElement) => {
       const my = ++seq;
+      const started = performance.now();
       let data: any = null;
       try {
         // First search is fresh (deterministic pre-pass eligible); once filters
@@ -863,6 +924,12 @@ const dockConfig = JSON.stringify({
         data = await res.json().catch(() => null);
       } catch { /* network error — fall through to the unclear message below */ }
       if (my !== seq) { retire(typing); return; } // superseded by a newer submit / reset
+
+      // Guarantee a minimum "thinking" beat so the fade-out + dots always read,
+      // even when the response is effectively instant (cached / deterministic).
+      const elapsed = performance.now() - started;
+      if (elapsed < MIN_BEAT_MS) await delay(MIN_BEAT_MS - elapsed);
+      if (my !== seq) { retire(typing); return; } // superseded during the beat
 
       const gridPresent = !!document.getElementById('inventory-results');
       const filters: FilterState | null =
@@ -880,6 +947,9 @@ const dockConfig = JSON.stringify({
       if (applied && gridPresent && filters) {
         await applyFilterUrl(hrefFor({ ...filters, page: 1 }));
         if (my !== seq) { retire(typing); return; } // superseded during the grid swap
+        // Keep the freshly-swapped results hidden (synchronously, pre-paint) so
+        // their fade-in lands AFTER the message — not the instant the grid swaps.
+        primeGridHidden();
         flipHeading(true);
       }
 
@@ -894,7 +964,16 @@ const dockConfig = JSON.stringify({
         descriptor = { kind: 'unclear', text: unclear, count: 0 };
       }
 
+      // Step 3 — the reply message lands in the chat (replacing the dots).
       landReply(typing, descriptor);
+
+      // Step 4 — a beat later, the new (or restored, on a no-op search) grid
+      // fades back in, so the message registers before the results appear.
+      if (REDUCED_MOTION) {
+        fadeGridIn();
+      } else {
+        setTimeout(() => { if (my === seq) fadeGridIn(); }, 180);
+      }
     };
 
     // "New search": full reset to idle → base inventory, heading + stack + input.
@@ -927,7 +1006,9 @@ const dockConfig = JSON.stringify({
       startTw();
       setActive(true);
 
-      // 2) Rebi's typing beat; the live region announces "finding" now
+      // 2) the current list recedes AND Rebi's typing beat begins together — the
+      //    live region announces "finding" now
+      fadeGridOut();
       const typing = showTyping();
       live.textContent = cfg.messages.finding;
 
