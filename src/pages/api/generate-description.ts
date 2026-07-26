@@ -108,8 +108,13 @@ export const POST: APIRoute = async ({ request }) => {
     category: draft.category ?? 'automotive',
     make: draft.make,
     model: draft.model,
+    badge: draft.badge,
+    series: draft.series,
     colour: draft.colour,
     engine: draft.engine,
+    doors: draft.doors,
+    trim: draft.trim,
+    price: draft.price,
     specs: draft.vehicleSpecs ?? {},
     dealerNotes: draft.dealerNotes ?? '',
   };
