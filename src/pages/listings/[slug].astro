@@ -6,6 +6,7 @@ import ListingCard from '../../components/ListingCard.astro';
 import ContactModal from '../../components/ContactModal.astro';
 import CompareTray from '../../components/CompareTray.astro';
 import ChatWidget from '../../components/widgets/ChatWidget.astro';
+import AskRebiButton from '../../components/AskRebiButton.astro';
 import { PortableText } from 'astro-portabletext';
 import {
   type Listing,
@@ -231,17 +232,14 @@ const canonicalURL = new URL(
                 <span id="save-icon" class="inline-flex"><Fragment set:html={iconSvg('heart', 'h-4 w-4')} /></span>
                 <span id="save-label">Save Listing</span>
               </button>
-              <button
-                type="button"
+              <AskRebiButton
+                size="block"
+                label="Ask about this car"
                 data-rebi-open
                 data-rebi-kind="listing"
                 data-rebi-ref={listing._id}
                 data-rebi-title={listing.title}
-                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[rgb(1_97_239)] px-5 py-3 font-semibold text-white transition hover:bg-[rgb(1_84_207)]"
-              >
-                <Fragment set:html={iconSvg('sparkle', 'h-4 w-4')} />
-                Ask about this car
-              </button>
+              />
             </div>
           </div>
         </div>
