@@ -59,17 +59,6 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         </div>
       </div>
       <div class="reb-head-actions">
-        <button id="reb-speaker" class="reb-close reb-speaker" type="button" aria-pressed="false" aria-label="Mute message tones" title="Mute message tones">
-          <svg class="reb-ico-sound-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
-            <path d="M16.5 8.5a5 5 0 0 1 0 7"></path>
-            <path d="M19 6a8 8 0 0 1 0 12"></path>
-          </svg>
-          <svg class="reb-ico-sound-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
-            <path d="M17 9l4 6M21 9l-4 6"></path>
-          </svg>
-        </button>
         <button id="reb-minimise" class="reb-close" type="button" aria-label="Minimise chat" title="Minimise">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -84,11 +73,24 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       </div>
     </header>
 
-    <div id="reb-log" class="reb-log" aria-live="polite" aria-atomic="false"></div>
+    <!-- The shared Focus Stage: the conversation renders as receding focus cards
+         (identical to the homepage search bar), built entirely at runtime. The
+         card column carries NO aria-live (that would spam every reveal frame) — a
+         single visually-hidden polite region below announces each landed message
+         once. -->
+    <div class="reb-stage-viewport">
+      <div class="reb-glass-shelf" aria-hidden="true"></div>
+      <div class="reb-card-column focus-stage" id="reb-column"></div>
+    </div>
+    <p id="reb-live" class="reb-sr-only" aria-live="polite"></p>
+
+    <!-- Dev fallback log — kept in the DOM but hidden (a later phase removes it).
+         aria-live intentionally removed so cards don't double-announce. -->
+    <div id="reb-log" class="reb-log" hidden></div>
 
     {turnstileEnabled && (
       <div id="reb-turnstile" class="reb-turnstile" hidden>
-        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark" data-size="flexible" data-callback="rebTurnstileVerified" data-expired-callback="rebTurnstileExpired"></div>
+        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light" data-size="flexible" data-callback="rebTurnstileVerified" data-expired-callback="rebTurnstileExpired"></div>
       </div>
     )}
 
@@ -109,7 +111,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       </div>
     </form>
 
-    <form id="reb-form" class="reb-form">
+    <form id="reb-form" class="reb-form reb-entry">
       <textarea
         id="reb-input"
         class="reb-input"
@@ -119,7 +121,18 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         autocomplete="off"
         maxlength="2000"
       ></textarea>
-      <button id="reb-mic" class="reb-mic" type="button" aria-label="Dictate a message" hidden>
+      <button id="reb-speaker" class="reb-icon-btn reb-speaker" type="button" aria-pressed="false" aria-label="Mute message tones" title="Mute message tones">
+        <svg class="reb-ico-sound-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+          <path d="M16.5 8.5a5 5 0 0 1 0 7"></path>
+          <path d="M19 6a8 8 0 0 1 0 12"></path>
+        </svg>
+        <svg class="reb-ico-sound-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+          <path d="M17 9l4 6M21 9l-4 6"></path>
+        </svg>
+      </button>
+      <button id="reb-mic" class="reb-icon-btn reb-mic" type="button" aria-label="Dictate a message" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -160,13 +173,21 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   .reb-chat {
     --reb-primary: rgb(1 97 239);
     --reb-primary-hover: rgb(1 84 207);
-    --reb-panel-bg: rgb(8 12 40);
-    --reb-panel-border: rgb(255 255 255 / 10%);
-    --reb-bot-bg: rgb(58 58 62);          /* iMessage dark-mode grey bubble */
-    --reb-bot-text: rgb(245 247 250);
-    --reb-human-bg: rgb(16 122 87);        /* Team — distinct green from Rebi's grey */
-    --reb-text: rgb(229 236 246);
-    --reb-muted: rgb(229 236 246 / 60%);
+    /* Focus Stage brand tokens — inherited down into the .focus-stage cards so
+       the shared stage renders identically to the homepage search bar. */
+    --rebi-blue: rgb(1 97 239);
+    --rebi-blue-hover: rgb(1 84 207);
+    --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
+    --ink: rgb(15 23 42);
+    --muted: rgb(100 116 139);
+    /* Light / near-white glass palette (was a dark panel; now matches the stage). */
+    --reb-panel-bg: rgb(255 255 255 / 0.92);
+    --reb-panel-border: rgb(1 97 239 / 0.16);
+    --reb-bot-bg: rgb(241 245 249);        /* legacy .reb-msg (hidden log) fallbacks */
+    --reb-bot-text: var(--ink);
+    --reb-human-bg: rgb(16 122 87);
+    --reb-text: var(--ink);
+    --reb-muted: var(--muted);
     position: fixed;
     right: 1rem;
     bottom: 1rem;
@@ -227,9 +248,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     width: min(30rem, calc(100vw - 2rem));
     height: min(38rem, calc(100vh - 4rem));
     background: var(--reb-panel-bg);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
     border: 1px solid var(--reb-panel-border);
     border-radius: 1rem;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 60%);
+    box-shadow: 0 25px 50px -12px rgb(15 23 42 / 28%);
     overflow: hidden;
     color: var(--reb-text);
     animation: reb-rise 0.35s ease-out;
@@ -280,19 +303,50 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   .reb-action-btn svg { width: 1rem; height: 1rem; flex-shrink: 0; }
   .reb-action-primary { background: var(--reb-primary); color: #fff; }
   .reb-action-primary:hover { background: var(--reb-primary-hover); }
-  .reb-action-secondary { background: rgb(255 255 255 / 6%); color: var(--reb-text); border-color: var(--reb-panel-border); }
-  .reb-action-secondary:hover { background: rgb(255 255 255 / 12%); }
+  .reb-action-secondary { background: rgb(1 97 239 / 0.04); color: var(--ink); border-color: rgb(1 97 239 / 0.28); }
+  .reb-action-secondary:hover { background: rgb(1 97 239 / 0.1); }
 
-  /* Log */
-  .reb-log {
+  /* ================= Focus Stage viewport (the 3D theatre) ================= */
+  .reb-stage-viewport {
+    position: relative;
     flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    scrollbar-width: thin;
+    min-height: 0;
+    perspective: 1200px;
+    perspective-origin: 50% 120%;
+    overflow: hidden;
+    padding: 1rem 1rem 0;
+    /* fade the very top so receding cards dissolve into nothing above the shelf */
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 7%, #000 22%);
+    mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 7%, #000 22%);
   }
+  /* the frosted "glass shelf" — cards physically tuck behind this strip */
+  .reb-glass-shelf {
+    position: absolute; inset: 0 0 auto 0;
+    height: 3.75rem;
+    pointer-events: none;
+    z-index: 5;
+    background: linear-gradient(180deg,
+      rgb(255 255 255 / 0.9) 0%,
+      rgb(255 255 255 / 0.7) 42%,
+      rgb(255 255 255 / 0) 100%);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
+  }
+  /* the moving column of cards, absolutely anchored to the bottom of the viewport */
+  .reb-card-column { position: absolute; inset: 1rem 1rem 0.75rem; }
+
+  /* Visually-hidden live region (announces the complete landed message once). */
+  .reb-sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); border: 0;
+    white-space: nowrap;
+  }
+
+  /* Dev fallback log — hidden (kept in the DOM for a later phase). */
+  .reb-log { display: none; }
+  .reb-log[hidden] { display: none; }
   /* Message row: bot/human rows carry an avatar to the left; user rows sit right. */
   .reb-row { display: flex; align-items: flex-end; gap: 0.45rem; max-width: 85%; }
   .reb-row-bot { align-self: flex-start; }
@@ -342,62 +396,82 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   .reb-turnstile { padding: 0.5rem 0.75rem 0; display: flex; justify-content: center; }
   .reb-turnstile[hidden] { display: none; }
 
-  /* Contact capture */
-  .reb-contact { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem 0.75rem 0; }
+  /* Contact capture — presented as a pinned focal stage card during a handoff. */
+  .reb-contact { display: flex; flex-direction: column; gap: 0.4rem; }
   .reb-contact[hidden] { display: none; }
-  .reb-contact-label { font-size: 0.72rem; color: var(--reb-muted); }
+  .reb-contact-label { font-size: 0.78rem; font-weight: 600; color: var(--ink); }
   .reb-contact-row { display: flex; gap: 0.4rem; }
   .reb-contact-input {
-    flex: 1; background: rgb(255 255 255 / 6%); border: 1px solid var(--reb-panel-border);
-    border-radius: 0.6rem; color: var(--reb-text); padding: 0.45rem 0.6rem; font-size: 0.85rem; font-family: inherit;
+    flex: 1; background: rgb(255 255 255 / 0.9); border: 1px solid rgb(1 97 239 / 0.25);
+    border-radius: 0.6rem; color: var(--ink); padding: 0.5rem 0.65rem; font-size: 0.88rem; font-family: inherit;
+    min-width: 0;
   }
+  .reb-contact-input::placeholder { color: var(--muted); }
   .reb-contact-input:focus { outline: none; border-color: var(--reb-primary); }
   .reb-contact-send {
     background: var(--reb-primary); color: #fff; border: none; border-radius: 0.6rem;
-    padding: 0 0.8rem; font-size: 0.82rem; cursor: pointer;
+    padding: 0 0.9rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; flex-shrink: 0;
   }
   .reb-contact-send:hover { background: var(--reb-primary-hover); }
 
-  /* Form */
-  .reb-form { display: flex; align-items: flex-end; gap: 0.5rem; padding: 0.6rem; border-top: 1px solid var(--reb-panel-border); }
+  /* Form — the search bar's underline "entry" row (light glass, blue underline). */
+  .reb-form.reb-entry {
+    display: flex; align-items: flex-end; gap: 0.4rem;
+    margin: 0 0.75rem;
+    padding: 0.4rem 0.4rem 0.4rem 0.75rem;
+    border: 1px solid transparent;
+    border-bottom: 2px solid rgb(1 97 239 / 0.3);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 0.6);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: border-color 200ms ease, background 200ms ease;
+  }
+  .reb-form.reb-entry:focus-within {
+    border-bottom-color: var(--reb-primary);
+    background: rgb(255 255 255 / 0.9);
+  }
   .reb-input {
     flex: 1;
     resize: none;
     max-height: 6rem;
-    background: rgb(255 255 255 / 6%);
-    border: 1px solid var(--reb-panel-border);
-    border-radius: 0.75rem;
-    color: var(--reb-text);
-    padding: 0.55rem 0.7rem;
-    font-size: 0.9rem;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    padding: 0.4rem 0.15rem;
+    font-size: 0.95rem;
     font-family: inherit;
     line-height: 1.4;
+    min-width: 0;
   }
-  .reb-input::placeholder { color: var(--reb-muted); }
-  .reb-input:focus { outline: none; border-color: var(--reb-primary); }
+  .reb-input::placeholder { color: var(--muted); }
+  .reb-input:focus { outline: none; }
+
+  /* Secondary icon buttons (mic + speaker) sit inline in the entry row. */
+  .reb-icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 2.1rem; height: 2.1rem; flex-shrink: 0;
+    background: transparent; color: var(--muted);
+    border: none; border-radius: 9999px;
+    cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+  }
+  .reb-icon-btn:hover { background: rgb(1 97 239 / 0.08); color: var(--rebi-blue); }
+  .reb-icon-btn:focus-visible { outline: 2px solid var(--rebi-blue); outline-offset: 2px; }
+  .reb-icon-btn svg { width: 1.15rem; height: 1.15rem; }
+  .reb-mic[hidden] { display: none; }
+  .reb-mic.reb-recording { background: rgb(16 185 129 / 15%); color: rgb(16 185 129); animation: reb-pulse 1.4s ease-in-out infinite; }
+  @keyframes reb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 45%); } 50% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0%); } }
+
+  /* Send — the primary filled action (stays a solid blue button). */
   .reb-send {
     display: flex; align-items: center; justify-content: center;
     width: 2.5rem; height: 2.5rem; flex-shrink: 0;
     background: var(--reb-primary); color: #fff; border: none;
-    border-radius: 0.75rem; cursor: pointer; transition: background 0.15s ease;
+    border-radius: 9999px; cursor: pointer; transition: background 0.15s ease, transform 0.12s ease;
   }
   .reb-send:hover:not(:disabled) { background: var(--reb-primary-hover); }
+  .reb-send:active:not(:disabled) { transform: scale(0.94); }
   .reb-send:disabled { opacity: 0.5; cursor: not-allowed; }
   .reb-send svg { width: 1.15rem; height: 1.15rem; }
-
-  /* Mic (voice dictation) — secondary/outlined so send stays the primary action */
-  .reb-mic {
-    display: flex; align-items: center; justify-content: center;
-    width: 2.5rem; height: 2.5rem; flex-shrink: 0;
-    background: transparent; color: var(--reb-muted);
-    border: 1px solid var(--reb-panel-border); border-radius: 0.75rem;
-    cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-  }
-  .reb-mic[hidden] { display: none; }
-  .reb-mic:hover { background: rgb(255 255 255 / 6%); color: var(--reb-text); }
-  .reb-mic svg { width: 1.15rem; height: 1.15rem; }
-  .reb-mic.reb-recording { background: rgb(16 185 129 / 15%); border-color: rgb(16 185 129); color: rgb(16 185 129); animation: reb-pulse 1.4s ease-in-out infinite; }
-  @keyframes reb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 45%); } 50% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0%); } }
 
   .reb-foot { font-size: 0.68rem; color: var(--reb-muted); text-align: center; margin: 0; padding: 0 0.75rem 0.6rem; }
   .reb-foot a { color: var(--reb-muted); text-decoration: underline; }
@@ -411,20 +485,21 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    background: rgb(0 0 0 / 55%);
+    background: rgb(15 23 42 / 32%);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   }
   .reb-confirm[hidden] { display: none; }
   .reb-confirm-card {
     position: relative;
     width: 100%;
-    background: var(--reb-panel-bg);
+    background: rgb(255 255 255);
     border: 1px solid var(--reb-panel-border);
     border-radius: 0.9rem;
     padding: 1.25rem 1.1rem 1.1rem;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 60%);
+    box-shadow: 0 25px 50px -12px rgb(15 23 42 / 35%);
   }
-  .reb-confirm-x { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--reb-muted); }
-  .reb-confirm-x:hover { background: rgb(255 255 255 / 10%); color: var(--reb-text); }
+  .reb-confirm-x { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--muted); }
+  .reb-confirm-x:hover { background: rgb(1 97 239 / 0.08); color: var(--ink); }
   .reb-confirm-title { font-size: 1rem; font-weight: 600; margin: 0 1.25rem 0.35rem 0; color: var(--reb-text); }
   .reb-confirm-sub { font-size: 0.8rem; color: var(--reb-muted); margin: 0 0 0.9rem; }
   .reb-confirm-actions { flex-direction: column; } /* stacked — the primary label is long */
@@ -460,23 +535,17 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     hasActiveFilters,
     type FilterState,
   } from '../../lib/listings-query';
+  // Shared Focus Stage: the conversation now renders on the same cinematic
+  // receding-card stage as the homepage search bar (render layer only — the chat
+  // brains, escalation/handoff and streaming core are untouched).
+  import '../search/stage.css';
+  import { createFocusStage } from '../search/stage-engine';
 
   const GREETING =
     "Hi! I'm Rebi, the Rebirth Auto assistant. Ask me about our vehicles, financing, servicing, or trade-ins — I'm happy to help.";
 
-  // Rebi's avatar — a friendly robot head (inline so it needs no external asset).
-  const ROBOT_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M12 3.6v1.8"/><circle cx="12" cy="2.7" r="1" fill="currentColor" stroke="none"/>' +
-    '<rect x="4.5" y="6" width="15" height="12" rx="3.6"/>' +
-    '<circle cx="9.2" cy="12" r="1.25" fill="currentColor" stroke="none"/>' +
-    '<circle cx="14.8" cy="12" r="1.25" fill="currentColor" stroke="none"/>' +
-    '<path d="M9.6 15.3h4.8"/><path d="M2.6 10.6v2.8"/><path d="M21.4 10.6v2.8"/></svg>';
-
-  // The team's avatar — a simple person, to distinguish the human from Rebi.
-  const PERSON_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6"/></svg>';
+  // Rebi's (robot) and the Team's (person) avatars now live inside the Focus Stage
+  // engine, which builds the rebi/human cards — see src/components/search/stage-engine.ts.
 
   type WidgetRole = 'user' | 'assistant' | 'human' | 'system' | 'error';
   type Msg = { role: 'user' | 'assistant'; content: string; ts?: number };
@@ -487,6 +556,8 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   const panel = document.getElementById('reb-panel');
   const closeBtn = document.getElementById('reb-close');
   const log = document.getElementById('reb-log');
+  const column = document.getElementById('reb-column');
+  const live = document.getElementById('reb-live');
   const form = document.getElementById('reb-form') as HTMLFormElement | null;
   const input = document.getElementById('reb-input') as HTMLTextAreaElement | null;
   const sendBtn = document.getElementById('reb-send') as HTMLButtonElement | null;
@@ -505,7 +576,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   const confirmSecondary = document.getElementById('reb-confirm-secondary') as HTMLButtonElement | null;
   const confirmX = document.getElementById('reb-confirm-x');
 
-  if (root && launcher && panel && closeBtn && log && form && input && sendBtn) {
+  if (root && launcher && panel && closeBtn && log && form && input && sendBtn && column && live) {
     const STORAGE_KEY = 'reb-chat-history';
     const SESSION_KEY = 'reb-session-id';
     // Per-tab priming context (e.g. "Ask about this car"). Mirrored to
@@ -541,6 +612,33 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // this block. No-ops until then so the tone-call insertions are always safe.
     let soundSend: () => void = () => {};
     let soundRebi: () => void = () => {};
+
+    const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+    // The shared Focus Stage instance. `retire:false` → the whole conversation
+    // stacks (nothing is destroyed; scroll-back is a later phase). The sound + new
+    // conversation hooks are wrapped so they resolve the (later-assigned) `soundRebi`
+    // and `newChat` at click time, never the no-op stubs captured here.
+    const stage = createFocusStage({
+      column,
+      live,
+      reducedMotion: REDUCED_MOTION,
+      retire: false,
+      newSearchLabel: 'New chat',
+      onNewSearch: () => newChat(),
+      onReply: () => soundRebi(),
+    });
+    // The typing-dots card currently on the stage (null when none), so showTyping /
+    // hideTyping can retire exactly one indicator regardless of what added it.
+    let typingCard: HTMLElement | null = null;
+    // The inline wrap-up card is offered once per conversation; cleared with the stack.
+    let resolvedShown = false;
+    // Clear the stage AND reset the render bookkeeping that tracks its cards.
+    const clearStage = () => {
+      stage.clearStack();
+      typingCard = null;
+      resolvedShown = false;
+    };
 
     // Handoff state.
     type Status = 'ai_active' | 'escalated' | 'human_active' | 'closed' | null;
@@ -627,98 +725,37 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       return html;
     };
 
-    // --- Timestamps (centered separators, iMessage-style) ---
-    let lastTs = 0;
-    const TS_GAP_MS = 5 * 60 * 1000;
-    const formatTime = (ts: number) => {
-      const d = new Date(ts);
-      const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      const now = new Date();
-      return d.toDateString() === now.toDateString()
-        ? time
-        : d.toLocaleDateString([], { month: 'numeric', day: 'numeric' }) + ', ' + time;
-    };
-    const maybeAddTimestamp = (ts: number) => {
-      if (!ts) return;
-      if (lastTs === 0 || ts - lastTs > TS_GAP_MS) {
-        const div = document.createElement('div');
-        div.className = 'reb-time';
-        div.textContent = formatTime(ts);
-        log.appendChild(div);
-      }
-      lastTs = ts;
-    };
 
     const scroll = () => { log.scrollTop = log.scrollHeight; };
 
-    // System notices are centered, avatarless.
+    // System notices → a centered, avatarless system card on the stage.
     const addSystem = (text: string) => {
-      const div = document.createElement('div');
-      div.className = 'reb-system';
-      div.textContent = text;
-      log.appendChild(div);
-      scroll();
+      stage.addSystemCard(escapeHtml(text));
     };
 
-    // Returns the message element so callers (streaming) can keep updating it.
-    const addBubble = (role: WidgetRole, html: string, ts = Date.now()): HTMLElement => {
-      if (role === 'system') {
-        const div = document.createElement('div');
-        div.className = 'reb-system';
-        div.innerHTML = html;
-        log.appendChild(div);
-        scroll();
-        return div;
+    // Route a message to the right Focus Stage card. Returns the card's mutable
+    // body element (the `ts` argument is retained for signature compatibility; the
+    // stage has no per-message timestamps). Streaming does NOT flow through here —
+    // it uses stage.openStreamingRebiCard() directly (see handleStream).
+    const addBubble = (role: WidgetRole, html: string, _ts = Date.now()): HTMLElement => {
+      if (role === 'user') {
+        const el = stage.addUserTurn('');
+        el.innerHTML = html;
+        return el;
       }
-      maybeAddTimestamp(ts);
-      const isUser = role === 'user';
-      const isHuman = role === 'human';
-      const row = document.createElement('div');
-      row.className = 'reb-row ' + (isUser ? 'reb-row-user' : 'reb-row-bot');
-
-      if (!isUser) {
-        const avatar = document.createElement('span');
-        avatar.className = 'reb-avatar' + (isHuman ? ' reb-avatar-human' : '');
-        avatar.innerHTML = isHuman ? PERSON_SVG : ROBOT_SVG;
-        row.appendChild(avatar);
-      }
-
-      const col = document.createElement('div');
-      col.className = 'reb-col';
-      if (isHuman) {
-        const name = document.createElement('span');
-        name.className = 'reb-name';
-        name.textContent = 'Team';
-        col.appendChild(name);
-      }
-      const el = document.createElement('div');
-      el.className =
-        'reb-msg ' +
-        (isUser ? 'reb-msg-user' : isHuman ? 'reb-msg-human' : role === 'error' ? 'reb-msg-error' : 'reb-msg-bot');
-      el.innerHTML = html;
-      col.appendChild(el);
-      row.appendChild(col);
-      log.appendChild(row);
-      scroll();
-      return el;
+      if (role === 'human') return stage.addHumanCard(html);
+      if (role === 'system') return stage.addSystemCard(html);
+      if (role === 'error') return stage.addRebiCard(html, true);
+      return stage.addRebiCard(html); // 'assistant'
     };
 
     const showTyping = () => {
-      const row = document.createElement('div');
-      row.className = 'reb-row reb-row-bot';
-      row.id = 'reb-typing';
-      const avatar = document.createElement('span');
-      avatar.className = 'reb-avatar';
-      avatar.innerHTML = ROBOT_SVG;
-      const el = document.createElement('div');
-      el.className = 'reb-msg reb-msg-bot reb-typing';
-      el.innerHTML = '<span></span><span></span><span></span>';
-      row.appendChild(avatar);
-      row.appendChild(el);
-      log.appendChild(row);
-      scroll();
+      if (typingCard) return; // one indicator at a time
+      typingCard = stage.showTyping();
     };
-    const hideTyping = () => document.getElementById('reb-typing')?.remove();
+    const hideTyping = () => {
+      if (typingCard) { stage.retire(typingCard); typingCard = null; }
+    };
 
     const serverRole = (r: ServerMsg['role']): WidgetRole =>
       r === 'visitor' ? 'user' : r === 'human' ? 'human' : r === 'system' ? 'system' : 'assistant';
@@ -726,8 +763,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // Render from client history (the AI-only phase — has nice timestamps).
     const renderHistory = () => {
       clearGreetingTimer(); // an immediate render supersedes any pending typing→greeting
-      log.innerHTML = '';
-      lastTs = 0;
+      clearStage();
       // Always render exactly ONE greeting — the log was just cleared, so it
       // can't duplicate, and gating on a "greeted" flag left the panel blank on
       // any reopen with empty history (e.g. after end-chat reset while
@@ -740,8 +776,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // Render authoritatively from the server (once a human is involved).
     const renderFromServer = (messages: ServerMsg[]) => {
       clearGreetingTimer(); // an authoritative server render supersedes any pending typing→greeting
-      log.innerHTML = '';
-      lastTs = 0;
+      clearStage();
       seen.clear();
       // Same single-greeting rule as renderHistory: the primed opening replaces
       // the default greeting so a rehydrate never doubles it.
@@ -759,11 +794,9 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // indicator, then after a short, slightly-randomised beat reveal the greeting
     // (the primed opening when a context is active, else the default). Cancelled by
     // clearGreetingTimer() if the panel closes/resets before it fires.
-    const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const renderGreetingWithTyping = () => {
       clearGreetingTimer();
-      log.innerHTML = '';
-      lastTs = 0;
+      clearStage();
       showTyping();
       // ~1.5–2.5s so it feels alive, not fixed; near-instant under reduced motion.
       const delay = REDUCED_MOTION ? 0 : 1500 + Math.random() * 1000;
@@ -870,48 +903,25 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // subtitle / stacked primary+secondary), but it lives inline at the bottom of
     // the log and scrolls with the conversation rather than being a modal overlay.
     const showResolvedPrompt = () => {
-      if (document.getElementById('reb-resolved')) return;
-
-      const card = document.createElement('div');
-      card.id = 'reb-resolved';
-      card.className = 'reb-confirm-card'; // reuse the dialog card styling verbatim
-
-      const h = document.createElement('h2');
-      h.className = 'reb-confirm-title';
-      h.textContent = "That's everything for now";
-
-      const sub = document.createElement('p');
-      sub.className = 'reb-confirm-sub';
-      sub.textContent = 'Download a copy of the chat, or start fresh next time.';
-
-      const row = document.createElement('div');
-      row.className = 'reb-actions reb-confirm-actions';
-
-      const dl = document.createElement('button');
-      dl.type = 'button';
-      dl.className = 'reb-action-btn reb-action-primary';
-      dl.textContent = 'Download & end chat';
-
-      const end = document.createElement('button');
-      end.type = 'button';
-      end.className = 'reb-action-btn reb-action-secondary';
-      end.textContent = 'End chat';
-
-      dl.addEventListener('click', async () => {
-        dl.disabled = true; // guard against a double-tap during the await
-        end.disabled = true;
-        try { await downloadTranscript(); } catch { /* still end the chat */ }
-        endChat(); // must run AFTER the download — newChat() nulls the sessionId it needs
+      if (resolvedShown) return; // offered once per conversation (cleared with the stack)
+      resolvedShown = true;
+      // Inline wrap-up card on the stage — the action buttons auto-disable while the
+      // download await runs (the engine guards the double-tap). Handlers unchanged.
+      stage.addActionCard({
+        title: "That's everything for now",
+        sub: 'Download a copy of the chat, or start fresh next time.',
+        actions: [
+          {
+            label: 'Download & end chat',
+            primary: true,
+            onClick: async () => {
+              try { await downloadTranscript(); } catch { /* still end the chat */ }
+              endChat(); // must run AFTER the download — newChat() nulls the sessionId it needs
+            },
+          },
+          { label: 'End chat', onClick: () => { endChat(); } },
+        ],
       });
-      end.addEventListener('click', () => endChat());
-
-      row.appendChild(dl);
-      row.appendChild(end);
-      card.appendChild(h);
-      card.appendChild(sub);
-      card.appendChild(row);
-      log.appendChild(card);
-      scroll();
     };
 
     // Start a fresh conversation — clears the client session so the next message
@@ -979,11 +989,20 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       pollTimer = setInterval(pollOnce, POLL_MS);
     };
 
+    // Present the (frozen) contact form as a PINNED focal stage card — it holds the
+    // front slot and does not recede while active; it recedes (is removed) on
+    // submit/hide. Only the markup moves onto the stage; the submit handler and the
+    // rest of the handoff logic are untouched.
     const showContactPrompt = () => {
-      if (contactForm) contactForm.hidden = false;
+      if (!contactForm) return;
+      contactForm.hidden = false;
+      stage.addPinnedCard(contactForm);
+      setTimeout(() => { if (!panel.hidden) contactInput?.focus(); }, 30);
     };
     const hideContactPrompt = () => {
-      if (contactForm) contactForm.hidden = true;
+      if (!contactForm) return;
+      contactForm.hidden = true;
+      stage.unpinCard();
     };
 
     // Enter the handoff UI. `sysId` is the server id of the connecting message.
@@ -1064,7 +1083,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       let finished = false;
 
       const ensureBubble = () => {
-        if (!started) { hideTyping(); bubble = addBubble('assistant', ''); started = true; }
+        // Stream onto the shared Focus Stage: openStreamingRebiCard() seats an empty
+        // Rebi card and returns its `.body` element, so the per-delta
+        // `bubble.innerHTML = format(acc)` below is unchanged. The engine mirrors the
+        // settled text into the aria-live region once (no per-delta announce spam).
+        if (!started) { hideTyping(); bubble = stage.openStreamingRebiCard().el; started = true; }
       };
 
       const handleEvent = (evt: any) => {
