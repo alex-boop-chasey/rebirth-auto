@@ -158,6 +158,46 @@ function normaliseEnum(field: keyof typeof ENUM_MAPS, raw: string): string | nul
   return null;
 }
 
+// --- Base-colour matching ----------------------------------------------------
+// Maps a manufacturer paint NAME (e.g. "Snowflake White Pearl Mica") to a base
+// colour family code — a `vehicleSpecs.colour` value drawn from COLOUR_CODES in
+// src/lib/listings-query.ts, mirrored here so this script lib stays free of Astro
+// imports. Detection is by base-colour WORD substring, specific-before-generic
+// (same discipline as normaliseEnum above). If a paint name carries NO recognised
+// base-colour word it can't be confidently classified: we return null so the
+// caller emits a WARN and leaves the field unset. Determinism over guessing — a
+// human sets those by hand. We deliberately NEVER fall back to 'other'.
+//
+// 'grey' and 'gray' both normalise to the 'grey' code. Order is specific-before-
+// generic to stay deterministic if a name ever carries two base words.
+const BASE_COLOUR_MATCHERS: ReadonlyArray<{ code: string; patterns: string[] }> = [
+  { code: 'white', patterns: ['white'] },
+  { code: 'black', patterns: ['black'] },
+  { code: 'silver', patterns: ['silver'] },
+  { code: 'grey', patterns: ['grey', 'gray'] },
+  { code: 'blue', patterns: ['blue'] },
+  { code: 'red', patterns: ['red'] },
+  { code: 'green', patterns: ['green'] },
+  { code: 'gold', patterns: ['gold'] },
+  { code: 'brown', patterns: ['brown'] },
+  { code: 'orange', patterns: ['orange'] },
+  { code: 'yellow', patterns: ['yellow'] },
+  { code: 'purple', patterns: ['purple'] },
+];
+
+/**
+ * Map a manufacturer paint name to a base colour code (a COLOUR_CODES value), or
+ * null when no recognised base-colour word is present (caller should WARN + skip).
+ */
+export function matchBaseColour(paintName: string | undefined | null): string | null {
+  if (!paintName) return null;
+  const p = paintName.toLowerCase();
+  for (const { code, patterns } of BASE_COLOUR_MATCHERS) {
+    if (patterns.some((n) => p.includes(n))) return code;
+  }
+  return null;
+}
+
 // --- Number parsing ----------------------------------------------------------
 /** Prefer the structured number; else strip commas/units from the display value. */
 function parseNumber(d: DetailLike): number | null {
