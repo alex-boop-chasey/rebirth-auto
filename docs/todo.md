@@ -11,17 +11,18 @@
 - [x] **Rebi personality polish**: sparkle icon + Rebi-blue styling on the AI buttons; abandoned-primed-chat resets on close; the greeting now appears after a brief "Rebi is typing" beat.
 - [x] **AI-driven search refine + anti-hallucination grounding firewall** (via a contest): plain-English refines now move the grid (the AI interpreter, not the old keyword matcher), and a firewall blocks any invented price or unstocked brand from reaching the visitor.
 
-## Now — next build (the chatbot as the site's AI hub)
 
-- **AI search bar tweaks** - The search bar does not recognise the 'colour' attribute. We may need to add colour to the list of specs in the listing. - Also, let's stager the sequence of events so website visitors can actually witness the AI performing a function. The events should appear on screen in this order 1. the user enters a search query. 2. The current 'unfiltered' list of cars disappears with a slight fade-out and the 'AI is typing' three dot msg bubble animation triggers. 3. The AI's results msg appears in the chat. 4. The results of the search appear with a slight fade-in.
+- **AI search bar tweaks** - The search bar does not recognise the 'colour' attribute. We may need to add colour to the list of specs in the listing. - Also, let's stager the sequence of events so website visitors can actually witness the AI performing a function. The events should appear on screen in this order 1. the user enters a search query. 2. The current 'unfiltered' list of cars disappears with a slight fade-out and the 'AI is typing' three dot msg bubble animation triggers. 3. The AI's results msg appears in the chat. 4. The results of the search appear with a slight fade-in. Another edit to be made is to have the initial ai search bar appear at a reasonable distance underneath the hero section heading by having the heading on a layer on top of the space where the carousal effect plays out.
 
 - **Chatbot - comparison mode tweaks** - The chatbot should be able to perform any function including the function of the ai search bar regardless of which task it's been primed with. For example, if i opened the chatbot by clicking 'Ask AI in the comparison drawer, and then asked it to show me all the suv's under $40K, it should be able to. Also, for consistency, the ask ai button in the comparison draw should say Ask Rebi - make this 'Ask Rebi' button style a global style so we have consistency with all AI features. That will make it easy if we add another ai button somewhere else.
 
-- **Manual Filter drawer** - the text in the 2 price dropdowns is 'any' and 'any' it should be 'min' and 'max'. Also, the dropdowns for 'year' dont dropdown and show years to choose. They should be labelled 'from' and 'to'.
-
-- **tidy up the comparison table** - The table looks messy because there is a colomn on the left with the spec names leaving a blank spece above it where the vehicle img goes on the following columns.
+- **Manual Filter drawer** - the text in the 2 price dropdowns is 'any' and 'any' it should be 'min' and 'max'. Also, the dropdowns for 'year' dont dropdown and show years to choose. They should be labelled 'from' and 'to'. I think eventually, we might have filters that do not appear in the manual filter drawer but exist only for the benefit of the ai search function (like 'colour'). 
 
 - [ ] **The continuity journey** — a server-persisted D1 "journey" so Rebi remembers what the visitor did across search → listing → compare (and on return visits), folded into every reply. This is the last substantive piece before the fork-at-100% snapshot. (Its building blocks are already sketched under "Experience Mode runway".)
+
+- **tidy up the comparison table** - The table looks messy because there is a colomn on the left with the spec names leaving a blank spece above it where the vehicle img goes on the following columns. I think the comparison table could be reimagined with a sub-agent design contest. I think for the purpose of this contest, we don't need a 3rd sub-agent looking for weaknesses in the first 2 proposals. Let's instead have 3 agents running sequentially with each one trying to out do the previous ones design. Each contestant has the freedom to propose extra features or content animations to impress me, the judge.
+
+
 
 ### ⭐ North Star — continuity
 
