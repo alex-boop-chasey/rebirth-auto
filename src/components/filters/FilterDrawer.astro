@@ -71,6 +71,9 @@ if (dimensions.includes('condition') && showCondition)
 const sortOptions = Object.entries(sortLabels) as [string, string][];
 
 const fieldLabel = 'block text-xs font-semibold uppercase tracking-wide text-slate-400';
+// Sub-label for the paired min/max (price) and from/to (year) range selects, so a
+// shopper can tell the two side-by-side dropdowns apart. Subordinate to the legend.
+const subLabel = 'mb-1 block text-xs font-medium text-slate-500';
 const textInput =
   'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-slate-400 focus:outline-none';
 ---
@@ -124,22 +127,28 @@ const textInput =
           <fieldset>
             <legend class={fieldLabel}>Price</legend>
             <div class="mt-2 grid grid-cols-2 gap-3">
-              <select name="priceMin" aria-label="Minimum price" class={textInput}>
-                <option value="">Any</option>
-                {priceOpts.map((o) => (
-                  <option value={o.value} selected={String(state.priceMin) === o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <select name="priceMax" aria-label="Maximum price" class={textInput}>
-                <option value="">Any</option>
-                {priceOpts.map((o) => (
-                  <option value={o.value} selected={String(state.priceMax) === o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              <label class="block">
+                <span class={subLabel}>Min</span>
+                <select name="priceMin" aria-label="Minimum price" class={textInput}>
+                  <option value="">Any</option>
+                  {priceOpts.map((o) => (
+                    <option value={o.value} selected={String(state.priceMin) === o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label class="block">
+                <span class={subLabel}>Max</span>
+                <select name="priceMax" aria-label="Maximum price" class={textInput}>
+                  <option value="">Any</option>
+                  {priceOpts.map((o) => (
+                    <option value={o.value} selected={String(state.priceMax) === o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </fieldset>
         )
@@ -150,22 +159,28 @@ const textInput =
           <fieldset>
             <legend class={fieldLabel}>Year</legend>
             <div class="mt-2 grid grid-cols-2 gap-3">
-              <select name="yearMin" aria-label="Earliest year" class={textInput}>
-                <option value="">Any</option>
-                {yearOpts.map((o) => (
-                  <option value={o.value} selected={String(state.yearMin) === o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <select name="yearMax" aria-label="Latest year" class={textInput}>
-                <option value="">Any</option>
-                {yearOpts.map((o) => (
-                  <option value={o.value} selected={String(state.yearMax) === o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              <label class="block">
+                <span class={subLabel}>From</span>
+                <select name="yearMin" aria-label="Earliest year" class={textInput}>
+                  <option value="">Any</option>
+                  {yearOpts.map((o) => (
+                    <option value={o.value} selected={String(state.yearMin) === o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label class="block">
+                <span class={subLabel}>To</span>
+                <select name="yearMax" aria-label="Latest year" class={textInput}>
+                  <option value="">Any</option>
+                  {yearOpts.map((o) => (
+                    <option value={o.value} selected={String(state.yearMax) === o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </fieldset>
         )

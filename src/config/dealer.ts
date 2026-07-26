@@ -326,14 +326,19 @@ export const dealerConfig: DealerConfig = {
     priceOptions: [
       5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 50000, 60000, 75000, 100000, 150000,
     ],
-    // Years this dealer offers, newest-first: 2000 → current calendar year.
-    // Generated at module load so the upper bound advances automatically on each
-    // redeploy — the component never reads the runtime clock itself.
-    yearOptions: (() => {
+    // Years this dealer offers, newest-first: current calendar year → 2000.
+    // A LAZY GETTER, not a value computed at module load. On Cloudflare Workers the
+    // clock is pinned to the Unix epoch during global-scope (module) evaluation, so a
+    // top-level `new Date().getFullYear()` returns 1970 and the descending loop
+    // produces an EMPTY list — the cause of empty year dropdowns in production.
+    // Reading per-access defers the clock read to SSR render, which runs inside a
+    // request where the clock is live, so the upper bound still advances
+    // automatically on each render without a redeploy.
+    get yearOptions(): readonly number[] {
       const years: number[] = [];
       for (let y = new Date().getFullYear(); y >= 2000; y--) years.push(y);
       return years;
-    })(),
+    },
     // Odometer steps this dealer offers in the odometer dropdown (whole km).
     odoOptions: [10000, 25000, 50000, 75000, 100000, 150000, 200000, 250000, 300000],
     bodyTypes: ['sedan', 'hatchback', 'suv', 'ute', 'wagon', 'van', 'coupe', 'convertible'],
