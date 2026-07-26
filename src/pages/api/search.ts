@@ -22,6 +22,8 @@ import { getChatEnv } from '~/chatbot/get-env';
 import { dealerConfig } from '~/config/dealer';
 import { checkRateLimit } from '~/lib/rate-limit';
 import { activeChips, type FilterState } from '~/lib/listings-query';
+import { resolveVisitor, withCookie } from '~/chatbot/visitor';
+import { recordJourneyEvent } from '~/chatbot/journey';
 import { extractFilters, hasConcreteFilters } from '~/lib/vehicle-filter-extract';
 import {
   ExtractionSchema,
@@ -60,18 +62,38 @@ export const POST: APIRoute = async ({ request }) => {
 
   const env = getChatEnv();
 
+  // Continuity journey: resolve the opaque visitor id (fail-open → {id:null}).
+  // `setCookie`, when a fresh id is minted, rides on every outgoing Response via
+  // `withVid` so the id sticks across pages (listing/compare beacons reuse it).
+  const { id: visitorId, setCookie } = resolveVisitor(request, dealerConfig.chat.journey);
+  const withVid = (r: Response) => withCookie(r, setCookie);
+  // Record a `search` event AFTER the user-visible result is computed. Best-effort
+  // and fully fail-open (recordJourneyEvent swallows all errors). ref = the
+  // canonical serialized filters; label = the human chips phrase (price-free-ish).
+  const captureSearch = async (state: FilterState): Promise<void> => {
+    try {
+      const ref = activeFilterSummary(state);
+      const label = activeChips(state)
+        .map((c) => `${c.label.toLowerCase()} ${c.value}`)
+        .join(', ');
+      await recordJourneyEvent(env.CHAT_DB, visitorId, 'search', ref, label || null);
+    } catch {
+      /* fail-open — a journey hiccup never affects search */
+    }
+  };
+
   // Validate BEFORE spending a rate-limit slot or an AI call.
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return json({ error: 'Invalid JSON body.' }, 400);
+    return withVid(json({ error: 'Invalid JSON body.' }, 400));
   }
   const rawQuery = (body as { query?: unknown })?.query;
   const query = typeof rawQuery === 'string' ? rawQuery.trim() : '';
-  if (!query) return json({ error: 'Missing "query" (a non-empty string).' }, 400);
+  if (!query) return withVid(json({ error: 'Missing "query" (a non-empty string).' }, 400));
   if (query.length > cfg.maxQueryLength) {
-    return json({ error: `Query too long (max ${cfg.maxQueryLength}).` }, 400);
+    return withVid(json({ error: `Query too long (max ${cfg.maxQueryLength}).` }, 400));
   }
 
   const current = normalizeCurrentFilters((body as { filters?: unknown })?.filters);
@@ -94,9 +116,11 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       const rl = await checkRateLimit(env.RATE_LIMIT_KV, ip, cfg.rateLimit, 'search:');
       if (!rl.allowed) {
-        return json({ error: 'Search limit reached — please try again later.' }, 429, {
-          'Retry-After': String(rl.retryAfterSeconds),
-        });
+        return withVid(
+          json({ error: 'Search limit reached — please try again later.' }, 429, {
+            'Retry-After': String(rl.retryAfterSeconds),
+          }),
+        );
       }
     } catch (err) {
       console.error('[ai-search] rate limit check failed (allowing request)', err);
@@ -118,7 +142,8 @@ export const POST: APIRoute = async ({ request }) => {
         filters: pre.state,
         matchReasons,
       };
-      return json(resp, 200);
+      await captureSearch(pre.state);
+      return withVid(json(resp, 200));
     }
   } catch (err) {
     console.error('[ai-search] deterministic pre-pass failed (falling through to LLM)', err);
@@ -126,9 +151,11 @@ export const POST: APIRoute = async ({ request }) => {
 
   // --- Stage 2: structured LLM extraction (soft concepts / ambiguity) ---------
   if (!env.OPENROUTER_API_KEY) {
-    return json(
-      fallbackResponse('AI search is temporarily unavailable — please use the filters.'),
-      200,
+    return withVid(
+      json(
+        fallbackResponse('AI search is temporarily unavailable — please use the filters.'),
+        200,
+      ),
     );
   }
   // Match /api/chat's configureAI call BYTE-FOR-BYTE (incl. streamAttemptTimeoutMs)
@@ -157,10 +184,12 @@ export const POST: APIRoute = async ({ request }) => {
         },
       ],
     });
-    return json(toSearchResponse(content), 200);
+    const resp = toSearchResponse(content);
+    await captureSearch(resp.filters);
+    return withVid(json(resp, 200));
   } catch (err) {
     // Model failure / unparseable / exhaustion → graceful 200 fallback.
     console.error('[ai-search] extraction failed', err);
-    return json(fallbackResponse(), 200);
+    return withVid(json(fallbackResponse(), 200));
   }
 };
