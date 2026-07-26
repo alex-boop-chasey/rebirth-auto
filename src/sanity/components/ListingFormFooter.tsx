@@ -91,17 +91,11 @@ export function ListingFormFooter(props: ObjectInputProps) {
 
   const handleNext = useCallback(() => {
     if (!nextGroup) return;
-    const firstFieldName = nextGroup.fields?.[0]?.name;
-    if (firstFieldName) {
-      // Focusing a field inside a group auto-selects that group AND scrolls the
-      // field into view. Since it's the group's FIRST field, this lands the new
-      // tab at the top — one call yields both the switch and the top position.
-      props.onPathFocus([firstFieldName]);
-    } else {
-      // Fallback: no derivable field on the next group — just switch the tab.
-      props.onFieldGroupSelect(nextGroup.name);
-    }
-    // Hedge for layouts where focus alone doesn't scroll to the top.
+    // Switch to the next tab. onFieldGroupSelect is the confirmed-working
+    // mechanism — onPathFocus scrolled but did NOT reliably change the group.
+    props.onFieldGroupSelect(nextGroup.name);
+    // The switch leaves the scroll pinned at the footer (bottom); pull the
+    // form's scroll container back to the top once the new tab has rendered.
     requestAnimationFrame(() => scrollAncestorToTop(footerRef.current));
   }, [nextGroup, props]);
 

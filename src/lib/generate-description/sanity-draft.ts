@@ -16,8 +16,13 @@ export interface DraftListing {
   category?: string;
   make?: string;
   model?: string;
+  badge?: string;
+  series?: string;
   colour?: string;
   engine?: string;
+  doors?: number;
+  trim?: string;
+  price?: number;
   vehicleSpecs?: Record<string, unknown>;
   dealerNotes?: string;
   /** Image members with their asset reference — used to build CDN URLs for vision. */
@@ -25,7 +30,7 @@ export interface DraftListing {
 }
 
 const PROJECTION = `{
-  _id, title, category, make, model, colour, engine,
+  _id, title, category, make, model, badge, series, colour, engine, doors, trim, price,
   vehicleSpecs{ bodyType, transmission, fuelType, driveType, seatCount, year, odometer, condition },
   dealerNotes, images[]{ asset }
 }`;

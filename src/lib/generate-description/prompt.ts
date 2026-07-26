@@ -22,10 +22,20 @@ export interface DescriptionFacts {
   make?: string;
   /** Model, e.g. "RAV4". May be empty. */
   model?: string;
+  /** Variant/grade badge, e.g. "GXL". May be empty. */
+  badge?: string;
+  /** Model series/code, e.g. "PX III". May be empty. */
+  series?: string;
   /** Manufacturer paint colour name. May be empty. */
   colour?: string;
   /** Engine description. May be empty. */
   engine?: string;
+  /** Door count. May be empty. */
+  doors?: number;
+  /** Interior trim/upholstery, e.g. "Black leather". May be empty. */
+  trim?: string;
+  /** Listed price (positioning context only — never quoted verbatim). May be empty. */
+  price?: number;
   /** Typed vehicleSpecs, as-is. Serialised into the untrusted SPECS block. */
   specs: Record<string, unknown>;
   /** Verbatim dealerNotes; may be empty. */
@@ -42,7 +52,7 @@ LENGTH & STRUCTURE
 - One short closing line inviting the buyer to contact or inspect. Do NOT include phone numbers or email addresses — the page's contact button handles that.
 
 RULES
-- No pricing claims unless a price is present in the specs.
+- A price may be provided as context for value/positioning; do NOT state the exact price figure — the listing page already displays it. Never invent finance, discount, or savings claims.
 - No superlatives ("best", "unbeatable", "perfect") — stay confident and factual.
 - Output PLAIN TEXT with a blank line between paragraphs. No markdown, no headings, no bullet lists.
 
@@ -63,8 +73,13 @@ export function buildUserText(facts: DescriptionFacts): string {
   const specs: Record<string, unknown> = {
     ...(facts.make ? { make: facts.make } : {}),
     ...(facts.model ? { model: facts.model } : {}),
+    ...(facts.badge ? { badge: facts.badge } : {}),
+    ...(facts.series ? { series: facts.series } : {}),
     ...(facts.colour ? { colour: facts.colour } : {}),
     ...(facts.engine ? { engine: facts.engine } : {}),
+    ...(facts.doors != null ? { doors: facts.doors } : {}),
+    ...(facts.trim ? { trim: facts.trim } : {}),
+    ...(facts.price != null ? { price: facts.price } : {}),
     ...facts.specs,
   };
   return `TITLE:
