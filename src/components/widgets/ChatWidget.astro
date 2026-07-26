@@ -50,14 +50,8 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     aria-label="Chat with Rebirth Auto"
     hidden
   >
+    <!-- Minimal floating controls (top-right of the stage) — no header bar/box. -->
     <header class="reb-head">
-      <div class="reb-head-info">
-        <span class="reb-dot" aria-hidden="true"></span>
-        <div>
-          <p class="reb-head-title">Rebirth Auto</p>
-          <p class="reb-head-sub">Ask Rebi, our AI assistant</p>
-        </div>
-      </div>
       <div class="reb-head-actions">
         <button id="reb-minimise" class="reb-close" type="button" aria-label="Minimise chat" title="Minimise">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -79,7 +73,6 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
          single visually-hidden polite region below announces each landed message
          once. -->
     <div class="reb-stage-viewport">
-      <div class="reb-glass-shelf" aria-hidden="true"></div>
       <div class="reb-card-column focus-stage" id="reb-column"></div>
     </div>
     <p id="reb-live" class="reb-sr-only" aria-live="polite"></p>
@@ -235,7 +228,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   }
   .reb-badge[hidden] { display: none; }
 
-  /* Panel — viewport-centered modal surface */
+  /* Panel — a TRANSPARENT, layout-only wrapper. It has NO box of any kind (no
+     background, border, shadow, glass or rounded card): it only centers the
+     floating Focus Stage + input on the viewport, exactly like SearchDock floats
+     its stage on the hero. The ONLY visible chrome is the bubble cards + the input
+     row, floating directly on the greyed page. */
   .reb-panel {
     position: fixed;
     top: 50%;
@@ -247,42 +244,42 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     flex-direction: column;
     width: min(30rem, calc(100vw - 2rem));
     height: min(38rem, calc(100vh - 4rem));
-    background: var(--reb-panel-bg);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    backdrop-filter: blur(16px) saturate(1.4);
-    border: 1px solid var(--reb-panel-border);
-    border-radius: 1rem;
-    box-shadow: 0 25px 50px -12px rgb(15 23 42 / 28%);
-    overflow: hidden;
-    color: var(--reb-text);
+    color: var(--ink);
     animation: reb-rise 0.35s ease-out;
   }
   .reb-panel[hidden] { display: none; }
   /* Entrance: fade + gentle scale, gaining colour (grayscale 1→0) as the page
-     behind it desaturates. translate(-50%,-50%) held in EVERY frame so the panel
+     behind it desaturates. translate(-50%,-50%) held in EVERY frame so the content
      stays centered throughout. */
   @keyframes reb-rise {
     from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); filter: grayscale(1); }
     to { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: grayscale(0); }
   }
 
-  /* Header */
+  /* Controls — minimal floating icons at the top-right of the stage (NOT a header
+     bar): small circular glass buttons, mirroring SearchDock's floating toggle. */
   .reb-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.85rem 1rem;
-    background: linear-gradient(135deg, var(--reb-primary), rgb(109 40 217));
-    color: #fff;
+    position: absolute;
+    top: 0.4rem; right: 0.4rem;
+    z-index: 30;
+    display: flex; align-items: center;
+    padding: 0;
+    background: none;
   }
-  .reb-head-info { display: flex; align-items: center; gap: 0.6rem; }
-  .reb-head-title { font-weight: 600; font-size: 0.95rem; line-height: 1.1; margin: 0; }
-  .reb-head-sub { font-size: 0.75rem; opacity: 0.85; margin: 0.1rem 0 0; }
-  .reb-dot { width: 0.6rem; height: 0.6rem; border-radius: 9999px; background: #34d399; box-shadow: 0 0 0 3px rgb(52 211 153 / 25%); }
-  .reb-head-actions { display: flex; align-items: center; gap: 0.15rem; }
-  .reb-close { background: transparent; border: none; color: #fff; cursor: pointer; padding: 0.25rem; border-radius: 0.4rem; display: flex; }
-  .reb-close:hover { background: rgb(255 255 255 / 18%); }
-  .reb-close svg { width: 1.15rem; height: 1.15rem; }
+  .reb-head-actions { display: flex; align-items: center; gap: 0.3rem; }
+  .reb-close {
+    display: flex; align-items: center; justify-content: center;
+    width: 1.95rem; height: 1.95rem;
+    background: rgb(255 255 255 / 0.7);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    border: 1px solid rgb(1 97 239 / 0.16);
+    color: var(--muted); cursor: pointer; border-radius: 9999px;
+    box-shadow: 0 4px 12px -6px rgb(15 23 42 / 0.25);
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .reb-close:hover { background: rgb(255 255 255 / 0.95); color: var(--rebi-blue); }
+  .reb-close:focus-visible { outline: 2px solid var(--rebi-blue); outline-offset: 2px; }
+  .reb-close svg { width: 1.05rem; height: 1.05rem; }
 
   /* Speaker toggle (message tones) — icon swaps on the .muted class */
   .reb-speaker .reb-ico-sound-off { display: none; }
@@ -306,7 +303,10 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   .reb-action-secondary { background: rgb(1 97 239 / 0.04); color: var(--ink); border-color: rgb(1 97 239 / 0.28); }
   .reb-action-secondary:hover { background: rgb(1 97 239 / 0.1); }
 
-  /* ================= Focus Stage viewport (the 3D theatre) ================= */
+  /* ================= Focus Stage viewport (the 3D theatre) =================
+     Transparent, no box (no background/border/shadow) — the receding bubble cards
+     are the only chrome. The top mask just fades cards into nothing as they recede,
+     so nothing needs a frosted shelf strip. */
   .reb-stage-viewport {
     position: relative;
     flex: 1;
@@ -315,24 +315,9 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     perspective-origin: 50% 120%;
     overflow: hidden;
     padding: 1rem 1rem 0;
-    /* fade the very top so receding cards dissolve into nothing above the shelf */
+    /* fade the very top so receding cards dissolve into nothing */
     -webkit-mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 7%, #000 22%);
     mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 7%, #000 22%);
-  }
-  /* the frosted "glass shelf" — cards physically tuck behind this strip */
-  .reb-glass-shelf {
-    position: absolute; inset: 0 0 auto 0;
-    height: 3.75rem;
-    pointer-events: none;
-    z-index: 5;
-    background: linear-gradient(180deg,
-      rgb(255 255 255 / 0.9) 0%,
-      rgb(255 255 255 / 0.7) 42%,
-      rgb(255 255 255 / 0) 100%);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
   }
   /* the moving column of cards, absolutely anchored to the bottom of the viewport */
   .reb-card-column { position: absolute; inset: 1rem 1rem 0.75rem; }
@@ -476,27 +461,27 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   .reb-foot { font-size: 0.68rem; color: var(--reb-muted); text-align: center; margin: 0; padding: 0 0.75rem 0.6rem; }
   .reb-foot a { color: var(--reb-muted); text-decoration: underline; }
 
-  /* End-chat confirmation overlay */
+  /* End-chat confirmation — a small, centered FLOATING card (no full-panel scrim
+     box). The container is transparent; only the little card is visible. */
   .reb-confirm {
     position: absolute;
     inset: 0;
-    z-index: 20;
+    z-index: 40;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    background: rgb(15 23 42 / 32%);
-    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   }
   .reb-confirm[hidden] { display: none; }
   .reb-confirm-card {
     position: relative;
     width: 100%;
+    max-width: 20rem;
     background: rgb(255 255 255);
     border: 1px solid var(--reb-panel-border);
     border-radius: 0.9rem;
     padding: 1.25rem 1.1rem 1.1rem;
-    box-shadow: 0 25px 50px -12px rgb(15 23 42 / 35%);
+    box-shadow: 0 18px 40px -16px rgb(15 23 42 / 0.35);
   }
   .reb-confirm-x { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--muted); }
   .reb-confirm-x:hover { background: rgb(1 97 239 / 0.08); color: var(--ink); }
