@@ -629,7 +629,10 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
       .vboard * { box-sizing: border-box; }
       .vboard .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
       .vboard .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; letter-spacing: 0.02em; }
-      .vboard .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+      /* Align the compare shell to the site-wide full-width gutter system
+         (defined once in global.css) so its header/board/footer line up with
+         every other page. The board's own .scroller handles internal overflow. */
+      .vboard .wrap { max-width: var(--site-max); margin: 0 auto; padding: 0 var(--site-gutter); }
       .vboard .ic { width: 15px; height: 15px; }
       .vboard .ic-lg { width: 40px; height: 40px; }
 

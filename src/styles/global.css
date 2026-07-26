@@ -10,3 +10,37 @@
     border-radius: 6px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Site width system — the SINGLE source of truth for page gutters + max width.
+   The site runs near-full-width: content sits a responsive gutter in from each
+   viewport edge — ~55px on large desktops, scaling down to 16px on mobile so
+   small screens aren't cramped. Apply `.site-container` to every top-level page
+   wrapper (header, main, footer, compare shell) so they all stay aligned to the
+   same gutter. Change the numbers here and the whole site follows.
+   --------------------------------------------------------------------------- */
+:root {
+  --site-gutter: 16px; /* mobile */
+  --site-max: 2400px;  /* generous cap so ultra-wide screens don't over-stretch */
+}
+@media (min-width: 640px)  { :root { --site-gutter: 24px; } } /* tablet */
+@media (min-width: 1024px) { :root { --site-gutter: 40px; } } /* small desktop */
+@media (min-width: 1280px) { :root { --site-gutter: 55px; } } /* large desktop */
+
+.site-container {
+  width: 100%;
+  max-width: var(--site-max);
+  margin-inline: auto;
+  padding-inline: var(--site-gutter);
+}
+
+/* Fluid listings grid: columns are ADDED as width allows rather than the cards
+   stretching, so tiles stay a sensible size on full-width / ultra-wide screens.
+   `auto-fill` keeps empty tracks (a handful of results won't balloon to fill the
+   row); the `min(100%, …)` floor prevents overflow on very narrow viewports.
+   Column count scales naturally: ~1 (mobile) → 2 → 3 → 4 → 5+ on wide desktops. */
+.inventory-grid {
+  display: grid;
+  gap: 1.5rem; /* == Tailwind gap-6 */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
