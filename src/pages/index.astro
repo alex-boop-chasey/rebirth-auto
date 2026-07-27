@@ -89,6 +89,11 @@ const canonicalURL = new URL(
               {dealerConfig.tradeIn.copy.navLabel}
             </a>
           )}
+          {dealerConfig.service.enabled && (
+            <a href="/service" class="text-slate-500 transition hover:text-slate-900">
+              {dealerConfig.service.copy.navLabel}
+            </a>
+          )}
           <a
             href="#"
             id="nav-contact"

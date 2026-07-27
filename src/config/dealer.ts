@@ -359,6 +359,74 @@ export interface DealerConfig {
       emailIntro: string;
     };
   };
+  /**
+   * Book-a-service — a service-department booking REQUEST flow (the `/service`
+   * page + `/api/book-service` endpoint). A shopper asks for a service; the
+   * dealer's team then confirms a time out-of-band. This is deliberately a
+   * REQUEST, never a confirmed appointment: there is NO calendar/POS integration
+   * here (that's a separate deferred ticket), so the copy must never assert a
+   * locked booking or invent availability. Confirmation email to the shopper AND
+   * the dealer notification are STUBBED (see docs/briefs/_stub-convention.md and
+   * src/stubs/email.ts); persistence is fail-open Cloudflare D1. Its OWN block
+   * (not under `chat`) — it does not touch Rebi. Every dealer-facing string,
+   * toggle, and the offered service-type list lives here so a tenant swap
+   * restyles it without a code edit.
+   */
+  service: {
+    /** Master on/off — a dealer can hide the booking tool without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/book-service (its OWN `service:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /**
+     * The service types this dealer offers, in display order. Populates the form
+     * dropdown AND is the server-side allow-list the API validates against — a
+     * booking whose `serviceType` isn't in this list is rejected. Dealer-editable
+     * copy; NEVER hardcoded in the page or the endpoint.
+     */
+    serviceTypes: readonly string[];
+    /**
+     * Where the dealer receives the stubbed booking-request notification. A
+     * dealer-specific address — never hardcoded in the endpoint.
+     */
+    notifyEmail: string;
+    /** Front-of-house copy for the booking page, its nav link, and both emails. */
+    copy: {
+      /** Short nav/link label (e.g. "Book a service"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. Must read as a REQUEST, not a booking. */
+      subheading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the request is sent. */
+      loadingLabel: string;
+      /** Small helper line about hours / turnaround. Sets the "we'll confirm" expectation. */
+      hours: string;
+      /**
+       * Inline success message. MUST frame this as a request the team will
+       * confirm — never "your appointment is booked".
+       */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+      /** Subject line of the stubbed shopper confirmation email. */
+      emailSubject: string;
+      /**
+       * Lead line of the shopper confirmation email. MUST say the request was
+       * received and the team will confirm a time — never assert a booked slot.
+       */
+      emailIntro: string;
+      /** Subject line of the stubbed dealer notification email. */
+      dealerEmailSubject: string;
+    };
+  };
 }
 
 // Sort options are a fixed whitelist (see src/lib/listings-query.ts for how each
@@ -619,6 +687,45 @@ export const dealerConfig: DealerConfig = {
       rateLimitMessage: 'You have saved a few searches already — please try again later.',
       emailSubject: 'Your saved search is set up',
       emailIntro: "We'll email you when new matches arrive.",
+    },
+  },
+  service: {
+    enabled: true,
+    // Booking a service is a light action but still capped per-IP to bound abuse
+    // (and stubbed-email noise). Generous for a genuine shopper.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // The services THIS dealer offers. Dealer-editable — the form dropdown and the
+    // API allow-list both read this; nothing is hardcoded in the page/endpoint.
+    serviceTypes: [
+      'Logbook service',
+      'Brakes',
+      'Tyres',
+      'Air-con regas',
+      'General inspection',
+    ],
+    // Stubbed notification target — the dealer's service desk. Dealer-specific.
+    notifyEmail: 'service@rebirthauto.example',
+    copy: {
+      navLabel: 'Book a service',
+      eyebrow: 'Service department',
+      heading: 'Book a service',
+      subheading:
+        'Send us a service request and our team will get back to you to confirm a time. ' +
+        'Tell us about your car and what it needs — no appointment is locked in until we confirm.',
+      submitLabel: 'Request a booking',
+      loadingLabel: 'Sending your request…',
+      hours: 'Service desk: Mon–Fri, 7:30am–5pm. We reply to requests within one business day.',
+      successMessage:
+        "Thanks — we've received your request. Our team will be in touch to confirm a time. " +
+        'This is a request, not a confirmed appointment.',
+      errorMessage: "Sorry, we couldn't send that request. Please try again.",
+      invalidMessage: 'Please fill in your name, a valid email, your vehicle, and a service type.',
+      rateLimitMessage: 'You have sent a few requests already — please try again later.',
+      emailSubject: 'We received your service request',
+      emailIntro:
+        "Thanks for your service request — we've received it and our team will contact you to " +
+        'confirm a time. Nothing is booked yet; this just starts the conversation.',
+      dealerEmailSubject: 'New service booking request',
     },
   },
 };

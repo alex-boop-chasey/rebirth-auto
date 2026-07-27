@@ -28,6 +28,8 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 | fuel-economy backfill | backfill script `--commit` | review dry-run diff first |
 | D1 journey table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod |
 | D1 saved_searches table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod (migration 0004) |
+| D1 service_bookings table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod (migration 0005) |
+| Service scheduling (POS/calendar) | per-dealer POS/calendar API | booking requests → CONFIRMED appointments (reserve real slots) — deferred; requests + notify ship now |
 
 ## Owner infra / account actions
 
