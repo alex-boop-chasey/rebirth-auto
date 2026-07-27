@@ -29,8 +29,8 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 
 | Action | Command | Blocker |
 |--------|---------|---------|
-| businessInfo real facts | seed script `--commit` | needs real dealer facts + Editor `SANITY_TOKEN` |
-| brand reconciliation | reconcile script `--commit` | review dry-run diff first |
+| businessInfo real facts | `scripts/seed-business-info.ts --commit` | seeds `businessInfo-current` from knowledge.ts placeholders — owner MUST replace fictional name/phone/address/email with real dealer facts + supply Established year; needs Editor `SANITY_TOKEN`. Dry-run by default |
+| brand reconciliation | `scripts/reconcile-brands.ts` (read-only, no `--commit`) | review dry-run diff, then edit `src/chatbot/knowledge.ts` BY HAND — it is a source file, not a Sanity doc (current diff: claimed-absent Jeep/Leapmotor; present-unclaimed Ford/GWM/Holden/Mazda/Mitsubishi/Toyota) |
 | fuel-economy backfill | backfill script `--commit` | review dry-run diff first |
 | D1 journey table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod |
 | D1 saved_searches table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod (migration 0004) |
@@ -44,4 +44,10 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 |--------|-------|
 | GROUNDING_KV namespace + `wrangler.jsonc` binding | optional grounding cache; app works without it |
 | Sanity MCP plugin | `/plugin install sanity@claude-plugins-official` |
-| Cloudflare security tooling | account-level access required for some features |
+| Cloudflare security tooling | account-level access required for some features. Full audit + priority order in `docs/cloudflare-security.md`. Owner rows below. |
+| CF: security response headers (HSTS + baseline CSP) | **Biggest gap — currently absent.** Add via Cloudflare Transform Rule (response headers) or Astro middleware. Priority 1 |
+| CF: WAF managed ruleset + Bot Fight Mode | Enable Cloudflare Managed Ruleset (+ OWASP) and Bot Fight Mode on the zone (Security → WAF / Bots). Priority 2 |
+| CF: Access in front of Sanity Studio | Put the Studio route behind Cloudflare Access (Zero Trust) so only staff reach it. Priority 3 |
+| CF: edge rate-limiting rules on `/api/*` | Zone-level rate-limiting to complement the in-app KV limiter (`checkRateLimit`). Priority 4 |
+| CF: confirm TLS Full (strict) + Always Use HTTPS | Verify SSL/TLS mode and HTTP→HTTPS redirect. Priority 5 |
+| CF: periodic Security Center review | Review Cloudflare's automated vulnerability/misconfig scan findings. Priority 6 |

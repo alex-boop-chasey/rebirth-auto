@@ -16,6 +16,9 @@
     "seed:clean": "tsx scripts/seed.ts --clean",
     "import:bundaberg": "tsx scripts/import-bundaberg.ts",
     "import:migrate-specs": "tsx scripts/migrate-details-to-specs.ts",
+    "deps:report": "tsx scripts/deps-report.ts",
+    "seed:business-info": "tsx scripts/seed-business-info.ts",
+    "reconcile:brands": "tsx scripts/reconcile-brands.ts",
     "generate-types": "wrangler types",
     "check:ai-imports": "bash scripts/check-ai-imports.sh"
   },
