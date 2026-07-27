@@ -91,6 +91,20 @@ export interface DealerConfig {
       /** Per-IP rate limit for the generate-description endpoint. */
       rateLimit: { windowSeconds: number; maxRequests: number };
     };
+    /**
+     * Agentic inventory search ("Rebi as an agent with tools" —
+     * src/ai/agentic/search-agent.ts). The deterministic inventory TOOLS are real
+     * and testable, but the model-driven tool-calling LOOP needs a paid
+     * tool-capable model plus a provider tool-call transport that src/ai/ does not
+     * have yet. DEFAULT OFF — with `enabled: false`, `runAgenticSearch` returns
+     * null and NOTHING runs; the live grounded chatbot is entirely unaffected
+     * (this feature is not wired into it). Flip to true only once the paid drop-in
+     * lands (see the TODO_KEYS marker in search-agent.ts).
+     */
+    agenticSearch: {
+      /** Master on/off. False = feature dormant; the loop and tools never run. */
+      enabled: boolean;
+    };
   };
   /** Chatbot (Rebi) settings — dealer-scoped toggles and grounding tunables. */
   chat: {
@@ -742,6 +756,12 @@ export const dealerConfig: DealerConfig = {
       // Studio authoring is far lower-volume than shopper search, but still capped
       // per-IP to bound AI cost. 20/hour is generous for a dealer editing listings.
       rateLimit: { windowSeconds: 3600, maxRequests: 20 },
+    },
+    // Agentic search — DEFAULT OFF. The tools are real; the tool-calling loop is
+    // the paid drop-in (see src/ai/agentic/search-agent.ts). Not wired into the
+    // live chatbot — flipping this changes nothing about Rebi's grounded chat.
+    agenticSearch: {
+      enabled: false,
     },
   },
   chat: {

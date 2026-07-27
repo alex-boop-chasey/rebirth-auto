@@ -18,8 +18,12 @@
  * - `chat-quality` — reserved for future higher-reasoning chat.
  * - `writing`      — long-form generation (e.g. Sanity descriptions); quality > cost.
  * - `structured`   — anything that must return parseable JSON output.
+ * - `agentic`      — tool-calling loops (agentic inventory search). Needs a model
+ *                    that supports tool/function calling; only consumed when the
+ *                    (default-OFF) agentic feature is enabled — see
+ *                    `src/ai/agentic/search-agent.ts`.
  */
-export type Capability = 'chat-cheap' | 'chat-quality' | 'writing' | 'structured';
+export type Capability = 'chat-cheap' | 'chat-quality' | 'writing' | 'structured' | 'agentic';
 
 /**
  * A single part of a multimodal message. `text` carries prose; `image_url`

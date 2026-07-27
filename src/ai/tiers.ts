@@ -65,6 +65,17 @@ export const TIERS = {
     defaultTemperature: 0,
     defaultMaxTokens: 2048,
   },
+  // Agentic inventory search (tool-calling loop). Points at a tool-capable PAID
+  // model — Haiku supports function/tool calling; the free models above do NOT,
+  // so this tier deliberately lists ONLY Haiku (no free fallback). This tier is
+  // consumed ONLY when `ai.agenticSearch.enabled` is true (default OFF), so
+  // adding it changes nothing today — no existing tier entry is touched, and the
+  // live chatbot never resolves this capability. See src/ai/agentic/search-agent.ts.
+  agentic: {
+    models: ['anthropic/claude-haiku-4-5'],
+    defaultTemperature: 0,
+    defaultMaxTokens: 1024,
+  },
 } as const satisfies Record<Capability, TierConfig>;
 
 // Per-model capability metadata, keyed by OpenRouter model id. Kept as a parallel
