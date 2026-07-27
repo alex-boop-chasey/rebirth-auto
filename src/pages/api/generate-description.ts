@@ -1,13 +1,25 @@
 /**
- * AI listing-description generator — Studio-only endpoint.
+ * AI listing editor assistant — Studio-only endpoint. A distinct "brain" from the
+ * visitor-facing Rebi: it never chats, only runs focused one-shot actions over the
+ * OPEN listing, read server-side.
  *
- * POST { listingId: string } → { description: PortableTextBlock[] } on success,
- * or { error: string } (HTTP 200) on any AI failure. Reads the DRAFT listing
- * server-side (title, category, vehicleSpecs, dealerNotes, image assets),
- * composes a prose prompt, and calls the `writing` tier via the src/ai/ layer
- * (DECISION.md Decision 3 — no direct provider calls). When the resolved primary
- * writing model supports vision AND the listing has photos, the photos are sent
- * as image parts; otherwise text-only.
+ * POST { listingId: string, action?, tone? } where `action` is one of:
+ *   - 'describe' (DEFAULT — an absent action is exactly today's behaviour):
+ *       draft a fresh full description → { description: PortableTextBlock[] }.
+ *   - 'tone' (requires `tone` from the dealer's DESCRIPTION_TONES vocabulary):
+ *       regenerate the description in that tone → { description }.
+ *   - 'tighten': rewrite the listing's CURRENT description tighter, same facts
+ *       → { description }.
+ *   - 'sellingPoints': draft 3–5 scannable selling points → { sellingPoints: string[] }.
+ * Any AI failure degrades to { error } at HTTP 200 (never a 500).
+ *
+ * Reads the DRAFT listing server-side (title, category, vehicleSpecs, details,
+ * current description, dealerNotes, image assets), composes a per-action prompt,
+ * and calls the `writing` tier via the src/ai/ layer (DECISION.md Decision 3 — no
+ * direct provider calls). For the two actions that generate a fresh full
+ * description ('describe'/'tone'), when the resolved primary writing model
+ * supports vision AND the listing has photos, the photos are sent as image parts;
+ * otherwise text-only. Every action grounds ONLY in the listing's real data.
  *
  * Discipline: feature flag → cheap body validation → per-IP KV rate limit
  * (fail OPEN) → graceful degradation, never a 500 for AI failure. Dealer-scoped
@@ -20,9 +32,19 @@ import type { AIContentPart, AIMessage } from '~/ai';
 import { APP_URL, APP_TITLE, REQUEST_TIMEOUT_MS } from '~/chatbot/config';
 import { dealerConfig } from '~/config/dealer';
 import { getDescriptionEnv } from '~/lib/generate-description/env';
-import { fetchDraftListing } from '~/lib/generate-description/sanity-draft';
-import { buildSystemPrompt, buildUserText, type DescriptionFacts } from '~/lib/generate-description/prompt';
-import { plainTextToPortableText } from '~/lib/portable-text';
+import { fetchDraftListing, type DraftDetail } from '~/lib/generate-description/sanity-draft';
+import {
+  buildSystemPrompt,
+  buildUserText,
+  buildSellingPointsSystemPrompt,
+  buildSellingPointsUserText,
+  buildTightenSystemPrompt,
+  buildTightenUserText,
+  type DescriptionFacts,
+  type DetailFact,
+} from '~/lib/generate-description/prompt';
+import { plainTextToPortableText, portableTextToPlainText } from '~/lib/portable-text';
+import { DESCRIPTION_TONES, type DescriptionTone } from '~/config/dealer';
 import { checkRateLimit } from '~/lib/rate-limit';
 import { urlFor } from '~/sanity/lib/image';
 
@@ -36,6 +58,44 @@ const json = (body: unknown, status = 200, headers?: Record<string, string>): Re
 
 // Cap the number of photos sent on the vision path — bounds token cost/latency.
 const MAX_IMAGES = 4;
+
+// The editor-assistant actions. An ABSENT action is treated as 'describe' so the
+// existing "Generate description" behaviour is preserved byte-for-byte.
+const ACTIONS = ['describe', 'sellingPoints', 'tighten', 'tone'] as const;
+type AssistAction = (typeof ACTIONS)[number];
+
+// Cap on selling points returned — a scannable list, not an essay.
+const MAX_SELLING_POINTS = 5;
+
+/**
+ * Reduce a `details[]` member to a grounded label/value pair. Display value
+ * preference: explicit `value` → number(+unit) → boolean(Yes/No) → date. Only
+ * REAL data is surfaced — nothing is invented or defaulted.
+ */
+function toDetailFact(d: DraftDetail): DetailFact | null {
+  const label = (d.label ?? '').trim();
+  if (!label) return null;
+  let value = (d.value ?? '').trim();
+  if (!value) {
+    if (typeof d.valueNumber === 'number' && Number.isFinite(d.valueNumber)) {
+      value = d.unit?.trim() ? `${d.valueNumber} ${d.unit.trim()}` : String(d.valueNumber);
+    } else if (typeof d.valueBoolean === 'boolean') {
+      value = d.valueBoolean ? 'Yes' : 'No';
+    } else if (d.valueDate?.trim()) {
+      value = d.valueDate.trim();
+    }
+  }
+  return { label, value };
+}
+
+/** Parse the model's selling-points output (one per line) into clean strings. */
+function parseSellingPoints(raw: string): string[] {
+  return raw
+    .split('\n')
+    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+    .filter((line) => line.length > 0)
+    .slice(0, MAX_SELLING_POINTS);
+}
 
 export const POST: APIRoute = async ({ request }) => {
   const cfg = dealerConfig.ai.generateDescription;
@@ -62,6 +122,23 @@ export const POST: APIRoute = async ({ request }) => {
   const rawId = (body as { listingId?: unknown })?.listingId;
   const listingId = typeof rawId === 'string' ? rawId.trim() : '';
   if (!listingId) return json({ error: 'Missing "listingId" (a non-empty string).' }, 400);
+
+  // Action dispatch. Absent → 'describe' (today's behaviour). Unknown → 400.
+  const rawAction = (body as { action?: unknown })?.action;
+  const action: AssistAction =
+    rawAction == null ? 'describe' : (rawAction as AssistAction);
+  if (!ACTIONS.includes(action)) return json({ error: 'Unknown action.' }, 400);
+
+  // The 'tone' action needs a valid tone from the dealer's tone vocabulary
+  // (config as data — never hardcoded here). Reject anything off-vocabulary.
+  let requestedTone: DescriptionTone | undefined;
+  if (action === 'tone') {
+    const rawTone = (body as { tone?: unknown })?.tone;
+    if (typeof rawTone !== 'string' || !DESCRIPTION_TONES.includes(rawTone as DescriptionTone)) {
+      return json({ error: 'Missing or unknown "tone".' }, 400);
+    }
+    requestedTone = rawTone as DescriptionTone;
+  }
 
   // Per-IP rate limiting (Cloudflare KV). Guard when unbound; fail OPEN so a KV
   // hiccup never blocks a dealer clicking the button.
@@ -118,8 +195,42 @@ export const POST: APIRoute = async ({ request }) => {
     specs: draft.vehicleSpecs ?? {},
     dealerNotes: draft.dealerNotes ?? '',
   };
-  const systemPrompt = buildSystemPrompt(dealerConfig.identity.name, dealerConfig.ai.descriptionVoice);
-  const userText = buildUserText(facts);
+  const details: DetailFact[] = (draft.details ?? [])
+    .map(toDetailFact)
+    .filter((d): d is DetailFact => d !== null);
+
+  // The 'tone' action rewrites the description in a caller-chosen tone; every
+  // other action uses the dealer's configured voice. Tone stays config-scoped —
+  // the dealer's locale is preserved, only the tone knob varies.
+  const voice =
+    action === 'tone' && requestedTone
+      ? { tone: requestedTone, locale: dealerConfig.ai.descriptionVoice.locale }
+      : dealerConfig.ai.descriptionVoice;
+
+  // Build the per-action system + user prompt. 'tighten' reads the CURRENT
+  // description server-side (never client-supplied) and bails if there's none.
+  let systemPrompt: string;
+  let userText: string;
+  if (action === 'sellingPoints') {
+    systemPrompt = buildSellingPointsSystemPrompt(dealerConfig.identity.name, voice);
+    userText = buildSellingPointsUserText(facts, details);
+  } else if (action === 'tighten') {
+    const currentDescription = portableTextToPlainText(draft.description);
+    if (!currentDescription) {
+      return json({ error: 'There is no description yet to tighten — generate one first.' }, 200);
+    }
+    systemPrompt = buildTightenSystemPrompt(dealerConfig.identity.name, voice);
+    userText = buildTightenUserText(facts, currentDescription, details);
+  } else {
+    // 'describe' (default) and 'tone' both generate a fresh full description.
+    systemPrompt = buildSystemPrompt(dealerConfig.identity.name, voice);
+    userText = buildUserText(facts);
+  }
+
+  // Vision applies only to actions that generate a fresh full description from
+  // scratch ('describe' / 'tone'), where photos add grounding. 'tighten' works
+  // on existing prose and 'sellingPoints' on structured specs — both text-only.
+  const visionEligible = action === 'describe' || action === 'tone';
 
   // Vision opt-out: send photos only when the RESOLVED PRIMARY writing model
   // supports vision AND the listing has image assets. If the tier falls through
@@ -133,7 +244,7 @@ export const POST: APIRoute = async ({ request }) => {
     .slice(0, MAX_IMAGES);
 
   let userContent: string | AIContentPart[];
-  if (supportsVision && imageRefs.length) {
+  if (visionEligible && supportsVision && imageRefs.length) {
     const parts: AIContentPart[] = [{ type: 'text', text: userText }];
     for (const ref of imageRefs) {
       const url = urlFor(ref).width(1024).fit('max').url();
@@ -152,6 +263,17 @@ export const POST: APIRoute = async ({ request }) => {
   // One-shot generation on the `writing` tier (prose, not structured JSON).
   try {
     const { content } = await generate({ capability: 'writing', messages });
+
+    // Selling points return a string[]; the three description actions return
+    // Portable Text under the SAME `description` key the component already reads.
+    if (action === 'sellingPoints') {
+      const sellingPoints = parseSellingPoints(content);
+      if (!sellingPoints.length) {
+        return json({ error: 'No selling points came back — please try again.' }, 200);
+      }
+      return json({ sellingPoints }, 200);
+    }
+
     const description = plainTextToPortableText(content);
     if (!description.length) {
       return json({ error: 'The generated description was empty — please try again.' }, 200);

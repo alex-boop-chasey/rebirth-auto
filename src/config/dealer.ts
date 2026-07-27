@@ -575,12 +575,17 @@ export interface DealerConfig {
 // maps to a GROQ order clause). `newest` is the safe default.
 export type SortKey = 'newest' | 'price-asc' | 'price-desc' | 'year-desc' | 'odo-asc';
 
-// The voices the AI description generator can write in. Kept a literal union so a
-// config with an unknown tone fails typecheck rather than reaching the prompt.
-export type DescriptionTone =
-  | 'confident-professional'
-  | 'friendly-casual'
-  | 'premium-restrained';
+// The voices the AI description generator can write in. Kept as a `const` tuple —
+// the single source of truth — so it is available BOTH as a runtime list (the
+// Studio tone selector reads it; the endpoint validates against it — nothing
+// hardcodes the tone vocabulary) AND as a literal-union type derived from it (a
+// config with an unknown tone fails typecheck rather than reaching the prompt).
+export const DESCRIPTION_TONES = [
+  'confident-professional',
+  'friendly-casual',
+  'premium-restrained',
+] as const;
+export type DescriptionTone = (typeof DESCRIPTION_TONES)[number];
 
 // Body-type codes mirror the Sanity vehicleSpecs enum. Kept as a literal union so
 // a config that lists an unknown code fails typecheck rather than at runtime.

@@ -9,6 +9,18 @@
  * bundle); the token comes from the Worker runtime env (see ./env.ts).
  */
 import { createClient } from '@sanity/client';
+import type { PortableTextBlock } from '@portabletext/types';
+
+/** A single `details[]` member (the loose key/value escape hatch). */
+export interface DraftDetail {
+  label?: string;
+  value?: string;
+  valueType?: string;
+  valueNumber?: number;
+  unit?: string;
+  valueBoolean?: boolean;
+  valueDate?: string;
+}
 
 export interface DraftListing {
   _id: string;
@@ -24,6 +36,10 @@ export interface DraftListing {
   trim?: string;
   price?: number;
   vehicleSpecs?: Record<string, unknown>;
+  /** Loose extras (sunroof, tow bar, service history). Grounds selling points. */
+  details?: DraftDetail[];
+  /** Current Portable Text description — read server-side for the "tighten" action. */
+  description?: PortableTextBlock[];
   dealerNotes?: string;
   /** Image members with their asset reference — used to build CDN URLs for vision. */
   images?: Array<{ asset?: { _ref?: string } }>;
@@ -32,6 +48,8 @@ export interface DraftListing {
 const PROJECTION = `{
   _id, title, category, make, model, badge, series, colour, engine, doors, trim, price,
   vehicleSpecs{ bodyType, transmission, fuelType, driveType, seatCount, year, odometer, condition },
+  details[]{ label, value, valueType, valueNumber, unit, valueBoolean, valueDate },
+  description,
   dealerNotes, images[]{ asset }
 }`;
 
