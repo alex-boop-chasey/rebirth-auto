@@ -1,0 +1,364 @@
+---
+/**
+ * Dealer listing-creation PWA — the /capture surface.
+ *
+ * A STANDALONE, mobile-first, installable surface (its OWN manifest + a service
+ * worker SCOPED to /capture) — deliberately NOT built on the shopper `Layout`, so
+ * nothing here (least of all the service worker) can bleed onto the main site.
+ *
+ * SSR-guarded by `dealerConfig.capture.enabled` (DEFAULT OFF): when off this
+ * redirects home, matching the /api/capture/* endpoints that 404 while off.
+ *
+ * The flow (capture → assemble → review → create draft) is driven client-side by
+ * a self-contained inline script that talks to /api/capture/*. Voice uses the Web
+ * Speech API (feature-detected; the upgrade point to Whisper/Deepgram is marked).
+ * The "Create draft" button ends at the STUB writer — no real Sanity write.
+ */
+import { dealerConfig } from '~/config/dealer';
+
+export const prerender = false;
+
+// DEFAULT OFF — a separate, opt-in dealer surface. Redirect home while disabled.
+if (!dealerConfig.capture.enabled) {
+  return Astro.redirect('/');
+}
+
+const cfg = dealerConfig.capture;
+const { copy } = cfg;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <link rel="manifest" href="/capture/manifest.webmanifest" />
+    <link rel="icon" href="/capture/icon.svg" type="image/svg+xml" />
+    <title>{copy.appName} — {copy.heading}</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #0b1220;
+        color: #e7ecf5;
+        -webkit-font-smoothing: antialiased;
+        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      }
+      main { max-width: 640px; margin: 0 auto; padding: 20px 16px 64px; }
+      h1 { font-size: 1.4rem; margin: 0 0 6px; }
+      .sub { color: #9fb0cc; font-size: 0.92rem; margin: 0 0 20px; }
+      section {
+        background: #121b2e;
+        border: 1px solid #22314f;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      section h2 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: #8ea6cf; margin: 0 0 12px; }
+      label { display: block; font-size: 0.82rem; color: #b7c6e0; margin: 0 0 4px; }
+      input[type=text], input[type=number], textarea, select {
+        width: 100%; padding: 10px 12px; font-size: 1rem; color: #e7ecf5;
+        background: #0d1626; border: 1px solid #2b3c5e; border-radius: 10px;
+      }
+      textarea { min-height: 84px; resize: vertical; }
+      .row { display: flex; gap: 8px; }
+      .row > * { flex: 1; }
+      button {
+        font: inherit; font-weight: 600; cursor: pointer; border: 0; border-radius: 10px;
+        padding: 12px 16px; background: #3b6fe0; color: #fff; width: 100%;
+      }
+      button.secondary { background: #22314f; color: #cdd9f0; }
+      button:disabled { opacity: 0.5; cursor: default; }
+      .hint { font-size: 0.78rem; color: #7f92b4; margin: 6px 0 0; }
+      .field { padding: 10px 0; border-bottom: 1px solid #1c2942; }
+      .field:last-child { border-bottom: 0; }
+      .field-head { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
+      .field-name { font-size: 0.82rem; color: #b7c6e0; flex: 1; }
+      .badge { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
+      .src { background: #1e2c48; color: #9fb7e6; }
+      .conf-high { background: #14351f; color: #6ee7a0; }
+      .conf-medium { background: #3a3413; color: #e2cf6b; }
+      .conf-low { background: #3a1720; color: #f2879f; }
+      .field.review { background: #1a1220; border-left: 3px solid #f2879f; padding-left: 10px; border-radius: 6px; }
+      .prompt { background: #241a30; border: 1px solid #4a3a63; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+      .prompt p { margin: 0 0 8px; font-size: 0.86rem; color: #d9c9f0; }
+      .issues { list-style: none; padding: 0; margin: 8px 0 0; }
+      .issues li { font-size: 0.82rem; padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; }
+      .issue-error { background: #33141c; color: #f2879f; }
+      .issue-warning { background: #33290f; color: #e6c977; }
+      .ok { background: #12331f; color: #7ee0a3; padding: 12px; border-radius: 10px; font-size: 0.9rem; }
+      .demo-note { font-size: 0.72rem; color: #7f92b4; margin-top: 10px; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{copy.heading}</h1>
+      <p class="sub">{copy.subheading}</p>
+
+      <!-- STEP 1: capture inputs -->
+      <div id="capture-step">
+        <section>
+          <h2>VIN / rego</h2>
+          <label for="vin">Enter a VIN (17 chars) or registration</label>
+          <div class="row">
+            <input type="text" id="vin" placeholder="e.g. JTMRWRFVXND123456 or 123ABC" autocomplete="off" />
+            <button type="button" id="lookup-btn" class="secondary" style="flex:0 0 auto;width:auto;">{copy.lookupLabel}</button>
+          </div>
+          <p class="hint" id="lookup-status"></p>
+        </section>
+
+        <section>
+          <h2>Photos</h2>
+          <label for="photos">Add photos of the car (used for colour, body &amp; condition)</label>
+          <input type="file" id="photos" accept="image/*" multiple capture="environment" />
+          <p class="hint" id="photos-status">No photos added.</p>
+        </section>
+
+        <section>
+          <h2>Voice note</h2>
+          <p class="hint" id="voice-support"></p>
+          <div class="row" style="margin-bottom:8px;">
+            <button type="button" id="voice-btn" class="secondary" hidden>Start voice note</button>
+          </div>
+          <label for="transcript">Notes (odometer, price, condition, owner history, marks)</label>
+          <textarea id="transcript" placeholder="e.g. One owner, full service history, 142,000 km, asking $25,000, used, tow bar."></textarea>
+        </section>
+
+        <button type="button" id="assemble-btn">{copy.assembleLabel}</button>
+        <p class="hint" id="assemble-status"></p>
+      </div>
+
+      <!-- STEP 2: review -->
+      <div id="review-step" hidden>
+        <div class="prompt" id="ref-prompt" hidden>
+          <p id="ref-prompt-text">{copy.createNewReferencePrompt}</p>
+          <div class="row">
+            <button type="button" id="ref-create-new" class="secondary">Create as new</button>
+          </div>
+        </div>
+
+        <section>
+          <h2>Review draft</h2>
+          <div class="field">
+            <div class="field-head"><span class="field-name">Title</span></div>
+            <input type="text" id="f-title" />
+          </div>
+          <div id="fields"></div>
+          <div class="field">
+            <div class="field-head"><span class="field-name">Dealer notes (for AI, never shown to buyers)</span></div>
+            <textarea id="f-dealerNotes"></textarea>
+          </div>
+        </section>
+
+        <section id="validation-section" hidden>
+          <h2>Validation</h2>
+          <ul class="issues" id="issues"></ul>
+        </section>
+
+        <button type="button" id="create-btn">{copy.createDraftLabel}</button>
+        <div id="create-result" hidden></div>
+        <p class="demo-note">
+          Demo scaffold: every external (VIN decode, photo vision, voice transcription) is stubbed,
+          and "Create draft" ends at a stubbed writer — no listing is written to Sanity.
+        </p>
+        <div class="row" style="margin-top:12px;">
+          <button type="button" id="back-btn" class="secondary">Start over</button>
+        </div>
+      </div>
+    </main>
+
+    <div id="voice-copy" data-voice-unsupported={copy.voiceUnsupported} hidden></div>
+
+    <script is:inline>
+      // Register the service worker SCOPED to /capture only — it lives at
+      // /capture/sw.js (max scope /capture/) and is registered with an explicit
+      // scope, so it can never control the shopper site at /.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('/capture/sw.js', { scope: '/capture/' })
+            .catch(function (err) { console.warn('[capture] SW registration failed', err); });
+        });
+      }
+
+      (function () {
+        var VS_KEYS = ['bodyType', 'transmission', 'fuelType', 'driveType', 'seatCount', 'year', 'odometer', 'condition'];
+        var NUM_KEYS = { doors: 1, price: 1, seatCount: 1, year: 1, odometer: 1 };
+        var photoRefs = [];
+
+        function $(id) { return document.getElementById(id); }
+        function setStatus(id, msg) { $(id).textContent = msg || ''; }
+
+        // --- VIN/rego lookup ---
+        $('lookup-btn').addEventListener('click', function () {
+          var v = $('vin').value.trim();
+          if (!v) { setStatus('lookup-status', 'Enter a VIN or rego first.'); return; }
+          setStatus('lookup-status', 'Looking up…');
+          fetch('/api/capture/lookup', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vinOrRego: v }),
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.error) { setStatus('lookup-status', data.error); return; }
+            if (!data.oemSpec) { setStatus('lookup-status', 'No factory match — the photo & notes will fill the draft.'); return; }
+            var s = data.oemSpec;
+            var label = [s.year, s.make, s.model, s.badge].filter(Boolean).join(' ');
+            var flags = (s.status && (s.status.writtenOff || s.status.stolen)) ? ' ⚠ status flag!' : '';
+            setStatus('lookup-status', 'Found: ' + label + ' (stub decode)' + flags);
+          }).catch(function () { setStatus('lookup-status', 'Lookup failed — try again.'); });
+        });
+
+        // --- Photos → opaque deterministic refs (no upload; vision is stubbed) ---
+        $('photos').addEventListener('change', function (e) {
+          var files = e.target.files || [];
+          photoRefs = [];
+          for (var i = 0; i < files.length; i++) {
+            photoRefs.push('photo:' + files[i].name + ':' + files[i].size);
+          }
+          setStatus('photos-status', photoRefs.length ? (photoRefs.length + ' photo(s) added.') : 'No photos added.');
+        });
+
+        // --- Voice via Web Speech API (feature-detected) ---
+        // UPGRADE POINT: swap this browser Web Speech capture for a Whisper/Deepgram
+        // transcription upload (see TODO_KEYS.md — voice transcription).
+        var SR = window['SpeechRecognition'] || window['webkitSpeechRecognition'];
+        if (SR) {
+          setStatus('voice-support', 'Tap to dictate — your words fill the notes below.');
+          var btn = $('voice-btn'); btn.hidden = false;
+          var rec = new SR(); rec.continuous = true; rec.interimResults = false; rec.lang = 'en-AU';
+          var listening = false;
+          rec.onresult = function (ev) {
+            var t = '';
+            for (var i = ev.resultIndex; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+            var ta = $('transcript'); ta.value = (ta.value ? ta.value + ' ' : '') + t.trim();
+          };
+          rec.onend = function () { listening = false; btn.textContent = 'Start voice note'; };
+          btn.addEventListener('click', function () {
+            if (listening) { rec.stop(); return; }
+            try { rec.start(); listening = true; btn.textContent = 'Stop (listening…)'; }
+            catch (e2) { listening = false; }
+          });
+        } else {
+          var vc = $('voice-copy');
+          setStatus('voice-support', (vc && vc.dataset.voiceUnsupported) || 'Voice capture is not supported in this browser — type your notes below.');
+        }
+
+        // --- Assemble ---
+        $('assemble-btn').addEventListener('click', function () {
+          setStatus('assemble-status', 'Assembling…');
+          fetch('/api/capture/extract', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vinOrRego: $('vin').value.trim(),
+              imageRefs: photoRefs,
+              transcript: $('transcript').value,
+            }),
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.error) { setStatus('assemble-status', data.error); return; }
+            renderReview(data);
+            $('capture-step').hidden = true;
+            $('review-step').hidden = false;
+            window.scrollTo(0, 0);
+          }).catch(function () { setStatus('assemble-status', 'Assembly failed — try again.'); });
+        });
+
+        function badge(cls, text) {
+          var s = document.createElement('span'); s.className = 'badge ' + cls; s.textContent = text; return s;
+        }
+
+        function renderReview(data) {
+          var candidate = data.candidate;
+          var fields = candidate.fields || {};
+          $('f-title').value = candidate.title ? candidate.title.value : '';
+          $('f-dealerNotes').value = candidate.dealerNotes ? candidate.dealerNotes.value : '';
+
+          // Make/model "create new?" prompt (resolve-never-invent).
+          var ref = candidate.reference || {};
+          $('ref-prompt').hidden = !ref.promptCreateNew;
+
+          var wrap = $('fields'); wrap.innerHTML = '';
+          Object.keys(fields).forEach(function (key) {
+            var f = fields[key];
+            var div = document.createElement('div');
+            div.className = 'field' + (f.needsReview ? ' review' : '');
+            var head = document.createElement('div'); head.className = 'field-head';
+            var name = document.createElement('span'); name.className = 'field-name'; name.textContent = key;
+            head.appendChild(name);
+            head.appendChild(badge('src', f.source));
+            head.appendChild(badge('conf-' + f.confidence, f.confidence));
+            div.appendChild(head);
+            var input = document.createElement('input');
+            input.type = NUM_KEYS[key] ? 'number' : 'text';
+            input.value = f.value;
+            input.dataset.key = key;
+            div.appendChild(input);
+            wrap.appendChild(div);
+          });
+
+          renderValidation(data.validation);
+        }
+
+        function renderValidation(validation) {
+          var sec = $('validation-section'); var ul = $('issues'); ul.innerHTML = '';
+          if (!validation || !validation.issues || !validation.issues.length) { sec.hidden = true; return; }
+          sec.hidden = false;
+          validation.issues.forEach(function (iss) {
+            var li = document.createElement('li');
+            li.className = 'issue-' + iss.severity;
+            li.textContent = '[' + iss.severity + '] ' + iss.field + ': ' + iss.message;
+            ul.appendChild(li);
+          });
+        }
+
+        $('ref-create-new').addEventListener('click', function () {
+          $('ref-prompt').hidden = true; // dealer accepts creating a new make/model
+        });
+
+        function gatherDraft() {
+          var draft = { vehicleSpecs: {} };
+          draft.title = $('f-title').value.trim();
+          draft.dealerNotes = $('f-dealerNotes').value.trim();
+          var inputs = $('fields').querySelectorAll('input[data-key]');
+          for (var i = 0; i < inputs.length; i++) {
+            var key = inputs[i].dataset.key;
+            var val = inputs[i].value;
+            if (val === '') continue;
+            if (NUM_KEYS[key]) val = Number(val);
+            if (VS_KEYS.indexOf(key) >= 0) draft.vehicleSpecs[key] = val; else draft[key] = val;
+          }
+          return draft;
+        }
+
+        // --- Create draft (STUB — no real Sanity write) ---
+        $('create-btn').addEventListener('click', function () {
+          var btn = $('create-btn'); btn.disabled = true; btn.textContent = 'Creating…';
+          fetch('/api/capture/create-draft', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ draft: gatherDraft() }),
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            var box = $('create-result'); box.hidden = false;
+            if (data.error) {
+              box.className = 'issue-error'; box.style.padding = '12px'; box.style.borderRadius = '10px';
+              box.textContent = data.error;
+              renderValidation(data.validation);
+            } else {
+              box.className = 'ok';
+              box.textContent = 'Draft assembled (' + data.result.draftId + '). ' + data.result.note;
+            }
+            btn.disabled = false; btn.textContent = 'Create draft';
+          }).catch(function () {
+            btn.disabled = false; btn.textContent = 'Create draft';
+          });
+        });
+
+        $('back-btn').addEventListener('click', function () {
+          $('review-step').hidden = true; $('capture-step').hidden = false;
+          $('create-result').hidden = true; window.scrollTo(0, 0);
+        });
+      })();
+    </script>
+  </body>
+</html>

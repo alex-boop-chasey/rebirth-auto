@@ -547,6 +547,62 @@ export interface DealerConfig {
     };
   };
   /**
+   * Dealer listing-creation PWA ("capture") — the standalone `/capture` surface
+   * where a dealer photographs a car, records a short voice note, and/or enters a
+   * rego/VIN and gets a complete DRAFT listing to review before publishing. A
+   * SEPARATE dealer surface (its OWN installable PWA, scoped service worker), so
+   * it is deliberately its own block (not under `ai`/`chat`) and DEFAULT OFF — a
+   * dealer opts in. Every external it touches is STUBBED (VIN/OEM lookup, vision
+   * extraction, voice transcription) and the Sanity write is OWNER-GATED: the
+   * pipeline only ever assembles + validates a draft and hands it to a STUB
+   * writer (src/stubs/listing-writer.ts) that returns a MOCK id — no real Sanity
+   * write ever happens here, and no write token is ever client-side (see
+   * TODO_KEYS.md). Every dealer-facing string/toggle lives here so a tenant swap
+   * restyles it without a code edit.
+   */
+  capture: {
+    /** Master on/off — a SEPARATE dealer surface, DEFAULT OFF (opt-in). While off,
+     *  the /capture pages redirect home and the /api/capture/* endpoints return 404. */
+    enabled: boolean;
+    /** Per-IP rate limit for the /api/capture/* endpoints (its OWN `capture:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /**
+     * Origin allowlist for the capture endpoints (same discipline as
+     * ai.studioOrigins) — the endpoints only accept requests from the dealer's
+     * own PWA origin. NEVER hardcode the origin in an endpoint; it reads this.
+     */
+    allowedOrigins: string[];
+    /** Hard cap on photos accepted in one extraction (bounds work + payload). */
+    maxImages: number;
+    /** Hard cap on the character length of a submitted voice transcript. */
+    maxTranscriptLength: number;
+    /**
+     * Minimum fuzzy-match score (0–1) the make/model reference resolver must reach
+     * against real inventory to count as a CONFIDENT match. Below this the UI is
+     * signalled to prompt "create new?" — a reference is NEVER silently invented.
+     */
+    referenceMatchThreshold: number;
+    /** Front-of-house copy for the capture PWA (installable name, headings, prompts). */
+    copy: {
+      /** PWA short name / nav label. */
+      appName: string;
+      /** Page H1 on the capture screen. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Label for the VIN/rego lookup submit. */
+      lookupLabel: string;
+      /** Label for the "assemble draft" action. */
+      assembleLabel: string;
+      /** Label for the final "create draft" button (draft-only, never publish). */
+      createDraftLabel: string;
+      /** Message shown when the browser lacks Web Speech (voice) support. */
+      voiceUnsupported: string;
+      /** Prompt shown when make/model can't be confidently resolved. */
+      createNewReferencePrompt: string;
+    };
+  };
+  /**
    * Third-party syndication integrations — pushing a listing OUT to external
    * marketplaces. Today: carsales.com.au. The upload itself is STUBBED (see
    * docs/briefs/_stub-convention.md and src/stubs/carsales.ts); this block only
@@ -939,6 +995,38 @@ export const dealerConfig: DealerConfig = {
       invalidMessage: 'Please enter a valid email address.',
       rateLimitMessage: 'Too many attempts — please try again later.',
       errorMessage: "Sorry, we couldn't load that account. Please try again.",
+    },
+  },
+  capture: {
+    // DEFAULT OFF — the listing-creation PWA is a SEPARATE dealer surface a dealer
+    // opts into. While off, /capture redirects home and /api/capture/* return 404.
+    // Even when enabled EVERY external is stubbed and the Sanity write is
+    // owner-gated (a mock draft id, never a real write) — see TODO_KEYS.md.
+    enabled: false,
+    // Studio-style authoring volume; still capped per-IP to bound abuse + stub cost.
+    rateLimit: { windowSeconds: 3600, maxRequests: 40 },
+    allowedOrigins: [
+      'http://localhost:4321', // `astro dev`
+      'https://rebirth-listings-auto.alexharris0079.workers.dev', // prod origin
+    ],
+    maxImages: 6,
+    maxTranscriptLength: 2000,
+    // 0.72 → a strong-but-not-exact fuzzy match; below this the UI prompts
+    // "create new?" rather than binding to an inventory make/model.
+    referenceMatchThreshold: 0.72,
+    copy: {
+      appName: 'Rebirth Capture',
+      heading: 'Create a listing',
+      subheading:
+        'Photograph the car, add a quick voice note, and/or enter a rego or VIN. ' +
+        "We'll assemble a draft for you to review — nothing is published automatically.",
+      lookupLabel: 'Look up VIN / rego',
+      assembleLabel: 'Assemble draft',
+      createDraftLabel: 'Create draft (review before publishing)',
+      voiceUnsupported:
+        'Voice capture is not supported in this browser — you can still type notes below.',
+      createNewReferencePrompt:
+        "We couldn't match that make/model to your existing inventory. Create it as new?",
     },
   },
   integrations: {
