@@ -1,0 +1,71 @@
+---
+/**
+ * C3_Contender — one car's row on Rebi's Balance leaderboard (Candidate 3). The
+ * rows physically REORDER (FLIP) as the dials move; each row's score bar is
+ * SEGMENTED by dimension, so you can see WHY a car leads — the weighted
+ * contribution of price, age, km, seats, economy stacked into its total. Every
+ * segment maps to a real, shared normDim score; the value chips are real specs.
+ */
+import { iconSvg } from '../../lib/listing';
+import type { Segment } from './reckon';
+
+interface Props {
+  id: string;
+  name: string;
+  title: string;
+  slug: string;
+  priceDisplay: string;
+  photo: string | null;
+  rank: number;
+  overall: number;
+  segments: Segment[];
+}
+const { id, name, title, slug, priceDisplay, photo, rank, overall, segments } = Astro.props;
+const href = `/listings/${slug}`;
+---
+
+<div class:list={['c3-con', rank === 1 && 'lead']} data-car-id={id}>
+  <button class="c3-remove" type="button" data-remove={id} title="Remove" aria-label={`Remove ${title}`}>
+    <Fragment set:html={iconSvg('cross', 'ic')} />
+  </button>
+
+  <span class="c3-medal" data-rank={rank} aria-label={`Rank ${rank}`}>
+    <span class="c3-medal-num">{rank}</span>
+  </span>
+
+  <a class="c3-thumb" href={href} tabindex="-1" aria-hidden="true">
+    {
+      photo ? (
+        <img src={photo} alt="" loading="lazy" />
+      ) : (
+        <span class="c3-thumb-empty"><Fragment set:html={iconSvg('image', 'ic')} /></span>
+      )
+    }
+  </a>
+
+  <div class="c3-con-main">
+    <div class="c3-con-top">
+      <a class="c3-con-name" href={href}>
+        <span class="c3-crown" aria-hidden="true"><Fragment set:html={iconSvg('sparkle', 'ic')} /></span>
+        {name}
+      </a>
+      <span class="c3-con-price num">{priceDisplay}</span>
+    </div>
+    <div class="c3-bar" data-bar role="presentation">
+      {
+        segments.map((s) => (
+          <span
+            class="c3-seg"
+            data-seg-dim={s.key}
+            style={`width:${s.value}%;--sc:${s.color}`}
+          />
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="c3-score">
+    <span class="c3-score-num num" data-score>{overall}</span>
+    <span class="c3-score-lbl">score</span>
+  </div>
+</div>
