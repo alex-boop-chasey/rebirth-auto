@@ -57,6 +57,15 @@ export interface GroundingContext {
    * grounding/reviews.ts). Undefined by default → contributes nothing.
    */
   reviews?: string | null;
+  /**
+   * Rendered WEB REFERENCE block (OPTIONAL, default-off background from a
+   * dealer-configured hardcoded allowlist of trusted domains/URLs), or
+   * null/undefined when disabled / nothing relevant. EXTERNAL REFERENCE ONLY:
+   * placed AFTER live inventory/focus (with the other external references) so
+   * those keep last-word authority, and it carries no prices/stock/availability
+   * (built in grounding/websearch.ts). Undefined by default → contributes nothing.
+   */
+  webSearch?: string | null;
 }
 
 const DEGRADED_INVENTORY =
@@ -136,6 +145,19 @@ function renderReviewsSection(ctx: GroundingContext): string {
 ${ctx.reviews}`;
 }
 
+/**
+ * Render the OPTIONAL WEB REFERENCE section. Empty (byte-identical no-op) when
+ * there's no web reference — the block carries its own delimiters and "external
+ * allowlisted sources, not our inventory" framing (built in
+ * grounding/websearch.ts). Mirrors renderReviewsSection.
+ */
+function renderWebSearchSection(ctx: GroundingContext): string {
+  if (!ctx.webSearch) return '';
+  return `
+
+${ctx.webSearch}`;
+}
+
 export function buildSystemPrompt(ctx: GroundingContext = {}): string {
   const businessFacts = ctx.businessFacts ?? BUSINESS_KNOWLEDGE;
   const inventorySection = renderInventorySection(ctx);
@@ -143,6 +165,7 @@ export function buildSystemPrompt(ctx: GroundingContext = {}): string {
   const journeySection = renderJourneySection(ctx);
   const manufacturerSection = renderManufacturerSection(ctx);
   const reviewsSection = renderReviewsSection(ctx);
+  const webSearchSection = renderWebSearchSection(ctx);
   return `You are "Rebi", the friendly AI assistant on the Rebirth Auto website
 (https://rebirthauto.com.au). Rebirth Auto is a local car dealership. You help visitors —
 mostly people looking to buy, finance, service, or trade in a vehicle —
@@ -271,7 +294,7 @@ afterwards, just carry on normally.
 
 # KNOWLEDGE BASE (your only source of truth for business facts)
 ${businessFacts}
-${journeySection}${inventorySection}${focusSection}${manufacturerSection}${reviewsSection}
+${journeySection}${inventorySection}${focusSection}${manufacturerSection}${reviewsSection}${webSearchSection}
 
 Now help the visitor. Keep it friendly, useful, and short.`;
 }

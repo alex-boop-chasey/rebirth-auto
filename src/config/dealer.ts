@@ -193,6 +193,28 @@ export interface DealerConfig {
         /** Hard cap on the number of pros and of cons rendered into the block. */
         maxItems: number;
       };
+      /**
+       * OPTIONAL allowlisted web-reference source (src/chatbot/grounding/
+       * websearch.ts, stub in src/stubs/websearch.ts). Additive, fail-open,
+       * CONTEXT ONLY: when enabled, the visitor's message is used as a query into a
+       * hardcoded ALLOWLIST of trusted domains/URLs and any relevant, PRICE-FREE
+       * "external, not our inventory" snippet is folded in. DEFAULT OFF — with
+       * `enabled: false` the composed prompt + firewall are identical to today, and
+       * the block is excluded from the firewall allow-list even when on. Only
+       * allowlisted-domain URLs can ever appear (enforced in the stub).
+       */
+      webSearch: {
+        /** Master on/off. False keeps Rebi byte-identical to today. */
+        enabled: boolean;
+        /**
+         * Dealer-editable allowlist of TRUSTED domains/URLs (config as data). The
+         * ONLY sources a reference snippet can come from — a non-allowlisted URL is
+         * never returned. Entries may be bare domains or full URLs.
+         */
+        allowlist: readonly string[];
+        /** Hard cap on the number of reference snippets rendered into the block. */
+        maxItems: number;
+      };
     };
     /**
      * Conversation priming/context seam (the "Ask about this car" button and,
@@ -643,6 +665,22 @@ export const dealerConfig: DealerConfig = {
       },
       reviews: {
         enabled: false,
+        maxItems: 3,
+      },
+      // OPTIONAL allowlisted web-reference source — DEFAULT OFF. With
+      // enabled:false the composed system prompt and the anti-hallucination
+      // firewall are byte-identical to today. `allowlist` is dealer-editable
+      // config-as-data: the ONLY trusted domains/URLs a reference snippet may come
+      // from (a manufacturer site + AU government / safety sources here). Flip to
+      // true to fold the external, price-free reference block (see
+      // grounding/websearch.ts).
+      webSearch: {
+        enabled: false,
+        allowlist: [
+          'ancap.com.au',
+          'greenvehicleguide.gov.au',
+          'mazda.com.au',
+        ],
         maxItems: 3,
       },
     },

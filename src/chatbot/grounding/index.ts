@@ -21,6 +21,7 @@ import { resolveFocus } from './context';
 import { resolveJourney } from './journey';
 import { resolveManufacturer } from './manufacturer';
 import { resolveReviews } from './reviews';
+import { resolveWebSearch } from './websearch';
 import { CAR_MAKES, extractPriceValues, findKnownMakes, type GroundingFacts } from './verify';
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
@@ -121,6 +122,21 @@ export async function buildGroundedSystemPrompt(
     console.error('[grounding] Reviews fold failed (omitting reviews)', err);
   }
 
+  // Allowlisted web reference — OPTIONAL, default-off, resolved INDEPENDENTLY in
+  // its own try/catch. CONTEXT ONLY (external background from a hardcoded
+  // allowlist of trusted domains/URLs, no prices/stock), folded AFTER
+  // inventory/focus. Contributes nothing unless the dealer flips
+  // `grounding.webSearch.enabled`.
+  let webSearch: string | null = null;
+  try {
+    if (cfg.grounding.webSearch.enabled) {
+      const useStub = await useStubFor('WEBSEARCH_API_KEY', 'STUB_WEBSEARCH');
+      webSearch = await resolveWebSearch(userMessage, cfg.grounding.webSearch, useStub);
+    }
+  } catch (err) {
+    console.error('[grounding] Web search fold failed (omitting web search)', err);
+  }
+
   // Conversation focus is resolved INDEPENDENTLY of inventory grounding: a chat
   // primed from a listing should still be grounded on that vehicle even if the
   // dealer has broad inventory grounding turned off. Fail-open (null on miss).
@@ -135,12 +151,12 @@ export async function buildGroundedSystemPrompt(
   // here would suppress priming (the bug the critic flagged) and would also drop
   // continuity when inventory grounding is off, so we key on focus OR journey.
   if (!cfg.grounding.enabled) {
-    if (!focus && !journey && !manufacturer && !reviews) return null;
+    if (!focus && !journey && !manufacturer && !reviews && !webSearch) return null;
     // Base carries the inventory-bearing/continuity blocks; the OPTIONAL external
     // references are added to the DISPLAY prompt but EXCLUDED from the firewall
     // allow-list (see buildFacts call) so they can never widen it.
     const base = { focus, journey };
-    const prompt = buildSystemPrompt({ ...base, manufacturer, reviews });
+    const prompt = buildSystemPrompt({ ...base, manufacturer, reviews, webSearch });
     // A resolved focus is a specific-vehicle block → inventory-bearing; a journey
     // or external reference alone carries no prices/specs, so NOT inventory-bearing.
     return { prompt, facts: buildFacts(buildSystemPrompt(base), focus !== null) };
@@ -171,7 +187,7 @@ export async function buildGroundedSystemPrompt(
   // derived from. The OPTIONAL external references are added to the DISPLAY prompt
   // only; the allow-list is built from `base` WITHOUT them (see buildFacts below).
   const base = { businessFacts, overview, matches, available, focus, journey };
-  const prompt = buildSystemPrompt({ ...base, manufacturer, reviews });
+  const prompt = buildSystemPrompt({ ...base, manufacturer, reviews, webSearch });
 
   // Inventory-bearing (→ the streaming path BUFFERS the whole reply before any of
   // it reaches the browser). True when either:
@@ -186,9 +202,9 @@ export async function buildGroundedSystemPrompt(
   const listsVehicles = (s: string | null): boolean => !!s && /(^|\n)\s*\d+\.\s/.test(s);
   const hasInventory = focus !== null || listsVehicles(matches);
 
-  // Firewall allow-list from `base` (no external references) so a manufacturer or
-  // review reference can NEVER add a price or a make to the allow-list. When both
-  // optional flags are off, `base` === the composed prompt, so this is identical
-  // to today.
+  // Firewall allow-list from `base` (no external references) so a manufacturer,
+  // review, or web reference can NEVER add a price or a make to the allow-list.
+  // When all optional flags are off, `base` === the composed prompt, so this is
+  // identical to today.
   return { prompt, facts: buildFacts(buildSystemPrompt(base), hasInventory) };
 }
