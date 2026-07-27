@@ -17,6 +17,7 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 | Service | Env flag | Credential needed | Where to add | Unlocks | Effort |
 |---------|----------|-------------------|--------------|---------|--------|
 | Redbook trade-in | STUB_REDBOOK | REDBOOK_API_KEY | .dev.vars / wrangler secret | live trade-in valuations | ~1 day (API contract + mapping) |
+| Email alerts | STUB_EMAIL | RESEND_API_KEY | .dev.vars / wrangler secret | real confirmation + new-match alert emails | ~0.5 day (provider SDK) |
 
 ## Owner-gated data writes (no autonomous `--commit`)
 
@@ -26,6 +27,7 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 | brand reconciliation | reconcile script `--commit` | review dry-run diff first |
 | fuel-economy backfill | backfill script `--commit` | review dry-run diff first |
 | D1 journey table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod |
+| D1 saved_searches table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod (migration 0004) |
 
 ## Owner infra / account actions
 

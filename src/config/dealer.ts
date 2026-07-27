@@ -318,6 +318,47 @@ export interface DealerConfig {
       loadingLabel: string;
     };
   };
+  /**
+   * Saved searches + email alerts ("save this search, email me new matches").
+   * A shopper saves their current canonical filter query (see listings-query.ts)
+   * and is "alerted" when new matching stock arrives. Email sending is STUBBED
+   * (see docs/briefs/_stub-convention.md and src/stubs/email.ts); persistence is
+   * fail-open Cloudflare D1. Deliberately its OWN block (not under `chat`): it does
+   * not touch Rebi. Every dealer-facing string/toggle lives here so a tenant swap
+   * restyles it without a code edit. The PERIODIC alerting (a scheduled worker that
+   * re-runs saved queries and emails matches) is a separate cron-triggered ticket.
+   */
+  savedSearch: {
+    /** Master on/off — a dealer can hide the "Save this search" affordance without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/saved-search (its OWN `savedsearch:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Front-of-house copy for the save-search affordance and its confirmation email. */
+    copy: {
+      /** Label on the toggle button that reveals the email-capture (e.g. "Save this search"). */
+      toggleLabel: string;
+      /** Heading shown above the email input when the capture is open. */
+      heading: string;
+      /** One-line description under the heading. */
+      description: string;
+      /** Placeholder for the email input. */
+      emailPlaceholder: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Inline success message after a save. */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when the entered email is invalid. */
+      invalidEmailMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+      /** Subject line of the stubbed confirmation email. */
+      emailSubject: string;
+      /** Lead line of the confirmation email body ("We'll email you when new matches arrive."). */
+      emailIntro: string;
+    };
+  };
 }
 
 // Sort options are a fixed whitelist (see src/lib/listings-query.ts for how each
@@ -559,6 +600,25 @@ export const dealerConfig: DealerConfig = {
         "Bring it in and we'll confirm with a quick inspection.",
       submitLabel: 'Get my estimate',
       loadingLabel: 'Valuing your car…',
+    },
+  },
+  savedSearch: {
+    enabled: true,
+    // Saving a search is a light action but still capped per-IP to bound abuse
+    // (and stubbed-email noise). Generous for a genuine shopper.
+    rateLimit: { windowSeconds: 3600, maxRequests: 20 },
+    copy: {
+      toggleLabel: 'Save this search',
+      heading: 'Get an email when new matches arrive',
+      description: "We'll email you when new stock matches these filters. No account needed.",
+      emailPlaceholder: 'you@example.com',
+      submitLabel: 'Notify me',
+      successMessage: "Saved — we'll email you when new matches arrive.",
+      errorMessage: "Sorry, we couldn't save that search. Please try again.",
+      invalidEmailMessage: 'Please enter a valid email address.',
+      rateLimitMessage: 'You have saved a few searches already — please try again later.',
+      emailSubject: 'Your saved search is set up',
+      emailIntro: "We'll email you when new matches arrive.",
     },
   },
 };
