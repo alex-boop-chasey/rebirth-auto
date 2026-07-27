@@ -130,7 +130,7 @@ const textInput =
               <label class="block">
                 <span class={subLabel}>Min</span>
                 <select name="priceMin" aria-label="Minimum price" class={textInput}>
-                  <option value="">Any</option>
+                  <option value="">Min</option>
                   {priceOpts.map((o) => (
                     <option value={o.value} selected={String(state.priceMin) === o.value}>
                       {o.label}
@@ -141,7 +141,7 @@ const textInput =
               <label class="block">
                 <span class={subLabel}>Max</span>
                 <select name="priceMax" aria-label="Maximum price" class={textInput}>
-                  <option value="">Any</option>
+                  <option value="">Max</option>
                   {priceOpts.map((o) => (
                     <option value={o.value} selected={String(state.priceMax) === o.value}>
                       {o.label}

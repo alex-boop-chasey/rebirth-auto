@@ -23,23 +23,16 @@ export interface TierConfig {
  * has exactly one entry (exhaustiveness) and each entry is a valid `TierConfig`.
  */
 export const TIERS = {
-  // High-volume buyer-facing chat. Free models only. Primary → fallback:
-  // gpt-oss-20b → gemma-4-26b (hermes-3:free was discontinued on OpenRouter's
-  // free tier; gemma-4 is a different lab/architecture, so failures are
-  // uncorrelated with the primary).
-  //
-  // DEFERRED DEMO UPGRADE (Rebi's reply brain → Haiku): the chatbot reply runs on
-  // this free tier today, backstopped by the grounding firewall (src/chatbot/
-  // grounding/verify.ts) so a free model can't ship an invented car/price. When
-  // the demo warrants it, flipping the reply to Haiku is a ONE-LINE change —
-  // point the chatbot at a Haiku-backed tier (e.g. prepend 'anthropic/
-  // claude-haiku-4-5' here, or switch generateReply/streamChatResponse's
-  // `capability` to 'chat-quality'). Everything built around it (LLM refine,
-  // grounding, firewall, concept map) is model-agnostic and needs no rebuild;
-  // Haiku just makes the whole thing markedly better and the firewall near-never
-  // fires. See the standing memory note (phase3-demo-swap-structured-model).
+  // High-volume buyer-facing chat. DEMO FLIP APPLIED: Rebi's reply brain now runs
+  // on Haiku (primary), with the two free models retained as fallbacks tried in
+  // order — Haiku → gpt-oss-20b:free → gemma-4-26b:free (gemma is a different
+  // lab/architecture, so failures stay uncorrelated with the primary). The
+  // grounding firewall (src/chatbot/grounding/verify.ts) still backstops every
+  // reply; everything around it (LLM refine, grounding, concept map) is
+  // model-agnostic. See the standing memory note (phase3-demo-swap-structured-model).
   'chat-cheap': {
     models: [
+      'anthropic/claude-haiku-4-5', // demo flip: Haiku primary (free fallbacks below remain intact)
       'openai/gpt-oss-20b:free',
       'google/gemma-4-26b-a4b-it:free',
     ],
