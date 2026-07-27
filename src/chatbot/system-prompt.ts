@@ -41,6 +41,22 @@ export interface GroundingContext {
    * carries no prices/specs (built in grounding/journey.ts).
    */
   journey?: string | null;
+  /**
+   * Rendered MANUFACTURER REFERENCE block (OPTIONAL, default-off external model
+   * background), or null/undefined when disabled / nothing matched. EXTERNAL
+   * REFERENCE ONLY: placed AFTER live inventory/focus so those keep last-word
+   * authority, and it carries no prices/stock/availability (built in
+   * grounding/manufacturer.ts). Undefined by default → contributes nothing.
+   */
+  manufacturer?: string | null;
+  /**
+   * Rendered INDEPENDENT REVIEW REFERENCE block (OPTIONAL, default-off external
+   * review sentiment), or null/undefined when disabled / nothing matched.
+   * EXTERNAL REFERENCE ONLY: placed AFTER live inventory/focus so those keep
+   * last-word authority, and it carries no prices/stock/availability (built in
+   * grounding/reviews.ts). Undefined by default → contributes nothing.
+   */
+  reviews?: string | null;
 }
 
 const DEGRADED_INVENTORY =
@@ -94,11 +110,39 @@ function renderJourneySection(ctx: GroundingContext): string {
 ${ctx.journey}`;
 }
 
+/**
+ * Render the OPTIONAL MANUFACTURER REFERENCE section. Empty (byte-identical
+ * no-op) when there's no manufacturer reference — the block carries its own
+ * delimiters and "external, not our inventory" framing (built in
+ * grounding/manufacturer.ts). Mirrors renderFocusSection.
+ */
+function renderManufacturerSection(ctx: GroundingContext): string {
+  if (!ctx.manufacturer) return '';
+  return `
+
+${ctx.manufacturer}`;
+}
+
+/**
+ * Render the OPTIONAL INDEPENDENT REVIEW REFERENCE section. Empty (byte-identical
+ * no-op) when there's no review reference — the block carries its own delimiters
+ * and "external, not our inventory" framing (built in grounding/reviews.ts).
+ * Mirrors renderFocusSection.
+ */
+function renderReviewsSection(ctx: GroundingContext): string {
+  if (!ctx.reviews) return '';
+  return `
+
+${ctx.reviews}`;
+}
+
 export function buildSystemPrompt(ctx: GroundingContext = {}): string {
   const businessFacts = ctx.businessFacts ?? BUSINESS_KNOWLEDGE;
   const inventorySection = renderInventorySection(ctx);
   const focusSection = renderFocusSection(ctx);
   const journeySection = renderJourneySection(ctx);
+  const manufacturerSection = renderManufacturerSection(ctx);
+  const reviewsSection = renderReviewsSection(ctx);
   return `You are "Rebi", the friendly AI assistant on the Rebirth Auto website
 (https://rebirthauto.com.au). Rebirth Auto is a local car dealership. You help visitors —
 mostly people looking to buy, finance, service, or trade in a vehicle —
@@ -227,7 +271,7 @@ afterwards, just carry on normally.
 
 # KNOWLEDGE BASE (your only source of truth for business facts)
 ${businessFacts}
-${journeySection}${inventorySection}${focusSection}
+${journeySection}${inventorySection}${focusSection}${manufacturerSection}${reviewsSection}
 
 Now help the visitor. Keep it friendly, useful, and short.`;
 }

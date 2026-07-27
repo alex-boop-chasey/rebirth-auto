@@ -19,12 +19,36 @@ import { getInventoryOverview } from './overview';
 import { getLiveMatches } from './lookup';
 import { resolveFocus } from './context';
 import { resolveJourney } from './journey';
+import { resolveManufacturer } from './manufacturer';
+import { resolveReviews } from './reviews';
 import { CAR_MAKES, extractPriceValues, findKnownMakes, type GroundingFacts } from './verify';
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
 import type { D1Like } from '../state';
 
 export type { GroundingFacts } from './verify';
+
+/** A string/boolean env value is "truthy" unless it's empty / "false" / "0". */
+function truthy(v: unknown): boolean {
+  if (typeof v === 'string') return v !== '' && v.toLowerCase() !== 'false' && v !== '0';
+  return !!v;
+}
+
+/**
+ * Stub-activation resolver for an OPTIONAL grounding source (stub convention):
+ * `useStub = !env.<API_KEY> || truthy(env.STUB_<SERVICE>)` — auto-stubs until a
+ * real credential is added. Reads the Worker env lazily and fail-safe: any read
+ * error (e.g. non-Worker context) falls back to the stub. NEVER edits get-env.ts.
+ */
+async function useStubFor(apiKeyName: string, stubFlagName: string): Promise<boolean> {
+  try {
+    const { env } = await import('cloudflare:workers');
+    const e = env as unknown as Record<string, unknown>;
+    return !e[apiKeyName] || truthy(e[stubFlagName]);
+  } catch {
+    return true;
+  }
+}
 
 export interface GroundedPrompt {
   /** The fully-composed, live-grounded system prompt string. */
@@ -69,6 +93,34 @@ export async function buildGroundedSystemPrompt(
     console.error('[grounding] Journey fold failed (omitting journey)', err);
   }
 
+  // Manufacturer reference — OPTIONAL, default-off, resolved INDEPENDENTLY in its
+  // own try/catch so it can never affect the live path. CONTEXT ONLY (external
+  // model background, no prices/stock), folded AFTER inventory/focus. Contributes
+  // nothing unless the dealer flips `grounding.manufacturer.enabled`.
+  let manufacturer: string | null = null;
+  try {
+    if (cfg.grounding.manufacturer.enabled) {
+      const useStub = await useStubFor('MANUFACTURER_API_KEY', 'STUB_MANUFACTURER');
+      manufacturer = await resolveManufacturer(userMessage, cfg.grounding.manufacturer, useStub);
+    }
+  } catch (err) {
+    console.error('[grounding] Manufacturer fold failed (omitting manufacturer)', err);
+  }
+
+  // Independent review reference — OPTIONAL, default-off, resolved INDEPENDENTLY
+  // in its own try/catch. CONTEXT ONLY (external review sentiment, no
+  // prices/stock), folded AFTER inventory/focus. Contributes nothing unless the
+  // dealer flips `grounding.reviews.enabled`.
+  let reviews: string | null = null;
+  try {
+    if (cfg.grounding.reviews.enabled) {
+      const useStub = await useStubFor('REVIEWS_API_KEY', 'STUB_REVIEWS');
+      reviews = await resolveReviews(userMessage, cfg.grounding.reviews, useStub);
+    }
+  } catch (err) {
+    console.error('[grounding] Reviews fold failed (omitting reviews)', err);
+  }
+
   // Conversation focus is resolved INDEPENDENTLY of inventory grounding: a chat
   // primed from a listing should still be grounded on that vehicle even if the
   // dealer has broad inventory grounding turned off. Fail-open (null on miss).
@@ -83,11 +135,15 @@ export async function buildGroundedSystemPrompt(
   // here would suppress priming (the bug the critic flagged) and would also drop
   // continuity when inventory grounding is off, so we key on focus OR journey.
   if (!cfg.grounding.enabled) {
-    if (!focus && !journey) return null;
-    const prompt = buildSystemPrompt({ focus, journey });
-    // A resolved focus is a specific-vehicle block → inventory-bearing; a
-    // journey alone carries no prices/specs, so it is NOT inventory-bearing.
-    return { prompt, facts: buildFacts(prompt, focus !== null) };
+    if (!focus && !journey && !manufacturer && !reviews) return null;
+    // Base carries the inventory-bearing/continuity blocks; the OPTIONAL external
+    // references are added to the DISPLAY prompt but EXCLUDED from the firewall
+    // allow-list (see buildFacts call) so they can never widen it.
+    const base = { focus, journey };
+    const prompt = buildSystemPrompt({ ...base, manufacturer, reviews });
+    // A resolved focus is a specific-vehicle block → inventory-bearing; a journey
+    // or external reference alone carries no prices/specs, so NOT inventory-bearing.
+    return { prompt, facts: buildFacts(buildSystemPrompt(base), focus !== null) };
   }
 
   const g = cfg.grounding;
@@ -111,7 +167,11 @@ export async function buildGroundedSystemPrompt(
   // came back null (fetch errors), the prompt shows the degraded sentinel.
   const available = overview !== null || matches !== null;
 
-  const prompt = buildSystemPrompt({ businessFacts, overview, matches, available, focus, journey });
+  // Base = the inventory/focus/journey grounding the firewall allow-list is
+  // derived from. The OPTIONAL external references are added to the DISPLAY prompt
+  // only; the allow-list is built from `base` WITHOUT them (see buildFacts below).
+  const base = { businessFacts, overview, matches, available, focus, journey };
+  const prompt = buildSystemPrompt({ ...base, manufacturer, reviews });
 
   // Inventory-bearing (→ the streaming path BUFFERS the whole reply before any of
   // it reaches the browser). True when either:
@@ -126,5 +186,9 @@ export async function buildGroundedSystemPrompt(
   const listsVehicles = (s: string | null): boolean => !!s && /(^|\n)\s*\d+\.\s/.test(s);
   const hasInventory = focus !== null || listsVehicles(matches);
 
-  return { prompt, facts: buildFacts(prompt, hasInventory) };
+  // Firewall allow-list from `base` (no external references) so a manufacturer or
+  // review reference can NEVER add a price or a make to the allow-list. When both
+  // optional flags are off, `base` === the composed prompt, so this is identical
+  // to today.
+  return { prompt, facts: buildFacts(buildSystemPrompt(base), hasInventory) };
 }

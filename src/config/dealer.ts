@@ -165,6 +165,34 @@ export interface DealerConfig {
          */
         familySeats: readonly number[];
       };
+      /**
+       * OPTIONAL manufacturer new-model reference (src/chatbot/grounding/
+       * manufacturer.ts, stub in src/stubs/manufacturer.ts). Additive, fail-open,
+       * CONTEXT ONLY: when enabled, a known make/model in the visitor's message
+       * folds a PRICE-FREE "external, not our inventory" background block. DEFAULT
+       * OFF — with `enabled: false` the composed prompt + firewall are identical to
+       * today, and the block is excluded from the firewall allow-list even when on.
+       */
+      manufacturer: {
+        /** Master on/off. False keeps Rebi byte-identical to today. */
+        enabled: boolean;
+        /** Hard cap on key-feature items rendered into the reference block. */
+        maxItems: number;
+      };
+      /**
+       * OPTIONAL independent-review reference (src/chatbot/grounding/reviews.ts,
+       * stub in src/stubs/reviews.ts). Additive, fail-open, CONTEXT ONLY: when
+       * enabled, a known make/model in the visitor's message folds a PRICE-FREE
+       * "external, not our inventory" review-sentiment block. DEFAULT OFF — with
+       * `enabled: false` the composed prompt + firewall are identical to today, and
+       * the block is excluded from the firewall allow-list even when on.
+       */
+      reviews: {
+        /** Master on/off. False keeps Rebi byte-identical to today. */
+        enabled: boolean;
+        /** Hard cap on the number of pros and of cons rendered into the block. */
+        maxItems: number;
+      };
     };
     /**
      * Conversation priming/context seam (the "Ask about this car" button and,
@@ -581,6 +609,18 @@ export const dealerConfig: DealerConfig = {
         keywordSearch: true,
         lowKmThreshold: 60000,
         familySeats: [7, 8],
+      },
+      // OPTIONAL supplementary reference sources — DEFAULT OFF. With enabled:false
+      // the composed system prompt and the anti-hallucination firewall are
+      // byte-identical to today; flip to true to fold the external, price-free
+      // reference blocks (see grounding/manufacturer.ts and grounding/reviews.ts).
+      manufacturer: {
+        enabled: false,
+        maxItems: 4,
+      },
+      reviews: {
+        enabled: false,
+        maxItems: 3,
       },
     },
     context: {
