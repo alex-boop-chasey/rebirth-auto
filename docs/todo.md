@@ -88,13 +88,19 @@ Once the chatbot pipeline is complete — all three entry points built, continui
 - **Book a service** — service booking flow for the dealership's service department.
 - **Customer accounts** — login, service history, tyre rotation dates, previous repairs, email/SMS alerts. Platinum-level customer care that creates long-term dealer loyalty.
 - **Web search for Rebi** — hardcoded allowlist of URLs Rebi can search for supplementary info.
-- **Point-of-sale integration** — per-dealer build depending on which sales platform they use and API availability. Long-term.
+- **Point-of-sale integration** — per-dealer build depending on which sales platform they use and API availability. Long-term. ⏸️ **PARKED (2026-07-28)** — see Vision / future direction.
 - **Dependency version tracking** — tooling to safely track and update Astro and other stack dependencies.
 - **Cloudflare security tooling** — investigate and integrate Cloudflare's automated security features; ongoing vulnerability scanning and performance auditing.
 
 ---
 
 ## Vision / future direction
+
+> ⏸️ **PARKED (2026-07-28)** — the items below are deferred to pick up later, behind the 100%
+> snapshot fork / paid security review. Not to be built until then. Alongside POS integration
+> (above), the parked set is: kernel extraction, plug-into-any-website, multi-tenant, Experience
+> Mode, POS, and the paid multi-turn agentic loop (the deterministic tools + gated scaffold are
+> already built; only the paid tool-calling loop is parked).
 
 - **Extract the chatbot kernel** — framework-agnostic core + pluggable grounding interface into its own clean repo. The reusable product, not the whole dealership site.
 - **"Plug into any website" AI helper** — grounding source swaps from Sanity catalog to website content via a structural site-map index and/or semantic RAG with delta-refresh on change.
