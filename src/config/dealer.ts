@@ -470,6 +470,29 @@ export interface DealerConfig {
       dealerEmailSubject: string;
     };
   };
+  /**
+   * Third-party syndication integrations — pushing a listing OUT to external
+   * marketplaces. Today: carsales.com.au. The upload itself is STUBBED (see
+   * docs/briefs/_stub-convention.md and src/stubs/carsales.ts); this block only
+   * holds the dealer-facing toggle + copy so a tenant swap restyles it without a
+   * code edit. DEFAULT OFF — a dealer opts in (and a real CARSALES_API_KEY +
+   * account is a separate go-live step, see TODO_KEYS.md). It is deliberately
+   * its OWN block (not under `ai`/`chat`): it does not touch Rebi or the AI layer.
+   */
+  integrations: {
+    /** carsales.com.au listing syndication (the Studio "Upload to carsales" action). */
+    carsales: {
+      /** Master on/off — the Studio action only appears for a dealer who opts in. */
+      enabled: boolean;
+      /**
+       * Per-IP rate limit for /api/carsales-upload (its OWN `carsales:` KV counter).
+       * Studio authoring is low-volume, but still capped to bound abuse.
+       */
+      rateLimit: { windowSeconds: number; maxRequests: number };
+      /** Short label for the Studio document action (e.g. "Upload to carsales"). */
+      actionLabel: string;
+    };
+  };
 }
 
 // Sort options are a fixed whitelist (see src/lib/listings-query.ts for how each
@@ -787,6 +810,18 @@ export const dealerConfig: DealerConfig = {
         "Thanks for your service request — we've received it and our team will contact you to " +
         'confirm a time. Nothing is booked yet; this just starts the conversation.',
       dealerEmailSubject: 'New service booking request',
+    },
+  },
+  integrations: {
+    carsales: {
+      // DEFAULT OFF — a dealer opts into carsales syndication. While off, the
+      // Studio "Upload to carsales" action is not registered and the endpoint
+      // returns 404. Going live also needs a real CARSALES_API_KEY + account
+      // (see TODO_KEYS.md); until then the upload is stubbed even when enabled.
+      enabled: false,
+      // Low-volume Studio action, still capped per-IP to bound abuse.
+      rateLimit: { windowSeconds: 3600, maxRequests: 20 },
+      actionLabel: 'Upload to carsales',
     },
   },
 };

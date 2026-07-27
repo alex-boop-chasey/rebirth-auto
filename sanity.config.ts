@@ -4,6 +4,8 @@ import { structureTool } from 'sanity/structure';
 import { schemaTypes } from './src/sanity/schemaTypes';
 import { listingTemplates } from './src/sanity/templates';
 import { ListingFormFooter } from './src/sanity/components/ListingFormFooter';
+import { CarsalesUploadAction } from './src/sanity/components/CarsalesUploadAction';
+import { dealerConfig } from './src/config/dealer';
 
 export default defineConfig({
   name: 'default',
@@ -39,4 +41,15 @@ export default defineConfig({
   // The "Generate description" trigger lives on the description field itself
   // (src/sanity/components/GenerateDescriptionInput.tsx), not as a document
   // action — so it sits right under the dealer notes it draws from.
+  document: {
+    // "Upload to carsales" document action — appended to the listing type's
+    // actions ONLY when the dealer has opted into carsales syndication
+    // (config as data; DEFAULT OFF). The action itself is published-only, and
+    // /api/carsales-upload independently enforces published+active + origin.
+    actions: (prev, context) => {
+      if (context.schemaType !== 'listing') return prev;
+      if (!dealerConfig.integrations.carsales.enabled) return prev;
+      return [...prev, CarsalesUploadAction];
+    },
+  },
 });
