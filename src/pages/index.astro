@@ -11,6 +11,7 @@ import ChatWidget from '../components/widgets/ChatWidget.astro';
 import SearchDock from '../components/search/SearchDock.astro';
 import FilterDrawer from '../components/filters/FilterDrawer.astro';
 import InventoryResults from '../components/filters/InventoryResults.astro';
+import { dealerConfig } from '../config/dealer';
 import { iconSvg } from '../lib/listing';
 import {
   parseFilters,
@@ -83,6 +84,11 @@ const canonicalURL = new URL(
           <a href="#inventory" class="text-slate-500 transition hover:text-slate-900">
             Inventory
           </a>
+          {dealerConfig.tradeIn.enabled && (
+            <a href="/trade-in" class="text-slate-500 transition hover:text-slate-900">
+              {dealerConfig.tradeIn.copy.navLabel}
+            </a>
+          )}
           <a
             href="#"
             id="nav-contact"

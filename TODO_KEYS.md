@@ -16,7 +16,7 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 
 | Service | Env flag | Credential needed | Where to add | Unlocks | Effort |
 |---------|----------|-------------------|--------------|---------|--------|
-| _pending_ | | | | | |
+| Redbook trade-in | STUB_REDBOOK | REDBOOK_API_KEY | .dev.vars / wrangler secret | live trade-in valuations | ~1 day (API contract + mapping) |
 
 ## Owner-gated data writes (no autonomous `--commit`)
 

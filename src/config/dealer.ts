@@ -290,6 +290,34 @@ export interface DealerConfig {
       };
     };
   };
+  /**
+   * Trade-in valuation ("what's my car worth?"). A standalone shopper tool (the
+   * `/trade-in` page + `/api/trade-in` endpoint) backed by a STUBBED Redbook
+   * valuation — see docs/briefs/_stub-convention.md. Deliberately NOT under
+   * `chat`: it does not touch Rebi. Every dealer-facing string/toggle lives here
+   * so a tenant swap restyles it without a code edit.
+   */
+  tradeIn: {
+    /** Master on/off — a dealer can hide the trade-in tool without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/trade-in (its OWN `tradein:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Front-of-house copy for the trade-in page and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "Trade-in"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the estimate is fetched. */
+      loadingLabel: string;
+    };
+  };
 }
 
 // Sort options are a fixed whitelist (see src/lib/listings-query.ts for how each
@@ -515,6 +543,22 @@ export const dealerConfig: DealerConfig = {
         muteLabel: 'Mute notification sounds',
         unmuteLabel: 'Unmute notification sounds',
       },
+    },
+  },
+  tradeIn: {
+    enabled: true,
+    // Shopper-facing valuation; capped per-IP to bound abuse. Generous for a
+    // genuine "value a couple of cars" session.
+    rateLimit: { windowSeconds: 3600, maxRequests: 30 },
+    copy: {
+      navLabel: 'Trade-in',
+      eyebrow: 'Trade-in valuation',
+      heading: "What's your car worth?",
+      subheading:
+        "Tell us a few details and we'll give you an indicative trade-in range in seconds. " +
+        "Bring it in and we'll confirm with a quick inspection.",
+      submitLabel: 'Get my estimate',
+      loadingLabel: 'Valuing your car…',
     },
   },
 };
