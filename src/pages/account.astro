@@ -1,0 +1,307 @@
+---
+// SSR (not prerendered): the page posts to /api/account and honours the dealer
+// feature flag at request time. Mirrors trade-in.astro / service.astro.
+//
+// SECURITY: DEMO SCAFFOLD ONLY. This is NOT a secured login. There is no password
+// field, no session, and no real customer data — the sign-in returns a MOCK
+// profile (src/stubs/auth.ts). Real customer auth is a security-review BLOCKER
+// (DECISIONS.md / TODO_KEYS.md). The loud banner below states this to the visitor.
+export const prerender = false;
+
+import '../styles/global.css';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.accounts;
+
+// Feature flag — DEMO SCAFFOLD, OFF by default. When off, the surface isn't
+// reachable (the API returns 404 too).
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+const year = new Date().getFullYear();
+
+const inputClass =
+  'mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
+const labelClass = 'block text-sm font-medium text-slate-700';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <!-- Demo scaffold — keep out of search results. -->
+    <meta name="robots" content="noindex" />
+  </head>
+
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <div class="site-container">
+      <!-- Header -->
+      <header class="flex items-center justify-between py-6">
+        <a href="/" class="text-base font-semibold tracking-tight text-slate-900">
+          Rebirth<span class="text-slate-400"> Auto</span>
+        </a>
+        <nav class="flex items-center gap-6 text-sm">
+          <a href="/" class="text-slate-500 transition hover:text-slate-900">Inventory</a>
+          <a href="/account" class="font-medium text-slate-900">{copy.navLabel}</a>
+        </nav>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="mx-auto max-w-2xl pt-12 pb-16 md:pt-16">
+          <!-- Intro -->
+          <div class="text-center">
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
+            >
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              {copy.eyebrow}
+            </span>
+            <h1 class="mt-6 text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">
+              {copy.heading}
+            </h1>
+            <p class="mx-auto mt-4 max-w-xl text-lg text-slate-600">{copy.subheading}</p>
+          </div>
+
+          <!-- LOUD demo banner — this is NOT a secured login. -->
+          <div
+            role="note"
+            class="mt-8 flex items-start gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3.5 text-sm text-amber-900"
+          >
+            <span aria-hidden="true" class="mt-0.5 text-base leading-none">⚠️</span>
+            <p><span class="font-semibold">Demo account — not a secured login.</span> {copy.demoBanner}</p>
+          </div>
+
+          <!-- Sign-in card (email only — NO password) -->
+          <div
+            id="account-root"
+            data-loading-label={copy.loadingLabel}
+            data-history-heading={copy.serviceHistoryHeading}
+            data-interests-heading={copy.interestsHeading}
+            data-saved-label={copy.savedSearchesLabel}
+            class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
+          >
+            <form id="account-form" novalidate class="grid grid-cols-1 gap-5">
+              <div>
+                <label class={labelClass} for="ac-email">{copy.emailLabel}</label>
+                <input class={inputClass} id="ac-email" name="email" type="email" required
+                  autocomplete="email" placeholder={copy.emailPlaceholder} />
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  id="ac-submit"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                >
+                  <span id="ac-submit-label">{copy.submitLabel}</span>
+                </button>
+                <p class="mt-3 text-xs text-slate-500">
+                  No password required — this demo shows example data for whatever email you enter.
+                </p>
+              </div>
+            </form>
+
+            <!-- Error banner -->
+            <p
+              id="ac-error"
+              role="alert"
+              hidden
+              class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+            </p>
+
+            <!-- Profile (mock data) -->
+            <div id="ac-profile" hidden aria-live="polite" class="mt-8 border-t border-slate-200 pt-8">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-medium text-slate-500">Signed in as (demo)</p>
+                  <p id="ac-name" class="text-lg font-semibold text-slate-900"></p>
+                  <p id="ac-email-out" class="text-sm text-slate-500"></p>
+                </div>
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200"
+                >
+                  Example data
+                </span>
+              </div>
+
+              <!-- Service history -->
+              <div class="mt-8">
+                <h2 id="ac-history-heading" class="text-sm font-semibold text-slate-900"></h2>
+                <div class="mt-3 overflow-x-auto">
+                  <table class="w-full text-left text-sm">
+                    <thead>
+                      <tr class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                        <th class="py-2 pr-4 font-medium">Date</th>
+                        <th class="py-2 pr-4 font-medium">Vehicle</th>
+                        <th class="py-2 font-medium">Service</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ac-history-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Vehicle interests -->
+              <div class="mt-8">
+                <h2 id="ac-interests-heading" class="text-sm font-semibold text-slate-900"></h2>
+                <ul id="ac-interests" class="mt-3 flex flex-wrap gap-2"></ul>
+              </div>
+
+              <!-- Saved searches link -->
+              <div class="mt-8 border-t border-slate-200 pt-6">
+                <a
+                  id="ac-saved"
+                  href="/#inventory"
+                  class="inline-flex items-center gap-2 text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:decoration-slate-900"
+                >
+                  <span id="ac-saved-label"></span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="mt-8 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
+        © {year} {dealerConfig.identity.name} · Demo account surface — example data only, not a secured login.
+      </footer>
+    </div>
+
+    <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
+    <ChatWidget />
+
+    <script>
+      const root = document.getElementById('account-root');
+      const form = document.getElementById('account-form') as HTMLFormElement | null;
+      if (root && form) {
+        const loadingLabel = root.dataset.loadingLabel || 'Loading your account…';
+        // Config-driven copy, server-rendered onto the root — no hardcoded strings.
+        const historyHeading = root.dataset.historyHeading || 'Service history';
+        const interestsHeading = root.dataset.interestsHeading || 'Vehicle interests';
+        const savedBase = root.dataset.savedLabel || 'Saved searches';
+
+        const submit = document.getElementById('ac-submit') as HTMLButtonElement;
+        const submitLabel = document.getElementById('ac-submit-label') as HTMLElement;
+        const defaultLabel = submitLabel.textContent || 'View my account';
+        const errorEl = document.getElementById('ac-error') as HTMLElement;
+        const profileEl = document.getElementById('ac-profile') as HTMLElement;
+        const nameEl = document.getElementById('ac-name') as HTMLElement;
+        const emailOutEl = document.getElementById('ac-email-out') as HTMLElement;
+        const historyHeadingEl = document.getElementById('ac-history-heading') as HTMLElement;
+        const historyBodyEl = document.getElementById('ac-history-body') as HTMLElement;
+        const interestsHeadingEl = document.getElementById('ac-interests-heading') as HTMLElement;
+        const interestsEl = document.getElementById('ac-interests') as HTMLElement;
+        const savedLabelEl = document.getElementById('ac-saved-label') as HTMLElement;
+
+        // Seat the config-driven headings/label (no dealer string hardcoded here).
+        historyHeadingEl.textContent = historyHeading;
+        interestsHeadingEl.textContent = interestsHeading;
+        savedLabelEl.textContent = savedBase;
+
+        const showError = (msg: string) => {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+          profileEl.hidden = true;
+        };
+
+        const setLoading = (on: boolean) => {
+          submit.disabled = on;
+          submitLabel.textContent = on ? loadingLabel : defaultLabel;
+        };
+
+        const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+        interface Profile {
+          id: string;
+          email: string;
+          name: string;
+          serviceHistory: { date: string; vehicle: string; service: string }[];
+          vehicleInterests: string[];
+        }
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorEl.hidden = true;
+
+          const data = new FormData(form);
+          const email = String(data.get('email') || '').trim();
+          if (!isEmail(email)) return showError('Please enter a valid email address.');
+
+          setLoading(true);
+          try {
+            const res = await fetch('/api/account', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'signin', email }),
+            });
+            const body = (await res.json()) as {
+              profile?: Profile;
+              savedSearchCount?: number;
+              error?: string;
+            };
+            if (!res.ok || !body.profile) {
+              showError(body.error || 'We could not load that account right now — please try again.');
+              return;
+            }
+            const p = body.profile;
+            nameEl.textContent = p.name;
+            emailOutEl.textContent = p.email;
+
+            // Service history rows.
+            historyBodyEl.replaceChildren();
+            for (const row of p.serviceHistory) {
+              const tr = document.createElement('tr');
+              tr.className = 'border-b border-slate-100';
+              for (const val of [row.date, row.vehicle, row.service]) {
+                const td = document.createElement('td');
+                td.className = 'py-2.5 pr-4 text-slate-700';
+                td.textContent = val;
+                tr.appendChild(td);
+              }
+              historyBodyEl.appendChild(tr);
+            }
+
+            // Vehicle interests as pills.
+            interestsEl.replaceChildren();
+            for (const interest of p.vehicleInterests) {
+              const li = document.createElement('li');
+              li.className =
+                'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200';
+              li.textContent = interest;
+              interestsEl.appendChild(li);
+            }
+
+            // Saved-searches link label, with the fail-open count when present.
+            const count =
+              typeof body.savedSearchCount === 'number' ? body.savedSearchCount : 0;
+            savedLabelEl.textContent = count > 0 ? `${savedBase} (${count})` : savedBase;
+
+            profileEl.hidden = false;
+            profileEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch {
+            showError('Something went wrong — please check your connection and try again.');
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

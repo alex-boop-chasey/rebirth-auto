@@ -100,6 +100,11 @@ const canonicalURL = new URL(
               {dealerConfig.service.copy.navLabel}
             </a>
           )}
+          {dealerConfig.accounts.enabled && (
+            <a href="/account" class="text-slate-500 transition hover:text-slate-900">
+              {dealerConfig.accounts.copy.navLabel}
+            </a>
+          )}
           <a
             href="#"
             id="nav-contact"

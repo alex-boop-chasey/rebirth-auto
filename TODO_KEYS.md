@@ -23,6 +23,7 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 | Review grounding | STUB_REVIEWS | review source licence (Wheels/CarsGuide/etc.) | .dev.vars / wrangler secret | Rebi folds an external, price-free independent-review sentiment reference block (feature also gated by `chat.grounding.reviews.enabled`, DEFAULT OFF) | ~1 day (per-source licence + mapping) |
 | Web search (allowlisted) | STUB_WEBSEARCH | WEBSEARCH_API_KEY (search API) or a real `fetch()`+extract step | .dev.vars / wrangler secret | Rebi folds an external, price-free reference block from a hardcoded URL allowlist (feature also gated by `chat.grounding.webSearch.enabled`, DEFAULT OFF; only allowlisted-domain URLs ever returned) | ~1 day (fetch+extract or search API + mapping) |
 | carsales upload | STUB_CARSALES | CARSALES_API_KEY + dealer account | .dev.vars / wrangler secret | real carsales.com.au syndication (Studio "Upload to carsales" action; also gated by `integrations.carsales.enabled`, DEFAULT OFF) | ~2-3 days (their API onboarding) |
+| Customer accounts (DEMO ONLY) | STUB_AUTH | AUTH_PROVIDER_KEY (real IdP/session — e.g. Cloudflare Access / an auth provider) | .dev.vars / wrangler secret | replaces the mock demoSignIn with real authenticated sign-in (feature also gated by `accounts.enabled`, DEFAULT OFF). ⚠️ BLOCKED on the security review below — do NOT go live before it | BLOCKER (see security review) — then ~several days (IdP + session + review) |
 
 ## Owner-gated data writes (no autonomous `--commit`)
 
@@ -35,6 +36,7 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 | D1 saved_searches table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod (migration 0004) |
 | D1 service_bookings table (prod) | `wrangler d1 migrations apply astro-listings-chat --remote` | owner runs against prod (migration 0005) |
 | Service scheduling (POS/calendar) | per-dealer POS/calendar API | booking requests → CONFIRMED appointments (reserve real slots) — deferred; requests + notify ship now |
+| Customer auth — real customer data | wire /account + /api/account to real identity/PII | **BLOCKER: paid human security review (DECISIONS.md) is mandatory before ANY real customer data flows.** Ships as a DEMO SCAFFOLD only (mock profiles, no password/session/credential/PII, `accounts.enabled` DEFAULT OFF). A data leak would be business-ending — do NOT connect real customer PII until the review signs off |
 
 ## Owner infra / account actions
 
