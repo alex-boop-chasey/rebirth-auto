@@ -70,7 +70,9 @@ ${conceptGuidance}
   NOT a fuel type — map them to a small body (bodyType hatchback) and a modest budget (priceMax), and do
   NOT add a fuelType filter unless the visitor EXPLICITLY names a fuel (petrol/diesel/hybrid/electric). A
   small petrol car is cheap to run; forcing hybrid/electric wrongly excludes economical stock.
-- There is NO fuel-economy / L/100km field. Never encode running cost as an invented economy figure.
+- Listings may now carry a fuel-economy (L/100km) figure, but it is NOT a search filter dimension — do
+  NOT encode "economical/cheap to run" phrasing as an economy figure. Map that vague running-cost intent
+  to practical filters (small body + modest budget) as above; never fabricate an economy number.
 
 CARRY-FORWARD ON REFINE (important)
 - The shopper's CURRENT filters are given to you as a canonical query string. This is usually a REFINEMENT

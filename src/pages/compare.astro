@@ -130,6 +130,7 @@ const LABEL_GROUP: Record<string, GroupTitle> = {
   odometer: 'Age & usage',
   fuel: 'Running costs',
   'fuel type': 'Running costs',
+  'fuel economy': 'Running costs',
   body: 'Drivetrain & size',
   transmission: 'Drivetrain & size',
   drive: 'Drivetrain & size',
@@ -142,6 +143,7 @@ const LABEL_DIM: Record<string, DimKey> = {
   year: 'newer',
   odometer: 'lowkm',
   seats: 'space',
+  'fuel economy': 'economy',
 };
 
 interface CellVM {
@@ -254,6 +256,7 @@ const cars: CompareCar[] = listings.map((l) => ({
   year: l.vehicleSpecs?.year ?? null,
   odometer: l.vehicleSpecs?.odometer ?? null,
   seats: l.vehicleSpecs?.seatCount ?? null,
+  fuelEconomy: l.vehicleSpecs?.fuelEconomy ?? null,
 }));
 
 // Initial (no-JS) verdict for the default "Balanced" lens.

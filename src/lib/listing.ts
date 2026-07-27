@@ -34,6 +34,9 @@ export interface VehicleSpecs {
   seatCount?: number;
   year?: number;
   odometer?: number;
+  /** Combined-cycle fuel consumption in L/100km. Optional — stated only when a
+   *  listing actually carries it; never estimated or defaulted. */
+  fuelEconomy?: number;
   condition?: 'new' | 'used' | 'demo';
 }
 
@@ -79,7 +82,7 @@ export const LISTING_FIELDS = `_id, title, slug, description, price, currency, s
   make, model, badge, series, colour, engine, doors, trim,
   vin, registrationExpiry, buildDate, complianceDate,
   details[]{ _key, label, value, valueType, valueNumber, unit, valueBoolean, valueDate },
-  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, condition }, listingDate`;
+  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, fuelEconomy, condition }, listingDate`;
 
 // Broad colour families for the Studio `colourBase` dropdown. A universal vehicle
 // attribute (not dealer-specific), so it lives here rather than in dealer config.
@@ -238,6 +241,7 @@ export function buildSpecRows(listing: Listing): ListingDetail[] {
     rowOrFallback(numberRow('spec-odometer', 'Odometer', vs.odometer, 'km'), details, 'Odometer'),
     rowOrFallback(textRow('spec-transmission', 'Transmission', enumTitle(ENUM_TITLES.transmission, vs.transmission)), details, 'Transmission'),
     rowOrFallback(textRow('spec-fuel', 'Fuel', enumTitle(ENUM_TITLES.fuelType, vs.fuelType)), details, 'Fuel Type', 'Fuel'),
+    numberRow('spec-fuel-economy', 'Fuel economy', vs.fuelEconomy, 'L/100km'),
     rowOrFallback(textRow('spec-drive', 'Drive', enumTitle(ENUM_TITLES.driveType, vs.driveType)), details, 'Drive Type', 'Drive'),
     rowOrFallback(numberRow('spec-seats', 'Seats', vs.seatCount), details, 'Seats'),
     rowOrFallback(numberRow('spec-doors', 'Doors', listing.doors), details, 'Doors'),
@@ -335,5 +339,5 @@ export function categoryIconName(_category?: string): string {
 // to higher-is-better.
 export function isLowerBetter(label: string): boolean {
   const l = (label ?? '').toLowerCase();
-  return ['odometer', 'price', 'kilometre', 'mileage'].some((k) => l.includes(k));
+  return ['odometer', 'price', 'kilometre', 'mileage', 'economy'].some((k) => l.includes(k));
 }

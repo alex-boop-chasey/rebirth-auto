@@ -216,6 +216,13 @@ export const listing = defineType({
           validation: (Rule) => Rule.min(0),
         }),
         defineField({
+          name: 'fuelEconomy',
+          title: 'Fuel economy (L/100km, combined)',
+          type: 'number',
+          description: 'Combined-cycle fuel consumption in L/100km. Leave blank if unknown — never guess.',
+          validation: (Rule) => Rule.min(0).max(60).precision(1),
+        }),
+        defineField({
           name: 'condition',
           title: 'Condition',
           type: 'string',

@@ -33,6 +33,7 @@ interface FocusRow {
   driveType?: string;
   year?: number;
   odometer?: number;
+  fuelEconomy?: number;
   condition?: string;
   seatCount?: number;
 }
@@ -48,6 +49,7 @@ const FOCUS_PROJECTION = `{
   "driveType": vehicleSpecs.driveType,
   "year": vehicleSpecs.year,
   "odometer": vehicleSpecs.odometer,
+  "fuelEconomy": vehicleSpecs.fuelEconomy,
   "condition": vehicleSpecs.condition,
   "seatCount": vehicleSpecs.seatCount
 }`;
@@ -62,6 +64,7 @@ function renderFocusLine(r: FocusRow, i: number): string {
   if (r.driveType) parts.push(r.driveType);
   if (typeof r.seatCount === 'number') parts.push(`${r.seatCount} seats`);
   if (typeof r.odometer === 'number') parts.push(`${r.odometer.toLocaleString('en-AU')} km`);
+  if (typeof r.fuelEconomy === 'number') parts.push(`${r.fuelEconomy} L/100km`);
   if (r.condition) parts.push(r.condition);
   const price = formatPrice(r.price ?? 0, r.currency ?? getDealerConfig().locale.currency);
   const spec = parts.length ? ` (${parts.join(', ')})` : '';

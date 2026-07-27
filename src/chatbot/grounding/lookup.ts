@@ -37,6 +37,7 @@ interface MatchRow {
   transmission?: string;
   year?: number;
   odometer?: number;
+  fuelEconomy?: number;
 }
 
 function renderMatchLine(r: MatchRow, i: number): string {
@@ -47,6 +48,7 @@ function renderMatchLine(r: MatchRow, i: number): string {
   if (r.fuelType) parts.push(r.fuelType);
   if (r.transmission) parts.push(r.transmission);
   if (typeof r.odometer === 'number') parts.push(`${r.odometer.toLocaleString('en-AU')} km`);
+  if (typeof r.fuelEconomy === 'number') parts.push(`${r.fuelEconomy} L/100km`);
   const price = formatPrice(r.price ?? 0, r.currency ?? getDealerConfig().locale.currency);
   const spec = parts.length ? ` (${parts.join(', ')})` : '';
   return `${i + 1}. ${r.title ?? 'Vehicle'} — ${price}${spec}`;
@@ -117,7 +119,8 @@ export async function getLiveMatches(kv: KVNamespaceLike | undefined, message: s
           "fuelType": vehicleSpecs.fuelType,
           "transmission": vehicleSpecs.transmission,
           "year": vehicleSpecs.year,
-          "odometer": vehicleSpecs.odometer
+          "odometer": vehicleSpecs.odometer,
+          "fuelEconomy": vehicleSpecs.fuelEconomy
         }`;
         const query = `{
           "items": *[${scoped}] | order(price asc) [0...${max}]${projection},

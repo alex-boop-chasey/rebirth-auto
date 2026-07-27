@@ -21,10 +21,11 @@ export interface CompareCar {
   year: number | null;
   odometer: number | null;
   seats: number | null;
+  fuelEconomy: number | null;
 }
 
-export type DimKey = 'value' | 'newer' | 'lowkm' | 'space';
-export type DimField = 'price' | 'year' | 'odometer' | 'seats';
+export type DimKey = 'value' | 'newer' | 'lowkm' | 'space' | 'economy';
+export type DimField = 'price' | 'year' | 'odometer' | 'seats' | 'fuelEconomy';
 
 export interface ScoreDim {
   key: DimKey;
@@ -33,14 +34,18 @@ export interface ScoreDim {
   short: string; // label used in the "weighing …" note + caveats
 }
 
-// Only dimensions backed by real, trustworthy data. There is deliberately NO
-// fuel-economy dimension: the data model has no economy (L/100km) field, so an
-// economy lens would have to fabricate figures — omitted for determinism.
+// Only dimensions backed by real, trustworthy data. Fuel economy (L/100km) is an
+// optional per-vehicle field: it scores ONLY when at least two compared cars carry
+// it (see `normDim`, which drops any car missing the value and returns an empty
+// map — hence no contribution — when fewer than two remain). A pair where either
+// car lacks the figure is skipped entirely; a missing value is never treated as 0
+// or infinity, so the dimension can never fabricate a comparison.
 export const SCORE_DIMS: ScoreDim[] = [
   { key: 'value', field: 'price', dir: -1, short: 'price' },
   { key: 'newer', field: 'year', dir: 1, short: 'age' },
   { key: 'lowkm', field: 'odometer', dir: -1, short: 'kilometres' },
   { key: 'space', field: 'seats', dir: 1, short: 'seats' },
+  { key: 'economy', field: 'fuelEconomy', dir: -1, short: 'fuel economy' },
 ];
 
 export interface Lens {
@@ -51,8 +56,8 @@ export interface Lens {
 
 // Buyer lenses — one tap reweights the whole board. Static config-as-data.
 export const LENSES: Lens[] = [
-  { id: 'balanced', label: 'Balanced', w: { value: 1, newer: 1, lowkm: 1, space: 1 } },
-  { id: 'value', label: 'Best value', w: { value: 3, lowkm: 1 } },
+  { id: 'balanced', label: 'Balanced', w: { value: 1, newer: 1, lowkm: 1, space: 1, economy: 1 } },
+  { id: 'value', label: 'Best value', w: { value: 3, lowkm: 1, economy: 1 } },
   { id: 'nearly', label: 'Nearly new', w: { newer: 3, lowkm: 2 } },
   { id: 'lowkm', label: 'Low kms', w: { lowkm: 3, newer: 1 } },
   { id: 'family', label: 'Family space', w: { space: 3, lowkm: 1, value: 1 } },
@@ -175,6 +180,7 @@ function dimStrength(
   else if (d.key === 'lowkm') text = `${fmtNum(gap)} km less than the next`;
   else if (d.key === 'newer') text = gap === 1 ? `A year newer than the next` : `${gap} years newer than the next`;
   else if (d.key === 'space') text = `${gap} more seat${gap === 1 ? '' : 's'} than the next`;
+  else if (d.key === 'economy') text = `${gap} L/100km better on fuel than the next`;
   return { text, weight: dimScore[d.key][pick.id] };
 }
 
@@ -215,6 +221,7 @@ export function buildVerdict(cars: CompareCar[], lensId: string): Verdict {
       else if (d.key === 'lowkm') phr = `${r.name} has ${fmtNum(raw)} km less`;
       else if (d.key === 'newer') phr = `${r.name} is ${raw === 1 ? 'a year' : `${raw} years`} newer`;
       else if (d.key === 'space') phr = `${r.name} has ${raw} more seat${raw === 1 ? '' : 's'}`;
+      else if (d.key === 'economy') phr = `${r.name} uses ${raw} L/100km less fuel`;
       caveats.push({ gapScore, text: phr });
     });
   });
