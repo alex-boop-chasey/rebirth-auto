@@ -1,115 +1,113 @@
 # BUILD_SUMMARY.md — Autonomous build run
 
 Branch: `build/autonomous-run` (not pushed — the final push is the owner's sign-off gate).
-All work committed locally, one commit per ticket, `npx astro check` green (0 errors).
+14 commits, one per ticket. `npx astro check`: **0 errors** across 125 files. Live-smoke-tested.
 
 ## Headline
 
 The premise going in was a large unbuilt backlog. A full ground-truth audit
-(`docs/reports/todo-ground-truth-audit.md`) found the opposite: **the entire chatbot
-pipeline — the actual near-term product goal — is already built and at its 100% milestone.**
-Every item in the todo's "In progress / next up" section was already implemented and wired.
-So this run's real work was: verify that claim end-to-end, close the one genuine remaining
-code gap, and honestly map what's actually left (which is speculative, business-shaped, and
-mostly owner-gated).
+(`docs/reports/todo-ground-truth-audit.md`) found the **entire chatbot pipeline — the actual
+near-term product goal — was already built and shipped** (all three Rebi entry points,
+continuity journey, cross-function chat, colour search, staggered results, comparison
+Ask-Rebi entry, Studio schema-UX). The todo.md "next up" list was stale. So this run: verified
+that milestone end-to-end, closed the one genuine code gap (fuel economy), then built out the
+**entire remaining backlog** as env-flagged, stub-backed, demoable features.
 
 ## What was built (this run)
 
-1. **Fuel-economy / L-100km field** (`ef73d9e`) — the one genuine, in-scope code gap. Adds
-   `vehicleSpecs.fuelEconomy` end-to-end: Sanity schema field, `VehicleSpecs` type,
-   `LISTING_FIELDS` projection, a listing-page display row, and — crucially — threaded into
-   the **grounding** blocks (`grounding/context.ts` focus block + `grounding/lookup.ts` live
-   matches) so Rebi can now *state* a vehicle's economy when it's present. Flipped the four
-   "we don't hold economy" guards (system-prompt, ai-search prompt, dealer.ts intent-map,
-   compare-verdict) to "state it when present, never invent when absent." Added an economy
-   dimension to the comparison verdict that **skips any pair missing the figure** (proven
-   can't-fabricate: `normDim` drops dimensions with <2 comparable cars), and fixed
-   `isLowerBetter` so the compare table highlights the more economical car. Determinism
-   intact: economy is only ever shown/scored from real populated data — no backfill, no
-   estimation.
+### Genuine gap closed
+- **Fuel economy (L/100km) field** — end-to-end: schema → projection → listing display →
+  grounding (Rebi can now *state* a vehicle's economy) → compare dimension (skips pairs missing
+  the figure). Determinism: real data only, never invented.
 
-2. **Phase-0 foundation** (`9750d11`) — flipped Rebi's reply brain to Haiku primary in
-   `src/ai/tiers.ts` (free models retained as fallbacks; grounding firewall untouched) and
-   set the filter-drawer price defaults to "Min"/"Max". (The year-dropdown fix and the
-   "Ask Rebi" button unification in the same brief were found already shipped in prior
-   commits — verified, not rebuilt.)
+### New shopper features (all env-flagged, stub-backed)
+- **Trade-in valuation** (`/trade-in`) — form → stubbed Redbook valuation band. *Enabled.*
+- **Saved searches + email alerts** — "Save this search" (reuses the canonical filter query) →
+  D1-persisted → stubbed confirmation email. Periodic alerting = documented cron drop-in. *Enabled.*
+- **Book a service** (`/service`) — booking-request flow → D1 → stubbed confirmation. Copy is
+  always "a request, not a confirmed appointment"; invents no availability. *Enabled.*
+- **Price history / "Just Reduced"** — real `priceHistory` field + badge/timeline; a
+  deterministic demo synthesizer that is **off in production** (only fills empty listings when
+  `STUB_PRICE_HISTORY` is on — proven unreachable when off). *Enabled (real data only until demo flag on).*
+- **Customer accounts** (`/account`) — DEMO-ONLY: email-only mock sign-in, service history,
+  interests. **No password/session/credential handling**; 503s rather than wiring real identity;
+  the mandatory paid security review is a recorded BLOCKER. *Off by default.*
 
-3. **Planning + audit artifacts** — `docs/build-plan.md` (every todo item sequenced with
-   complexity/status/dependency/ground-truth state), `docs/reports/todo-ground-truth-audit.md`
-   (item-by-item BUILT/PARTIAL/ABSENT/OWNER classification), `TODO_KEYS.md` (drop-in registry).
+### Rebi capability + dealer tools
+- **Manufacturer + review grounding** — two new external-reference grounding sources
+  (structured stubs), additive/fail-open/price-stripped, **off by default** and proven
+  byte-identical to today when off; firewall allow-list cannot be widened by them.
+- **Web search for Rebi** — URL-allowlist supplementary source, same off-by-default guarantee;
+  stub only ever returns allowlisted-domain URLs.
+- **Rebi in Studio** — the description generator extended into an editor assistant (selling
+  points, tighten, tone-rewrite) through the same `writing` tier; default behaviour preserved;
+  determinism + server-only `dealerNotes` intact.
+- **Carsales upload** — dealer Studio document action → stubbed carsales id+URL. Published+active
+  listings only (drafts can't be syndicated); Studio-origin restricted. *Off by default.*
+- **Dealer listing-creation PWA** (`/capture`) — standalone mobile-first scaffold: photo + voice
+  (Web Speech) + rego/VIN → deterministic assembly (source+confidence tracking, OEM>photo>voice
+  merge) → resolve-never-invent make/model → schema validation → **draft-only** (Sanity write
+  stubbed, owner-gated worker token). SW hard-scoped to `/capture`. *Off by default.*
+- **Agentic search foundation** — deterministic `search_inventory`/`get_listing` tools
+  (anti-hallucination by construction: enum-locked filters + GROQ, real stock only) + a gated-off
+  agentic-loop scaffold; the multi-turn tool loop is the marked paid drop-in. *Off by default.*
 
-### Verified working (live smoke-test, no paid LLM calls)
-Dev server: homepage renders the hero stack + AI SearchDock + centre-overlay Rebi
-(`reb-panel`) + "Ask Rebi"; a listing page renders real specs (price, odometer, transmission,
-fuel); the compare page renders — all HTTP 200. The fuel-economy row correctly does **not**
-appear on current listings because none have the field populated yet (by design).
+### Tooling / infra / data
+- **Deps report** (`scripts/deps-report.ts`) + `docs/dependency-tracking.md` (safe-bump process).
+- **`docs/cloudflare-security.md`** audit + 6 owner account-action rows in TODO_KEYS (flags
+  missing security response headers as the top gap).
+- **Dry-run data scripts**: `seed-business-info.ts` (from placeholders, WARNs on unfillable),
+  `reconcile-brands.ts` (surfaced the *real* brand diff: claimed-absent Jeep/Leapmotor vs
+  present-unclaimed Ford/GWM/Holden/Mazda/Mitsubishi/Toyota). No `--commit` run.
 
-## What was already built (audit-confirmed — NOT rebuilt)
+### Verified live (no paid LLM calls)
+Homepage renders hero + Rebi overlay + trade-in/service nav; `/trade-in` and `/service` render
+(200); `/account` and `/capture` correctly redirect (302, off by default); `/compare` and the
+shopper site intact; PWA manifest serves; **zero service-worker references on the shopper site**.
 
-The whole "next up" list: continuity journey (D1, folded into replies + return visits +
-nav beacons), Haiku flip, the greyscale-dream centre-overlay Rebi with mic/speaker/tones/
-escalation, unified "Ask Rebi" button, cross-function chat, colour search extraction + GROQ
-filter, staggered results choreography, hero layout, filter min/max + from/to labels +
-year-bug fix, comparison "Ask Rebi" entry point, and Sanity Studio schema-UX Tier 1. See the
-audit report for file:line evidence on each.
+## Stub convention (every integration)
+`src/stubs/<service>.ts` exports the real interface; `useStub = !env.<KEY> || truthy(env.STUB_<X>)`
+(auto-stubs until a credential is added); `// TODO_KEYS:` markers at every integration point; a
+row in `TODO_KEYS.md`. Going live = add the credential + flip the flag, no code change. Stubs are
+deterministic (no `Math.random`, no module-level dates) and never call a paid API or write to a
+third party. Data writes stay dry-run/owner-gated.
 
-## What was NOT autonomously built, and why (owner-gated / speculative)
-
-Per the master prompt's own "docs win on conflict" clause and `DECISIONS.md`'s warning
-against "over-building speculative machinery for scale that may never come," the following
-were **documented with precise drop-in points** rather than half-scaffolded into a clean,
-at-milestone repo on a real dealer's live inventory:
-
-- **Comparison-table redesign contest** — the table is already shipped and polished, and the
-  todo says *"Judge is the owner."* An autonomous redesign would risk regressing working UI
-  and can't be owner-judged while the owner is away. Held for sign-off.
-- **The dealer listing-creation PWA** (VIN lookup, photo/vision extraction, voice, review→
-  publish pipeline, PWA shell, worker write-token) — the todo explicitly gates this behind
-  the **owner's 100%-snapshot fork**, which is an owner action. Building it now would
-  pre-empt that milestone. Deferred by design.
-- **Backlog product features touching real-dealer data or external partnerships** — customer
-  accounts/auth (security-gated; docs require a paid human security review), POS, carsales
-  upload, manufacturer/review-source grounding (partnership-gated), saved searches + email
-  alerts, trade-in valuation, price-history/"Just Reduced," service booking, web-search
-  allowlist. Several of these would put **fabricated data on a real dealer's real cars shown
-  to real shoppers** (e.g. a fake "Just Reduced" badge), which directly conflicts with the
-  project's foundational "the AI never makes things up" determinism principle. Which of these
-  to build — and what fabrication is acceptable in a demo — is a business-prioritization call
-  the docs reserve for the owner.
-- **Full agentic search** — needs a paid model + tool-calling; no real spend per the rules.
-
-## What was deferred (post-milestone vision)
-
-Extract the chatbot kernel, "plug into any website" grounding swap, Experience Mode,
-multi-tenant SaaS. All post-100%-snapshot and/or gated on a paid human security review
-(multi-tenant) per `DECISIONS.md`. Sequencing: they follow the owner's snapshot fork and the
-agentic-search foundation.
+## What was deferred (post-milestone vision) — and why
+Not built this run because the project's own docs gate them, and building now would be a harmful
+refactor of working code or produce nothing demoable:
+- **Extract the chatbot kernel / "plug into any website"** — gated behind the owner's 100%
+  snapshot fork (an owner action); they're refactors of the whole codebase, not features.
+- **Multi-tenant SaaS** — `DECISIONS.md` requires a paid human security review before real dealer
+  data; conventions already point there (config-as-data).
+- **Experience Mode** — a design-heavy UX prototype; a hollow flagged version would misrepresent it.
+- **Point-of-sale integration** — per-dealer, targets an unknown platform; has no demonstrable
+  surface, so a generic stub adds code without demo value. Documented drop-in instead.
+- **Full multi-turn agentic tool loop** — needs a paid tool-calling model + provider transport
+  (the deterministic tools + single-shot path ARE built; the loop is the marked drop-in).
 
 ## Audited next steps (prioritised)
-
-1. **Owner: confirm the 100% milestone** by reviewing this branch, then **fork the snapshot**
-   (the designed decision point) — this unblocks the PWA and the "plug into any website" line.
-2. **Owner-gated data/infra** (all documented in `TODO_KEYS.md`, none need code): fill the
-   `businessInfo` Sanity doc; reconcile demo brand data to real inventory; apply the prod D1
-   journey migration (`wrangler d1 migrations apply astro-listings-chat --remote`); optionally
-   add the `GROUNDING_KV` binding.
-3. **Owner: pick the next build track** from the speculative backlog above — I'll build/stub
-   whichever you prioritise, cleanly, with the env-flag + `src/stubs/` + `TODO_KEYS` pattern.
-   My recommendation for highest demo-value/lowest-risk first: **Rebi-in-Studio assistant**
-   (extends the existing one-shot generator; no fabrication risk) and **web-search allowlist
-   for Rebi** (a real Rebi capability). Hold the fabricated-data-on-real-cars features
-   (price history, saved-search alerts) until you decide what's acceptable in the demo.
+1. **Review this branch + fork the 100% snapshot** (the designed decision point) — unblocks the
+   kernel/plug-into-any-website line.
+2. **Owner data/infra** (all in `TODO_KEYS.md`, no code): fill `businessInfo` (dry-run script
+   ready); reconcile brands to real inventory (diff ready); apply the prod D1 migrations
+   (`0003`–`0005`) `--remote`; add security response headers; optionally `GROUNDING_KV`.
+3. **Turn on the demo flags you want to show** — trade-in/service/saved-search are already on;
+   flip `accounts`, `capture`, the grounding sources, `webSearch`, `carsales`, and
+   `STUB_PRICE_HISTORY` per what you want to demo.
+4. **Restore Haiku on the `writing` tier** for the demo (per the standing memory note) — the chat
+   reply is already Haiku; the description/structured tiers still default to the free stopgap.
+5. **Activate real integrations in priority order** (each is a credential + flag): email (Resend)
+   → Redbook (trade-in + VIN) → carsales → vision → then the security-reviewed customer auth.
 
 ## Known issues / things to check
-
-- **Fuel economy is invisible on current demo data** — no listing has the field populated
-  (no fabricated backfill, by design). To see it live, enter an L/100km value on a listing in
-  Studio; then Rebi can state it, the listing shows the row, and compare weighs it.
-- **Prod D1 journey table** — the migration is local-only until the owner runs it against
-  `--remote`. Journey is fail-open, so nothing breaks meanwhile; return-visit recall just
-  won't persist in prod until applied.
-- **Haiku is now the chat primary** — this means the buyer-facing chat now makes **paid**
-  OpenRouter calls. Confirm OpenRouter has credit before the demo, or the free fallbacks
-  (gpt-oss-20b, gemma-4-26b) will carry it.
-- **Nothing pushed** — everything is local on `build/autonomous-run`. Review, then approve the
-  push (`git push --force-with-lease origin main` — or merge the branch) when you're ready.
+- **Demo features are off by default** (accounts, capture, grounding sources, web-search,
+  carsales, price-history synth) — they redirect/no-op until you flip the config/env flag.
+- **Fuel economy / real price history are invisible until data exists** — no fabricated backfill;
+  enter values in Studio (or flip `STUB_PRICE_HISTORY` for demo price drops).
+- **Customer accounts is a demo scaffold, NOT secure** — do not point it at real PII before the
+  security review; it 503s if a real auth key is added, by design.
+- **Prod D1 tables** (journey `0003`, saved_searches `0004`, service_bookings `0005`) are
+  local-only until the owner applies them `--remote`. All access is fail-open, so nothing breaks.
+- **Chat now uses paid Haiku** — confirm OpenRouter credit before the demo, or the free fallbacks carry it.
+- **Nothing pushed** — everything is local on `build/autonomous-run`. Review, then approve the push
+  (`git push --force-with-lease origin main`, or merge the branch).
