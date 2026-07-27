@@ -40,6 +40,31 @@ export interface VehicleSpecs {
   condition?: 'new' | 'used' | 'demo';
 }
 
+// One real price-change record. Populated by dealers / a future POS feed and
+// projected via LISTING_FIELDS. When present, the "Just Reduced" badge + the
+// detail-page history render from THIS honest data (see getPriceDrop). The demo
+// synthesizer (src/stubs/price-history.ts) only ever fills this in for empty
+// listings behind the STUB_PRICE_HISTORY flag — never in production.
+export interface PriceHistoryEntry {
+  price: number;
+  /** ISO date (YYYY-MM-DD) this price took effect. */
+  date: string;
+  note?: string;
+}
+
+// The result of comparing the two most recent price points. `null` when there is
+// no real drop to show.
+export interface PriceDrop {
+  /** The earlier (higher) price. */
+  previous: number;
+  /** The current (most recent) price. */
+  current: number;
+  /** True when current < previous AND the change is within the badge window. */
+  dropped: boolean;
+  /** Whole days since the most recent price change (relative to the passed nowMs). */
+  daysAgo: number;
+}
+
 export interface Listing {
   _id: string;
   title: string;
@@ -71,6 +96,9 @@ export interface Listing {
   registrationExpiry?: string;
   buildDate?: string;
   complianceDate?: string;
+  /** Real, dealer/POS-populated price-change log (most recent last). Optional —
+   *  most listings won't carry one. Never synthesized here; see getPriceDrop. */
+  priceHistory?: PriceHistoryEntry[];
 }
 
 // --- Shared GROQ projection --------------------------------------------------
@@ -82,7 +110,8 @@ export const LISTING_FIELDS = `_id, title, slug, description, price, currency, s
   make, model, badge, series, colour, engine, doors, trim,
   vin, registrationExpiry, buildDate, complianceDate,
   details[]{ _key, label, value, valueType, valueNumber, unit, valueBoolean, valueDate },
-  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, fuelEconomy, condition }, listingDate`;
+  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, fuelEconomy, condition }, listingDate,
+  priceHistory[]{ price, date, note }`;
 
 // Broad colour families for the Studio `colourBase` dropdown. A universal vehicle
 // attribute (not dealer-specific), so it lives here rather than in dealer config.
@@ -124,6 +153,45 @@ export function formatDate(iso: string): string {
     month: 'long',
     day: 'numeric',
   });
+}
+
+// --- Price-drop derivation (honest data only) --------------------------------
+// Given a listing and a request-time clock (`nowMs`, passed IN — never a
+// module-level `new Date()`), derive a price DROP from the listing's REAL
+// `priceHistory`. This helper contains NO stub/demo logic: if `priceHistory` is
+// empty or absent it returns null. The demo synthesizer (src/stubs/price-history.ts)
+// feeds its output in via `listing.priceHistory` on a cloned listing, gated at the
+// data layer behind STUB_PRICE_HISTORY — this function can't tell the difference
+// and doesn't need to; it just reports what the history says.
+//
+// `dropped` is true only when the latest price is genuinely lower than the prior
+// one AND that change landed within `withinDays` (the "Just Reduced" window).
+export function getPriceDrop(
+  listing: Pick<Listing, 'priceHistory'>,
+  opts: { nowMs: number; withinDays: number },
+): PriceDrop | null {
+  const history = listing.priceHistory;
+  if (!Array.isArray(history) || history.length < 2) return null;
+
+  // Order-independent: sort a copy ascending by date so "previous" and "current"
+  // are the two most recent points regardless of stored order.
+  const sorted = history
+    .filter((h) => h && Number.isFinite(h.price) && typeof h.date === 'string' && h.date.trim() !== '')
+    .slice()
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  if (sorted.length < 2) return null;
+
+  const current = sorted[sorted.length - 1];
+  const previous = sorted[sorted.length - 2];
+
+  const currentMs = Date.parse(current.date);
+  if (!Number.isFinite(currentMs)) return null;
+
+  const daysAgo = Math.floor((opts.nowMs - currentMs) / 86_400_000);
+  const dropped =
+    current.price < previous.price && daysAgo >= 0 && daysAgo <= opts.withinDays;
+
+  return { previous: previous.price, current: current.price, dropped, daysAgo };
 }
 
 export function categoryLabel(category: string): string {

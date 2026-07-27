@@ -19,6 +19,7 @@ import {
   activeChips,
   type InventoryResult,
 } from '../lib/listings-query';
+import { priceDropsFor } from '../lib/price-history-data';
 
 // Edge caching (DECISION.md Decision 5): anonymous/unfiltered hits get served
 // from Cloudflare's cache and feel static; each unique filter URL caches
@@ -31,6 +32,11 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-re
 const filterState = parseFilters(Astro.url.searchParams);
 const { query, params } = buildListingsQuery(filterState);
 const { items: listings, total } = await client.fetch<InventoryResult>(query, params);
+
+// Resolve each card's honest price drop once (the STUB_PRICE_HISTORY demo flag is
+// read inside priceDropsFor, at this data layer — never in the card). Request-time
+// clock passed in (no module-level new Date()).
+const priceDrops = priceDropsFor(listings, Date.now());
 
 const activeCount = activeChips(filterState).length;
 const year = new Date().getFullYear();
@@ -160,7 +166,7 @@ const canonicalURL = new URL(
         <FilterDrawer state={filterState} triggerId="filters-trigger" />
 
         <!-- Swappable inventory results (chips + grid + pagination) -->
-        <InventoryResults listings={listings} total={total} state={filterState} />
+        <InventoryResults listings={listings} total={total} state={filterState} priceDrops={priceDrops} />
       </main>
 
       <!-- Footer -->

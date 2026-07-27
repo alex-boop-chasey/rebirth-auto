@@ -291,6 +291,21 @@ export interface DealerConfig {
     };
   };
   /**
+   * Price history + "Just Reduced" badge. When a listing carries a REAL
+   * `priceHistory` (dealer edits / a future POS price feed), the badge and the
+   * detail-page history render from THAT honest data. A demo synthesizer fills
+   * plausible history for listings with none ONLY behind the STUB_PRICE_HISTORY
+   * env flag (dev/demo) — deliberately env, NOT config, so a fabricated drop can
+   * never ship in a production config. Every knob here is dealer-tunable.
+   */
+  priceHistory: {
+    /** Master on/off — show the price-history feature (badge + history) at all. */
+    enabled: boolean;
+    /** "Just Reduced" badge window: a price drop counts as recent within this
+     *  many days of the most recent change. */
+    justReducedWithinDays: number;
+  };
+  /**
    * Trade-in valuation ("what's my car worth?"). A standalone shopper tool (the
    * `/trade-in` page + `/api/trade-in` endpoint) backed by a STUBBED Redbook
    * valuation — see docs/briefs/_stub-convention.md. Deliberately NOT under
@@ -653,6 +668,12 @@ export const dealerConfig: DealerConfig = {
         unmuteLabel: 'Unmute notification sounds',
       },
     },
+  },
+  priceHistory: {
+    enabled: true,
+    // A drop shown as "Just Reduced" is one whose most recent change landed
+    // within the last 30 days. Dealer-tunable.
+    justReducedWithinDays: 30,
   },
   tradeIn: {
     enabled: true,

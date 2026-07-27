@@ -13,6 +13,7 @@ export const partial = true;
 import { client } from '../../sanity/lib/client';
 import InventoryResults from '../../components/filters/InventoryResults.astro';
 import { parseFilters, buildListingsQuery, type InventoryResult } from '../../lib/listings-query';
+import { priceDropsFor } from '../../lib/price-history-data';
 
 // Same edge-cache policy as the homepage (DECISION.md Decision 5): each unique
 // filter URL caches separately at Cloudflare, so repeat combinations feel static.
@@ -21,6 +22,10 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-re
 const state = parseFilters(Astro.url.searchParams);
 const { query, params } = buildListingsQuery(state);
 const { items, total } = await client.fetch<InventoryResult>(query, params);
+
+// Same data-layer resolution as the homepage so a filter swap keeps the badges
+// (STUB_PRICE_HISTORY read here, not in the card; request-time clock passed in).
+const priceDrops = priceDropsFor(items, Date.now());
 ---
 
-<InventoryResults listings={items} total={total} state={state} />
+<InventoryResults listings={items} total={total} state={state} priceDrops={priceDrops} />

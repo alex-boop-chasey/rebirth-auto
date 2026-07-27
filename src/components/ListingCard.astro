@@ -10,19 +10,32 @@ import {
   formatPrice,
   categoryLabel as categoryLabelFn,
 } from '../lib/listing';
-import type { Listing } from '../lib/listing';
+import type { Listing, PriceDrop } from '../lib/listing';
+import { dealerConfig } from '../config/dealer';
 
 // Re-export so existing importers (e.g. index.astro) keep working.
 export type { Listing, ListingDetail } from '../lib/listing';
 
 interface Props {
   listing: Listing;
+  /**
+   * Pre-computed, ALREADY-RESOLVED price drop for this listing (honest data or,
+   * in dev/demo, the flag-gated synthesizer — resolved at the data layer). The
+   * card is pure: it reads this prop + config only, and NEVER reads env, so a
+   * synthesized drop is impossible unless the data layer put one here. Optional.
+   */
+  priceDrop?: PriceDrop | null;
 }
 
-const { listing } = Astro.props;
+const { listing, priceDrop = null } = Astro.props;
 
 // --- Derived view data -------------------------------------------------------
 const priceLabel = formatPrice(listing.price, listing.currency);
+
+// "Just Reduced": only when the feature is enabled AND the (already-resolved)
+// drop says so. No env, no synthesis here.
+const showDrop = dealerConfig.priceHistory.enabled && priceDrop?.dropped === true;
+const previousLabel = showDrop ? formatPrice(priceDrop!.previous, listing.currency) : null;
 
 const heroUrl = listing.images?.[0]
   ? urlFor(listing.images[0]).width(800).height(450).fit('crop').auto('format').url()
@@ -89,6 +102,17 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
       <span data-compare-label>Compare</span>
     </button>
 
+    {/* "Just Reduced" badge — honest drop, resolved upstream. Sits bottom-left so
+        it doesn't collide with the Compare toggle (top-left) or status (top-right). */}
+    {
+      showDrop && (
+        <span class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+          <Fragment set:html={svg('tag', 'h-3.5 w-3.5')} />
+          Just Reduced
+        </span>
+      )
+    }
+
     {/* SOLD banner */}
     {
       listing.status === 'sold' && (
@@ -104,7 +128,16 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
 
   {/* Body */}
   <div class="flex flex-1 flex-col gap-3 p-4">
-    <p class="text-2xl font-bold text-slate-900">{priceLabel}</p>
+    <div class="flex items-baseline gap-2">
+      <p class="text-2xl font-bold text-slate-900">{priceLabel}</p>
+      {
+        showDrop && previousLabel && (
+          <span class="text-sm font-medium text-slate-400 line-through" aria-label={`Was ${previousLabel}`}>
+            {previousLabel}
+          </span>
+        )
+      }
+    </div>
 
     <h3 class="line-clamp-2 text-base font-semibold text-slate-700">{listing.title}</h3>
 

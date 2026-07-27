@@ -397,6 +397,47 @@ export const listing = defineType({
       group: 'pricing',
       description: 'Last updated.',
     }),
+    // REAL price-change log. Dealers (or a future POS price feed) populate this;
+    // when present, the site renders the "Just Reduced" badge + history from THIS
+    // honest data. Never auto-filled — a demo synthesizer (src/stubs/price-history.ts)
+    // fills in plausible history for empty listings ONLY behind STUB_PRICE_HISTORY.
+    defineField({
+      name: 'priceHistory',
+      title: 'Price history',
+      type: 'array',
+      group: 'pricing',
+      description:
+        'Price changes over time — most recent last. Populated as prices change; leave empty if unknown.',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          name: 'priceChange',
+          fields: [
+            defineField({
+              name: 'price',
+              title: 'Price',
+              type: 'number',
+              description: 'The price as of this change.',
+              validation: (Rule) => Rule.required().min(0),
+            }),
+            defineField({
+              name: 'date',
+              title: 'Date',
+              type: 'date',
+              description: 'When this price took effect.',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'note',
+              title: 'Note',
+              type: 'string',
+              description: 'Optional context, e.g. "EOFY reduction".',
+            }),
+          ],
+          preview: { select: { title: 'price', subtitle: 'date' } },
+        }),
+      ],
+    }),
     defineField({
       name: 'category',
       title: 'Category',

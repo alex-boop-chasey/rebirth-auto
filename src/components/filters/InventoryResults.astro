@@ -11,7 +11,7 @@
 import ListingCard from '../ListingCard.astro';
 import ActiveFilterChips from './ActiveFilterChips.astro';
 import { iconSvg } from '../../lib/listing';
-import type { Listing } from '../../lib/listing';
+import type { Listing, PriceDrop } from '../../lib/listing';
 import { activeChips, totalPages, pageHref, type FilterState } from '../../lib/listings-query';
 import { dealerConfig } from '../../config/dealer';
 
@@ -19,9 +19,12 @@ interface Props {
   listings: Listing[];
   total: number;
   state: FilterState;
+  /** `_id → PriceDrop|null` map, resolved once at the data layer (demo flag read
+   *  there, never here). Absent → no drops. Threaded straight to each card. */
+  priceDrops?: Record<string, PriceDrop | null>;
 }
 
-const { listings, total, state } = Astro.props;
+const { listings, total, state, priceDrops = {} } = Astro.props;
 
 const chips = activeChips(state);
 // Saved searches: an auto-generated human label from the active chips (e.g.
@@ -139,7 +142,7 @@ const pageLinkDisabled =
     total > 0 ? (
       <section class="mt-6 inventory-grid">
         {listings.map((listing) => (
-          <ListingCard listing={listing} />
+          <ListingCard listing={listing} priceDrop={priceDrops[listing._id] ?? null} />
         ))}
       </section>
     ) : (

@@ -21,6 +21,13 @@ import {
   categoryLabel,
   formatDate,
 } from '../../lib/listing';
+import { dealerConfig } from '../../config/dealer';
+import {
+  usePriceHistoryDemo,
+  resolveHistory,
+  priceDropFor,
+  priceDropsFor,
+} from '../../lib/price-history-data';
 
 export async function getStaticPaths() {
   // Car dealership: only generate detail pages for vehicle listings.
@@ -56,6 +63,22 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
 const categoryName = categoryLabel(listing.category);
 const priceLabel = formatPrice(listing.price, listing.currency);
 const details = buildSpecRows(listing);
+
+// --- Price history (honest data; demo flag resolved at the data layer) --------
+// STUB_PRICE_HISTORY is read inside these helpers, never here or in the card.
+// Request-time clock passed in (no module-level new Date() for this feature).
+const nowMs = Date.now();
+const useDemo = usePriceHistoryDemo();
+const historyEnabled = dealerConfig.priceHistory.enabled;
+// resolveHistory returns [] when the feature is disabled; gated once here.
+const resolvedHistory = resolveHistory(listing, nowMs, useDemo);
+const priceDrop = priceDropFor(listing, nowMs, useDemo);
+const showDrop = historyEnabled && priceDrop?.dropped === true;
+const dropAmount = showDrop ? priceDrop!.previous - priceDrop!.current : 0;
+// Newest-first for the timeline display.
+const historyRows = historyEnabled ? [...resolvedHistory].reverse() : [];
+// Related-card badges resolved the same way (demo flag read inside).
+const relatedDrops = priceDropsFor(related, nowMs);
 
 const year = new Date().getFullYear();
 
@@ -206,7 +229,28 @@ const canonicalURL = new URL(
               {listing.title}
             </h1>
 
-            <p class="mt-4 text-4xl font-bold text-slate-900">{priceLabel}</p>
+            <div class="mt-4 flex flex-wrap items-baseline gap-3">
+              <p class="text-4xl font-bold text-slate-900">{priceLabel}</p>
+              {
+                showDrop && (
+                  <span
+                    class="text-lg font-medium text-slate-400 line-through"
+                    aria-label={`Was ${formatPrice(priceDrop!.previous, listing.currency)}`}
+                  >
+                    {formatPrice(priceDrop!.previous, listing.currency)}
+                  </span>
+                )
+              }
+            </div>
+
+            {
+              showDrop && (
+                <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                  <Fragment set:html={iconSvg('tag', 'h-3.5 w-3.5')} />
+                  Just reduced — save {formatPrice(dropAmount, listing.currency)}
+                </p>
+              )
+            }
 
             {
               listing.listingDate && (
@@ -276,6 +320,37 @@ const canonicalURL = new URL(
         )
       }
 
+      <!-- Price history -->
+      {
+        historyEnabled && historyRows.length > 1 && (
+          <section class="border-t border-slate-200 py-16">
+            <h2 class="text-xl font-bold text-slate-900">Price history</h2>
+            <ol class="mt-6 max-w-md space-y-3">
+              {historyRows.map((h, i) => (
+                <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+                  <span class="text-sm text-slate-500">{formatDate(h.date)}</span>
+                  <span class="inline-flex items-center gap-2">
+                    <span
+                      class:list={[
+                        'text-base font-semibold',
+                        i === 0 ? 'text-slate-900' : 'text-slate-400 line-through',
+                      ]}
+                    >
+                      {formatPrice(h.price, listing.currency)}
+                    </span>
+                    {i === 0 && showDrop && (
+                      <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                        −{formatPrice(dropAmount, listing.currency)}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      }
+
       <!-- Description -->
       {
         Array.isArray(listing.description) && listing.description.length > 0 && (
@@ -295,7 +370,7 @@ const canonicalURL = new URL(
             <h2 class="text-xl font-bold text-slate-900">More from {categoryName}</h2>
             <div class="mt-6 inventory-grid">
               {related.map((r) => (
-                <ListingCard listing={r} />
+                <ListingCard listing={r} priceDrop={relatedDrops[r._id] ?? null} />
               ))}
             </div>
           </section>

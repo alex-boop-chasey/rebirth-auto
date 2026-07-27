@@ -18,6 +18,7 @@ _(populated as Phase 6–8 stubs land — each `src/stubs/<service>.ts` gets a r
 |---------|----------|-------------------|--------------|---------|--------|
 | Redbook trade-in | STUB_REDBOOK | REDBOOK_API_KEY | .dev.vars / wrangler secret | live trade-in valuations | ~1 day (API contract + mapping) |
 | Email alerts | STUB_EMAIL | RESEND_API_KEY | .dev.vars / wrangler secret | real confirmation + new-match alert emails | ~0.5 day (provider SDK) |
+| Price history | STUB_PRICE_HISTORY | none — real `listing.priceHistory` (dealer edits / POS price log) | .dev.vars / wrangler secret (flag ON = demo only); real data via Studio/POS | "Just Reduced" badge + price-history timeline from real data; flag synthesizes demo history for empty listings (dev/demo ONLY, off in prod) | ~0 (data-driven; POS feed later) |
 
 ## Owner-gated data writes (no autonomous `--commit`)
 
