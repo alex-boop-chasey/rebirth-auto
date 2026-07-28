@@ -249,3 +249,19 @@ commit remainder → **hold push for owner** → write `docs/BUILD_SUMMARY.md` �
   problem; the comparison design contest already ran and was judged.
 - **Then:** firm up the remaining backlog (parked vision items stay parked; owner data tasks stay
   owner-gated/dry-run).
+
+---
+
+## /auto run 3 (autonomous) — edits-1.txt fixes
+
+Scope: the 3 open items from `docs/edits-1.txt` (item "Accounts dead-end" already done via Supabase auth).
+**Contest designation (§6): NONE** — all three are defined fixes, not open design/coding problems.
+
+1. **Rebi visual consistency + globalize his styles/sounds/layout into their own file.** Rebi shows the
+   greyed+blurred backdrop from the inventory widget but a white feathered-edge backdrop from the compare
+   table — unify so every Rebi instance matches the main chatbot. Extract the Rebi `<style is:global>` +
+   the oscillator sound engine + layout out of `ChatWidget.astro` into a dedicated file for easy edits.
+2. **Compare "Ask Rebi to choose" must stay the compare agent.** In `kind="compare"` context, a decision
+   criterion ("low running costs") must make Rebi pick ONE of the tagged compare cars and open that
+   listing — not run a generic inventory search (which abandons the compare role before release).
+3. **Centre the search-results listings** within the site's 55px laptop gutters.
