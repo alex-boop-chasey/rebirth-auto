@@ -507,57 +507,38 @@ export interface DealerConfig {
     };
   };
   /**
-   * Customer accounts — a DEMO-ONLY "my account" surface (the `/account` page +
-   * `/api/account` endpoint): service history, saved searches, vehicle interests
-   * behind a stubbed sign-in. DEFAULT OFF and deliberately so — DECISIONS.md
-   * mandates a paid human security review before ANY real customer data flows, so
-   * this ships as a SCAFFOLD, never a real auth system. The stubbed sign-in
-   * (src/stubs/auth.ts) accepts an email and returns a MOCK profile — NO password,
-   * NO session token, NO credential storage, NO real PII. Going live is a
-   * SECURITY-REVIEW BLOCKER (see TODO_KEYS.md), not a config change. Its OWN block
-   * (not under `chat`) — it does not touch Rebi. Every dealer-facing string/toggle
-   * lives here so a tenant swap restyles it without a code edit.
+   * Customer accounts — REAL Supabase auth ("my account"): the /login, /signup,
+   * /account, /check-email and /reset-password routes plus src/middleware.ts and
+   * the Supabase-backed Astro actions (src/actions/index.ts). Sign-in is real
+   * (Supabase Auth + Cloudflare Turnstile), so this is NOT a demo stub. DEFAULT
+   * behaviour is still gated: `enabled` is the single on/off seam for the whole
+   * surface (off = every route redirects home and the middleware no-ops).
+   *
+   * PRODUCTION NOTE: real customer PII still warrants the paid human security
+   * review DECISIONS.md mandates before launch — see the TODO_KEYS marker in
+   * src/pages/account.astro and TODO_KEYS.md. Its OWN block (not under `chat`) —
+   * it does not touch Rebi. Every dealer-facing string/toggle lives here so a
+   * tenant swap restyles it without a code edit.
    */
   accounts: {
-    /** Master on/off — DEMO SCAFFOLD, OFF by default. Even enabled it is mock, non-secured sign-in. */
+    /** Master on/off for the whole auth surface (login/signup/account/reset). */
     enabled: boolean;
-    /** Per-IP rate limit for /api/account (its OWN `account:` KV counter). */
+    /** Reserved per-IP rate limit for account endpoints (its OWN `account:` KV counter). */
     rateLimit: { windowSeconds: number; maxRequests: number };
-    /** Front-of-house copy for the account page, its nav link, and the demo banner. */
+    /** Front-of-house copy for the account surface and its nav link. */
     copy: {
       /** Short nav/link label (e.g. "My account"). */
       navLabel: string;
-      /** Page eyebrow kicker. */
+      /** Account-page eyebrow kicker. */
       eyebrow: string;
-      /** Page H1. */
+      /** Account-page H1 / title base. */
       heading: string;
-      /** One-line intro under the heading. */
+      /** One-line intro / meta description for the account surface. */
       subheading: string;
-      /**
-       * LOUD demo banner text. MUST make clear this is a demo, not a secured login —
-       * never imply real authentication or a real account.
-       */
-      demoBanner: string;
-      /** Label on the email input. */
-      emailLabel: string;
-      /** Placeholder for the email input. */
-      emailPlaceholder: string;
-      /** Submit button label. */
-      submitLabel: string;
-      /** Loading-state text shown while the demo sign-in runs. */
-      loadingLabel: string;
-      /** Heading above the service-history table once signed in. */
+      /** Heading above the service-history section on the account page. */
       serviceHistoryHeading: string;
-      /** Heading above the vehicle-interests list once signed in. */
-      interestsHeading: string;
       /** Label for the link through to saved searches. */
       savedSearchesLabel: string;
-      /** Inline message when the entered email is invalid. */
-      invalidMessage: string;
-      /** Inline message when the per-IP rate limit is hit. */
-      rateLimitMessage: string;
-      /** Inline generic-failure message. */
-      errorMessage: string;
     };
   };
   /**
@@ -986,35 +967,23 @@ export const dealerConfig: DealerConfig = {
     },
   },
   accounts: {
-    // DEMO SCAFFOLD — DEFAULT OFF. DECISIONS.md mandates a paid human security
-    // review before ANY real customer data flows; until that lands this stays off
-    // and the /account page (redirects home) + /api/account (returns 404) are
-    // inert. Even when enabled the sign-in is a STUB: an email returns a MOCK
-    // profile, with NO password, session token, credential, or real PII. The
-    // security review is the go-live BLOCKER — see TODO_KEYS.md.
-    enabled: false,
-    // Light demo action, still capped per-IP to bound abuse.
+    // REAL Supabase auth. `enabled` is the single on/off seam for the whole
+    // surface: off = /login, /signup, /account, /check-email, /reset-password all
+    // redirect home and src/middleware.ts no-ops. Production launch with real
+    // customer PII is still gated on the DECISIONS.md security review — see the
+    // TODO_KEYS marker in src/pages/account.astro and TODO_KEYS.md.
+    enabled: true,
+    // Reserved per-IP cap for future account endpoints; the auth actions carry
+    // their own Turnstile + Supabase rate limiting today.
     rateLimit: { windowSeconds: 3600, maxRequests: 20 },
     copy: {
       navLabel: 'My account',
       eyebrow: 'Customer account',
       heading: 'Your account',
       subheading:
-        'See your service history, saved searches, and the vehicles you are interested in.',
-      demoBanner:
-        'Demo account — not a real, secured login. This is a demonstration only: enter any ' +
-        'email to see example data. No password is asked for, nothing is stored, and no real ' +
-        'account is created.',
-      emailLabel: 'Email',
-      emailPlaceholder: 'you@example.com',
-      submitLabel: 'View my account',
-      loadingLabel: 'Loading your account…',
+        'Sign in to see your service history, saved searches, and the vehicles you are interested in.',
       serviceHistoryHeading: 'Service history',
-      interestsHeading: 'Vehicles you are interested in',
-      savedSearchesLabel: 'Browse inventory to manage saved searches',
-      invalidMessage: 'Please enter a valid email address.',
-      rateLimitMessage: 'Too many attempts — please try again later.',
-      errorMessage: "Sorry, we couldn't load that account. Please try again.",
+      savedSearchesLabel: 'Browse inventory to save a search',
     },
   },
   capture: {
