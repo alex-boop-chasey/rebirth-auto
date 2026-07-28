@@ -140,7 +140,7 @@ const pageLinkDisabled =
 
   {
     total > 0 ? (
-      <section class="mt-6 inventory-grid">
+      <section class="mt-6 inventory-grid" style={`--result-cols:${listings.length}`}>
         {listings.map((listing) => (
           <ListingCard listing={listing} priceDrop={priceDrops[listing._id] ?? null} />
         ))}

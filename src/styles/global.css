@@ -43,4 +43,15 @@
   display: grid;
   gap: 1.5rem; /* == Tailwind gap-6 */
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  /* Centre a sparse result set within the site gutters. With `auto-fill` a
+     handful of cards leave empty tracks on the right and sit left-aligned;
+     `justify-content` can't fix that because the `1fr` tracks absorb the free
+     space. Instead cap the grid to exactly the result count's worth of columns
+     (same 18rem min + 1.5rem gap as the template) and let `margin-inline: auto`
+     centre it inside the existing `.site-container` gutters. `--result-cols` is
+     set per render from the number of cards shown; the large fallback keeps this
+     a no-op for a full inventory — the cap exceeds the container, so the grid
+     still fills edge-to-edge and scales fluidly (mobile/ultra-wide unchanged). */
+  max-width: calc(var(--result-cols, 99) * 18rem + (var(--result-cols, 99) - 1) * 1.5rem);
+  margin-inline: auto;
 }
