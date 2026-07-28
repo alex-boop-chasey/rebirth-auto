@@ -147,3 +147,26 @@ Ran under the new `/auto` mode (`.claude/commands/auto.md`): commit-per-checkpoi
 Your demo-flag toggles for testing (`dealer.ts` — capture/grounding/carsales were flipped on earlier)
 were reset to committed defaults; flip them again locally to demo those. `STUB_PRICE_HISTORY=true`
 lives in your gitignored `.dev.vars`. Your two `.rtf` docs were left untouched.
+
+---
+
+## /auto run 3 (autonomous) — edits-1.txt fixes
+
+The 3 open items from `docs/edits-1.txt` (the "Accounts dead-end" item was already done via the
+Supabase auth port). Contest designation: none. Checkpoint `3a3ba6e`.
+
+- **Rebi visual consistency + globalize** (`e14398d`) — the `/compare` "white feathered" backdrop was
+  caused by `.balance-page` painting its colour washes on `<body>` (which the dreaming filter skips so
+  it can't clip `#reb-chat`); moved them onto a `.page-bg` body-child so Rebi's greyed+blurred backdrop
+  now applies identically everywhere (visually confirmed). Extracted Rebi's styles → `src/styles/rebi.css`
+  and the oscillator sounds → `src/components/widgets/rebi-sounds.ts` (behaviour byte-identical) for
+  easy editing.
+- **Compare-agent role** (`90d3a0d`) — in compare context a decision criterion no longer runs a generic
+  inventory search. It maps the criterion to a compare-verdict dimension, deterministically ranks the
+  COMPARED cars (`normDim`/`SCORE_DIMS`, read-only), and opens the winner's listing with a grounded
+  announcement (new config-gated, rate-limited `/api/compare-pick`). Un-rankable → grounded-chat
+  fallback (never a guess or a generic search). Role still releases on an explicit fresh-search intent;
+  all other chat contexts unchanged. Endpoint verified deterministic (cheapest→value, low-kms→lowkm,
+  newest→newer all return the correct compared car + slug).
+- **Results centering** (`a5a3a31`) — `.inventory-grid` caps its width to the result count and
+  `margin-inline:auto` centres a sparse result set within the 55px gutters; a full grid still fills.
