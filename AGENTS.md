@@ -58,6 +58,15 @@ Orchestrator then synthesises the winner (one proposal whole, or the best parts 
 
 One commit per completed ticket. Push only when the owner explicitly approves — never push unilaterally. Use `git push --force-with-lease` if a history rewrite is ever needed, never plain `--force`.
 
+## Dependencies & lockfile (prevents Cloudflare build failures)
+
+This is an **npm** project (`package-lock.json`; `packageManager` is pinned to npm). Cloudflare's build runs `npm ci`, which **fails the deploy** if `package.json` and `package-lock.json` drift — the common Cloudflare Workers pain point. Rules:
+
+- After ANY dependency change, run a **full `npm install`** (never a partial/offline install) and commit the updated `package-lock.json` **in the same commit**. Verify with `npm ci --dry-run` before pushing.
+- Never hand-edit dependency versions in `package.json` without re-running `npm install`.
+- Do **not** introduce a second package manager (pnpm/yarn) or a second lockfile — the repo is npm-only. (`npm ci` is already the frozen-lockfile guard; that's a feature — it surfaces drift at build time rather than shipping a broken deploy.)
+- Sub-agents must not run installs that could partially update the lock; the orchestrator owns dependency changes and re-syncs the lock.
+
 ## Data model
 
 - **`vehicleSpecs`** — typed object holding filterable dimensions: `bodyType`, `transmission`, `fuelType`, `driveType`, `seatCount`, `year`, `odometer`, `condition`. Values are lowercase codes that also serve as URL filter params.
