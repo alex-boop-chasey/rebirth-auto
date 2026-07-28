@@ -232,3 +232,20 @@ winner (3.1) and the final push. Everything else proceeds autonomously.
 
 **Finalisation:** `npx astro check` clean → verify homepage + a listing page render →
 commit remainder → **hold push for owner** → write `docs/BUILD_SUMMARY.md` → Telegram.
+
+---
+
+## /auto run 2 (autonomous) — scope + decisions
+
+- **Comparison option 3 ("Balance"):** already shipped (`fa52bff`, light theme) — NOT rebuilt (audit-first).
+- **Directional decision (this checkpoint):** replace the `/account` DEMO-stub (`src/stubs/auth.ts` +
+  `/api/account`) with **real Supabase auth ported from `/Users/alex/components/astro-users-demo`**, using
+  that project's existing `.env` credentials. Adaptations: env read via the Cloudflare-Worker pattern
+  (not `@astrojs/node`), **light theme** to match this site, **config-as-data** for any dealer values,
+  and **reuse the demo's Turnstile pair** for the auth widget. Ports: `getSupabase` cookie client, auth
+  middleware (guard `/dashboard`), Astro Actions (signUp/signIn/signOut/requestPasswordReset/
+  updatePassword), and the login/signup/dashboard/check-email/reset-password pages.
+- **Contest designation (§6): NONE this run** — the auth is a faithful port, not an open design/coding
+  problem; the comparison design contest already ran and was judged.
+- **Then:** firm up the remaining backlog (parked vision items stay parked; owner data tasks stay
+  owner-gated/dry-run).
