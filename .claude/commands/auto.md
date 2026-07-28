@@ -9,9 +9,9 @@ You are operating in **/auto mode**. Work through every task to completion **wit
 the owner**. The owner returns when the run is done. The single exception is contest judgments,
 which are decided up front and queued to the very end (see §6).
 
-`$ARGUMENTS` is the scope. If empty, the scope is **all outstanding work**: reconcile `docs/todo.md`,
-`docs/build-plan.md`, `TODO_KEYS.md`, and any open tickets **against the actual code first** (audit —
-never rebuild what is already shipped), then execute everything that remains.
+`$ARGUMENTS` is the scope. If empty, the scope is **all outstanding work**: reconcile
+`docs/REMAINING-WORK.md` and `TODO_KEYS.md` **against the actual code first** (audit — never rebuild
+what is already shipped), then execute everything that remains.
 
 ## 1. Authority granted in this mode
 These project-doc rules that normally require owner authorization are **lifted** here:
@@ -62,15 +62,15 @@ deterministic (no `Math.random`, no module-top-level `new Date()`).
 ## 6. Contests — decide up front, run LAST
 **Before starting the run**, review the whole task list and **decide which complex sections genuinely
 warrant a sub-agent contest** — a *design* contest for gold-standard UI/UX, a *coding* contest for a
-hard or open-ended technical problem. Record the decision in `docs/build-plan.md`. Then:
+hard or open-ended technical problem. Record the decision in `docs/REMAINING-WORK.md`. Then:
 - Build **everything else first**, autonomously, to completion.
 - **Defer the contest-designated features to the very end.** They are the **only** tasks that require
   the human. Run each contest per AGENTS.md (**3 sub-agents, strict sequence**), present the candidates,
   and let the **owner judge** — do **not** self-select the winner for a contest-designated feature.
 
 ## 7. Start & finish
-On invocation: audit the backlog vs the code, produce/refresh the sequenced plan in
-`docs/build-plan.md` **including the up-front contest designations**, commit it, then **execute
-without stopping**. When every non-contest task is done: run `astro check`, verify the key pages,
-update `docs/BUILD_SUMMARY.md`, commit, push the branch. Then present the queued contest(s) for the
-owner's decision — that handoff is the only stop.
+On invocation: audit the remaining work vs the code, refresh `docs/REMAINING-WORK.md` **including the
+up-front contest designations**, commit it, then **execute without stopping**. When every non-contest
+task is done: run `astro check`, verify the key pages, update `docs/REMAINING-WORK.md` (tick off what
+shipped), commit, push the branch. Then present the queued contest(s) for the owner's decision — that
+handoff is the only stop.

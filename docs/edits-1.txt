@@ -1,8 +1,0 @@
-Fixes
-- The chatbot background is inconsistent: When opened from the inventory page via the chatbot widget, it has the greyed, blurred page behind it but when opened from the comparison table it had the white background with feathered edge. Let’s make all instances of Rebi the same as the main chatbot and make all of his styles, layout, noises etc global in their own file for easy edits. 
-
-- The Accounts link was a dead-end - check out our project at 
-
-- With the comparison chart open, I clicked Ask Rebi to choose, it opened up the chatbot. It asked which was most import to me and I answered ‘Low running costs’ and it opened up a page with a search filter applied to [hatchback] [automatic] [up to $25,000] ignoring the cars i had with ‘compare’ tagged. Rebi just did an ordinary search, abandoning his job as the ‘Compare agent’ which is good because we wanted him to be able to switch from one role to another but in this case, we hadn’t released him from that role in our chat and what he should have done was choose a single listing from a selection of ‘compare’ vehicles and opened that listing.
-
-- When Rebi does a search, although we have designed the site to have 55px margins on laptop to make it full screen, the listings are not centered and they should be.
