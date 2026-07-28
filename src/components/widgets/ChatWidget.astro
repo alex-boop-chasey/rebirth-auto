@@ -876,6 +876,61 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       }
     };
 
+    // An EXPLICIT "go browse the inventory instead" intent — the only thing that
+    // may release the COMPARE role for a fresh search. Requires a browse verb
+    // ("show me / find / search / do you have …") so a plain decision criterion
+    // ("low running costs", "space", "cheapest") is NEVER mistaken for one.
+    const FRESH_SEARCH_INTENT =
+      /\b(show|find|search|browse|list|see|view|got|have|want|looking for|look for|pull up|bring up)\b.*\b(car|cars|vehicle|vehicles|suv|suvs|ute|utes|sedan|sedans|hatch|hatchback|wagon|van|truck|4wd|awd|automatic|manual|diesel|petrol|hybrid|electric|under|below|over|around|cheaper|else|other|instead|something)\b/i;
+    const looksLikeFreshSearch = (t: string) => FRESH_SEARCH_INTENT.test(t.trim());
+
+    // Compare-agent decision (§compare). When Rebi is primed as the COMPARE agent
+    // and the visitor answers with a decision criterion, he STAYS the compare
+    // agent: /api/compare-pick ranks ONLY the compared cars (activeContext.refs —
+    // real ids) on that criterion using the SAME deterministic scoring the
+    // /compare board uses, then Rebi announces the winner and opens its listing —
+    // NEVER the generic inventory search. Returns:
+    //   'navigated' — a car was chosen; announced + navigating to its listing.
+    //   'unmatched' — criterion maps to no scoring lens; the caller MAY let an
+    //                 explicit fresh search leave compare, otherwise it grounds.
+    //   'grounded'  — matched a lens but not rankable/openable from the compared
+    //                 cars' data (or any error) → grounded chat turn, no search,
+    //                 no guess.
+    type CompareDecision = 'navigated' | 'unmatched' | 'grounded';
+    const COMPARE_NAV_DELAY_MS = 1100; // let the announcement land before the listing loads
+    const tryCompareDecision = async (text: string): Promise<CompareDecision> => {
+      const refs = activeContext?.refs ?? [];
+      if (refs.length < 2) return 'unmatched';
+      try {
+        const res = await fetch('/api/compare-pick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refs, criterion: text }),
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json().catch(() => null);
+        if (!data || !data.matched) return 'unmatched';
+        if (!data.rankable || !data.slug || !data.announce) return 'grounded';
+
+        // Announce the pick, then open its listing. The message is pushed to
+        // history so it persists in the chat after the same-tab navigation
+        // rehydrates it on the listing page.
+        hideTyping();
+        const ts = Date.now();
+        history.push({ role: 'assistant', content: String(data.announce), ts });
+        addBubble('assistant', format(String(data.announce)), ts);
+        soundRebi();
+        save();
+        const slug = String(data.slug);
+        setTimeout(() => {
+          window.location.href = `/listings/${encodeURIComponent(slug)}`;
+        }, COMPARE_NAV_DELAY_MS);
+        return 'navigated';
+      } catch {
+        return 'grounded'; // never turn an error into a generic search
+      }
+    };
+
     const send = async (text: string) => {
       if (busy || !text.trim()) return;
 
@@ -904,10 +959,25 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       // filter URL moves. A question leaves the grid alone and just gets a
       // grounded answer.
       if (!looksLikeQuestion(text)) {
-        const outcome = await applyInventorySearch(text);
-        // Off-grid apply navigates to the inventory — the page is unloading, so
-        // there's no in-page chat turn to run; the filtered grid is the answer.
-        if (outcome === 'navigated') return;
+        if (activeContext?.kind === 'compare') {
+          // COMPARE role: a decision criterion must NOT run the generic inventory
+          // search (which would abandon the compared cars). Rank the compared cars
+          // and open the winner instead. Only an EXPLICIT fresh-search intent may
+          // release the role; anything else grounds on the compared cars.
+          const decision = await tryCompareDecision(text);
+          if (decision === 'navigated') return; // announced + opening the listing
+          if (decision === 'unmatched' && looksLikeFreshSearch(text)) {
+            const outcome = await applyInventorySearch(text);
+            if (outcome === 'navigated') return;
+          }
+          // 'grounded' (and unmatched-but-not-a-fresh-search) → fall through to the
+          // normal grounded chat turn on the compared cars. No generic search.
+        } else {
+          const outcome = await applyInventorySearch(text);
+          // Off-grid apply navigates to the inventory — the page is unloading, so
+          // there's no in-page chat turn to run; the filtered grid is the answer.
+          if (outcome === 'navigated') return;
+        }
       }
 
       const payload = basePayload();
