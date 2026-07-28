@@ -111,3 +111,39 @@ refactor of working code or produce nothing demoable:
 - **Chat now uses paid Haiku** — confirm OpenRouter credit before the demo, or the free fallbacks carry it.
 - **Nothing pushed** — everything is local on `build/autonomous-run`. Review, then approve the push
   (`git push --force-with-lease origin main`, or merge the branch).
+
+---
+
+## /auto run 2 (autonomous mode) — additions
+
+Ran under the new `/auto` mode (`.claude/commands/auto.md`): commit-per-checkpoint, no stopping.
+
+- **Comparison "Balance" (contest v3)** — shipped as the real `/compare` in the site's light theme
+  (`fa52bff`). The dark look was a `prefers-color-scheme: dark` block firing on OS dark mode; removed
+  (site is light-only, now a standing memory). Scratch `/compare-lab` candidates cleaned up.
+- **Real Supabase authentication** (`cdc58c6`) — replaced the `/account` demo stub with a real
+  Supabase SSR auth foundation ported from `astro-users-demo` and adapted to this project: cookie
+  client + middleware (guards `/account`, scoped off the shopper site) + Astro Actions
+  (signUp/signIn/signOut/password-reset/update) with Cloudflare Turnstile; pages `/login /signup
+  /account /check-email /reset-password`, re-skinned light, brand/copy from `dealerConfig.accounts`
+  (config-as-data, `accounts.enabled` gate preserved). The Turnstile secret is read Worker-safe via
+  `cloudflare:workers`. **Credentials live only in gitignored `.env`/`.dev.vars` — never committed.**
+  Production hardening + the DECISIONS.md security review before real customer PII remain a documented
+  TODO_KEYS blocker. `accounts` now defaults enabled (real, working feature); the other demo-only
+  stub flags (capture, grounding sources, carsales) were reset to their `false` defaults.
+- **Site-wide security headers** (`1ad7a81`) — nosniff + Referrer-Policy + X-Frame-Options SAMEORIGIN
+  on every response (the top gap from `docs/cloudflare-security.md`). Permissions-Policy and a CSP are
+  documented follow-ups (they'd break the chatbot mic / external scripts if added blindly).
+
+### Still owner-gated / parked (unchanged this run)
+- Owner data/infra (dry-run scripts ready; writes are yours): `businessInfo` fill, brand reconciliation,
+  prod D1 migrations (`0003`–`0005` `--remote`), `GROUNDING_KV` binding, Sanity MCP install, the CSP +
+  Permissions-Policy headers, the 100% snapshot fork.
+- Parked vision items (per your instruction): kernel extraction, plug-into-any-website, multi-tenant,
+  Experience Mode, POS, the paid multi-turn agentic loop.
+- No contest was pending this run (the comparison contest already ran and you judged it).
+
+### Local-only (not committed)
+Your demo-flag toggles for testing (`dealer.ts` — capture/grounding/carsales were flipped on earlier)
+were reset to committed defaults; flip them again locally to demo those. `STUB_PRICE_HISTORY=true`
+lives in your gitignored `.dev.vars`. Your two `.rtf` docs were left untouched.
