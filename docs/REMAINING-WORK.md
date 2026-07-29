@@ -9,6 +9,44 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 4 — audit verdicts, decisions & contest (2026-07-29)
+
+Autonomous run, scope = finish the backlog. Audited the code against this doc + `TODO_KEYS.md` first.
+Directional decisions recorded here (this section is the §3 checkpoint before executing):
+
+**Building autonomously this run:**
+- **/capture reachability** — the flow is fully built behind `capture.enabled=false` (redirect + API 404)
+  and has zero inbound links. Decision: flip the flag ON and add a **discreet, flag-gated dealer entry
+  link** (the write stays the owner-gated stub `src/stubs/listing-writer.ts`). There is no bespoke
+  "Studio" dealer area — Studio = embedded Sanity Studio — so the entry point is a new link, not a toggle.
+- **Account dashboard real data (folds in "saved searches view")** — the saved-search + service-booking
+  tables key on an anonymous `visitor_id`+`email`, NOT the Supabase user (no `user_id` column). Decision:
+  wire the `/account` cards to real data via a **query-by-email** path (the logged-in user's email), adding
+  `getSavedSearchesByEmail` / `getBookingsByEmail` helpers — no schema migration. Saved-search rows get
+  re-run links via `applyFilterUrl`.
+- **Restore Haiku tiers** — reorder `writing` + `structured` in `src/ai/tiers.ts` so Haiku is primary.
+- **Brand reconciliation** — deterministic (match Rebi's claimed brands to actual inventory). Run the
+  read-only `reconcile-brands.ts` for the authoritative diff, then edit `src/chatbot/knowledge.ts` to match.
+
+**Deliberately NOT done this run (with reasons):**
+- **Compare nav link** — SKIP. Marked optional ("fine as-is"); a nav link lands on an empty-state compare
+  page (compare needs 2+ tagged cars), which is worse UX than the tray entry. Owner can override.
+- **Full CSP** — DEFER to owner. Baseline security headers already ship; a full CSP that doesn't break
+  Turnstile/Supabase/chat needs careful per-source browser testing and is better as a CF Transform Rule
+  (see `TODO_KEYS.md`). Too risky to ship blind autonomously.
+- **Business info / fuel economy real values** — BLOCKED on owner. Fabricating a real dealer's phone/
+  address or a car's L/100km would violate the determinism rule. Scripts are ready; owner supplies facts.
+- **Integration go-lives** (email, Redbook/NEVDIS, vision, carsales, agentic search, grounding) — all built
+  + stubbed, flag-gated OFF; going live = add credential + flip flag. Owner-gated. No code work remains.
+- **Prod D1 migrations, paid security review, CF account-level settings** — owner infra actions.
+
+**Contest designated up front (deferred to end, OWNER JUDGES — §6):**
+- **Experience Mode** (§6) — the premium "Rebi drives the screen as a canvas" surface. Genuinely
+  open-ended, gold-standard UI/UX → a **design contest** (3 sub-agents, strict sequence). Built last;
+  candidates presented for the owner's decision. Not self-selected.
+
+---
+
 ## 1. Real gaps — features that are built but a shopper can't fully reach
 
 - [ ] 🟡 **Dealer "create a listing" tool (`/capture`) is unreachable.** The whole photo→voice→VIN→draft
