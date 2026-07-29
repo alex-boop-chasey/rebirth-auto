@@ -13,7 +13,7 @@
  *   tsx scripts/migrate-details-to-specs.ts            # dry-run (default) — prints diff, no writes
  *   tsx scripts/migrate-details-to-specs.ts --commit   # actually write the patches
  *
- * Requires a write-enabled SANITY_API_TOKEN in .env.
+ * Requires a write-enabled SANITY_TOKEN in .env.
  */
 import 'dotenv/config';
 import { createClient } from '@sanity/client';
@@ -27,7 +27,7 @@ const token = process.env.SANITY_TOKEN;
 if (!projectId || !dataset || !token) {
   throw new Error(
     'Missing required env vars. Ensure PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, ' +
-      'and a write-enabled SANITY_API_TOKEN are set in .env.',
+      'and a write-enabled SANITY_TOKEN are set in .env.',
   );
 }
 

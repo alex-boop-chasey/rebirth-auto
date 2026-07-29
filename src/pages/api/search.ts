@@ -162,13 +162,17 @@ export const POST: APIRoute = async ({ request }) => {
   // so the two are idempotent-compatible: in the common flow a visitor searches
   // then chats in the same isolate, and configureAI throws if re-called with a
   // *different* config. (Unused for this non-streaming generateObject call.)
-  configureAI({
-    openrouterApiKey: env.OPENROUTER_API_KEY,
-    referer: APP_URL,
-    appTitle: APP_TITLE,
-    attemptTimeoutMs: REQUEST_TIMEOUT_MS,
-    streamAttemptTimeoutMs: REQUEST_TIMEOUT_MS,
-  });
+  try {
+    configureAI({
+      openrouterApiKey: env.OPENROUTER_API_KEY,
+      referer: APP_URL,
+      appTitle: APP_TITLE,
+      attemptTimeoutMs: REQUEST_TIMEOUT_MS,
+      streamAttemptTimeoutMs: REQUEST_TIMEOUT_MS,
+    });
+  } catch (err) {
+    console.error('[search] configureAI mismatch, using existing isolate config', err);
+  }
 
   try {
     const { content } = await generateObject({

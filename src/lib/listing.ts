@@ -136,7 +136,7 @@ export const BASE_COLOUR_OPTIONS = [
 
 export function formatPrice(price: number, currency: string): string {
   // No/zero price = "price on application" — show a human label instead of "$0".
-  if (!price || price <= 0) return 'Contact agent';
+  if (!price || price <= 0) return 'Contact dealer';
   // Locale and default currency are dealer/region-specific — resolved from the
   // central dealer config (DECISION.md Decision 1), not hardcoded. A per-listing
   // currency still wins when present.
@@ -148,7 +148,9 @@ export function formatPrice(price: number, currency: string): string {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+  // Locale is dealer/region-specific — resolved from central config (like
+  // formatPrice), not hardcoded to en-US.
+  return new Date(iso).toLocaleDateString(dealerConfig.locale.locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -215,7 +217,7 @@ export function detailDisplay(d: ListingDetail): string {
     // With a unit, format the raw number nicely (e.g. "142,000 km"); without a
     // unit, prefer the human-readable value so plain figures like years stay
     // separator-free (e.g. "2019", not "2,019").
-    if (d.unit) return `${d.valueNumber.toLocaleString('en-AU')} ${d.unit}`;
+    if (d.unit) return `${d.valueNumber.toLocaleString(dealerConfig.locale.locale)} ${d.unit}`;
     return d.value ?? d.valueNumber.toString();
   }
   return d.value ?? '';

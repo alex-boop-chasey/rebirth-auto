@@ -21,7 +21,10 @@ interface Props {
   segments: Segment[];
 }
 const { id, name, title, slug, priceDisplay, photo, rank, overall, segments } = Astro.props;
-const href = `/listings/${slug}`;
+// Guard against a slug-less car (data gap): omit the href entirely rather than
+// render a dead `/listings/` link. Astro drops an `undefined` attribute, so the
+// thumb/name simply become non-clickable instead of pointing nowhere.
+const href = slug ? `/listings/${slug}` : undefined;
 ---
 
 <div class:list={['c3-con', rank === 1 && 'lead']} data-car-id={id}>

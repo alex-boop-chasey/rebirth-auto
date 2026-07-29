@@ -22,10 +22,11 @@
  * deterministic.
  *
  * Usage:
- *   npm run import:bundaberg -- --dry-run   # fetch + print assembled docs, no writes
- *   npm run import:bundaberg                # upload images + commit one transaction
+ *   npm run import:bundaberg                # DRY RUN (default) — fetch + print assembled docs, no writes
+ *   npm run import:bundaberg -- --commit    # LIVE — upload images + commit one transaction
  *
- * Requires a write-enabled SANITY_API_TOKEN in .env.
+ * Writes require the explicit --commit flag (dry-run by default, per the data-script
+ * safety rule). Requires a write-enabled SANITY_TOKEN in .env.
  */
 import 'dotenv/config';
 import { readFileSync } from 'node:fs';
@@ -49,13 +50,15 @@ const token = process.env.SANITY_TOKEN;
 if (!projectId || !dataset || !token) {
   throw new Error(
     'Missing required env vars. Ensure PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, ' +
-      'and a write-enabled SANITY_API_TOKEN are set in .env.',
+      'and a write-enabled SANITY_TOKEN are set in .env.',
   );
 }
 
 const client = createClient({ projectId, dataset, apiVersion, token, useCdn: false });
 
-const dryRun = process.argv.includes('--dry-run');
+// Dry-run by default; writes require the explicit --commit flag (data-script
+// safety rule). --dry-run is still accepted as an explicit no-op for clarity.
+const dryRun = !process.argv.includes('--commit');
 // --add skips the clean-slate REPLACE: existing automotive listings are kept and
 // the manifest vehicles are created alongside them (they use fresh _ids, so
 // nothing existing is overwritten). Default (no flag) is REPLACE.
@@ -70,8 +73,17 @@ const randKey = () => randomUUID().replace(/-/g, '').slice(0, 12);
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-/** Detail `_key` in the template style: label slug + short random suffix. */
-const detailKey = (label: string) => `${slugify(label)}-${Math.random().toString(36).slice(2, 8)}`;
+/** Stable short hash (djb2) → 6 base36 chars. Deterministic so re-imports of the
+ *  same content produce identical `_key`s (idempotent — no `Math.random()`). */
+function shortHash(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36).slice(0, 6).padStart(6, '0');
+}
+
+/** Detail `_key` in the template style: label slug + short deterministic suffix
+ *  derived from the label, so re-imports are idempotent. */
+const detailKey = (label: string) => `${slugify(label)}-${shortHash(label)}`;
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -440,7 +452,11 @@ function distribution(docs: any[], field: string): string {
 async function main() {
   const manifest = loadManifest();
   console.log(`\nSource: ${ORIGIN}  (manifest: ${manifest.length} vehicles)`);
-  console.log(dryRun ? '*** DRY RUN — no writes ***\n' : '*** LIVE IMPORT ***\n');
+  console.log(
+    dryRun
+      ? '*** DRY RUN (default) — no writes. Re-run with --commit to write. ***\n'
+      : '*** LIVE IMPORT (--commit) — writing to Sanity ***\n',
+  );
 
   // Warnings collected from the shared spec-mapper, tagged with their vehicle.
   const warnings: string[] = [];

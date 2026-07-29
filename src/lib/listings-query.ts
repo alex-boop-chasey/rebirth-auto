@@ -213,7 +213,7 @@ export function buildListingsFilter(state: FilterState): {
 
   // The shared filter expression — used by both the page slice and the count so
   // the total always matches what's shown. Contains only $params + static paths.
-  const filter = `_type == "listing" && category == "automotive"
+  const filter = `_type == "listing" && category == "automotive" && status == "active"
     // Multi-tenant seam — see DECISION.md Decision 1/2. When multi-tenant lands,
     // uncomment to scope every query to the current dealer:
     // && dealer._ref == $dealerId
@@ -249,7 +249,7 @@ export function buildListingsQuery(state: FilterState): { query: string; params:
   const order = SORT_CLAUSES[state.sort];
 
   const query = `{
-    "items": *[${filter}]{ ${LISTING_FIELDS} } | order(${order}) [${offset}...${end}],
+    "items": *[${filter}]{ ${LISTING_FIELDS} } | order(${order}, _id asc) [${offset}...${end}],
     "total": count(*[${filter}])
   }`;
 

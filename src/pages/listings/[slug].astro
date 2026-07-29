@@ -50,7 +50,7 @@ if (!listing) {
 
 const related = await client.fetch<Listing[]>(
   `*[_type == "listing" && category == $category && slug.current != $slug]
-     | order(listingDate desc)[0...3]{ ${LISTING_FIELDS} }`,
+     | order(listingDate desc, _id asc)[0...3]{ ${LISTING_FIELDS} }`,
   { category: listing.category, slug },
 );
 

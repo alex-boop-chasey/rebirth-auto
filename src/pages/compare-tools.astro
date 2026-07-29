@@ -323,7 +323,7 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
     </div>
 
     {canCompare && (
-      <script type="application/json" id="balance-data" is:inline set:html={JSON.stringify(cars)} />
+      <script type="application/json" id="balance-data" is:inline set:html={JSON.stringify(cars).replace(/</g, '\\u003c')} />
     )}
 
     <!-- Continuity-journey beacon: record this comparison (fail-open, best-effort). -->
@@ -494,6 +494,8 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
       .balance-page .c3-range:active::-webkit-slider-thumb { transform: scale(1.15); }
       .balance-page .c3-range:focus-visible { outline: none; }
       .balance-page .c3-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 30%, transparent); }
+      /* Firefox (non-webkit) keyboard-focus ring on the thumb — mirrors the webkit style above. */
+      .balance-page .c3-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 30%, transparent); }
       .balance-page .c3-range:disabled::-webkit-slider-thumb { background: var(--dim); border-color: var(--dim); box-shadow: none; }
       .balance-page .c3-range:disabled::-webkit-slider-runnable-track { background: var(--track); }
       .balance-page .c3-dial-note { margin: 7px 0 0; font-size: 11px; color: var(--dim); font-style: italic; }

@@ -163,7 +163,7 @@ export async function resolveFocus(
           // Mirror the homepage grid query (no extra status scoping) so the total
           // matches exactly what the visitor sees. Public projection — no dealerNotes.
           const query = `{
-            "items": *[${filter}] | order(price asc) [0...${max}]${FOCUS_PROJECTION},
+            "items": *[${filter}] | order(price asc, _id asc) [0...${max}]${FOCUS_PROJECTION},
             "total": count(*[${filter}])
           }`;
           const res = await client.fetch<{ items: FocusRow[]; total: number }>(query, params);

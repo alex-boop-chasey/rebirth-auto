@@ -5,11 +5,12 @@
  * Populates the Sanity dataset with sample listings so the listing component
  * can be built against real data.
  *
- * Usage:
- *   npm run seed         # create the sample listings (additive)
- *   npm run seed:clean   # delete existing listings, then re-seed (repeatable — recommended)
+ * Usage (dry-run by default — writes require the explicit --commit flag):
+ *   npm run seed                   # DRY RUN — print what would be created, no writes
+ *   npm run seed -- --commit       # create the sample listings (additive)
+ *   npm run seed:clean -- --commit # delete existing listings by explicit _id, then re-seed
  *
- * Requires a write-enabled SANITY_API_TOKEN in .env.
+ * Requires a write-enabled SANITY_TOKEN in .env.
  */
 import 'dotenv/config';
 import { createClient } from '@sanity/client';
@@ -24,7 +25,7 @@ const token = process.env.SANITY_TOKEN;
 if (!projectId || !dataset || !token) {
   throw new Error(
     'Missing required env vars. Ensure PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET, ' +
-      'and a write-enabled SANITY_API_TOKEN are set in .env.',
+      'and a write-enabled SANITY_TOKEN are set in .env.',
   );
 }
 
@@ -141,21 +142,40 @@ const listings = [
 
 // --- Operations --------------------------------------------------------------
 
-/** Delete every existing `listing` document so the seed is repeatable. */
-export async function clean() {
-  await client.delete({ query: '*[_type == "listing"]' });
-  console.log('Deleted all existing listing documents.');
+/**
+ * Delete every existing `listing` document so the seed is repeatable.
+ * Deletions target explicit _ids (never a broad query-match): the ids are
+ * fetched first, then deleted individually. In dry-run mode nothing is written —
+ * the ids that WOULD be deleted are printed instead.
+ */
+export async function clean(commit: boolean) {
+  const ids: string[] = await client.fetch('*[_type == "listing"]._id');
+  if (!commit) {
+    console.log(`[DRY RUN] would delete ${ids.length} existing listing document(s) by explicit _id:`);
+    ids.forEach((id) => console.log(`  ✗ delete ${id}`));
+    return;
+  }
+  for (const id of ids) await client.delete(id);
+  console.log(`Deleted ${ids.length} existing listing document(s) by explicit _id.`);
 }
 
-/** Create the sample listings. */
-export async function seed() {
+/** Create the sample listings (or, in dry-run mode, print what would be created). */
+export async function seed(commit: boolean) {
   for (const doc of listings) {
     // Every seed listing is automotive — populate the typed spec fields from the
     // same `details[]` the migration reads, so freshly-seeded listings match
     // migrated ones.
     const toCreate = { ...doc, vehicleSpecs: specsFromDetails(doc.details) };
+    if (!commit) {
+      console.log(`[DRY RUN] would create "${doc.title}"`);
+      continue;
+    }
     const created = await client.create(toCreate);
     console.log(`Created "${doc.title}" (${created._id})`);
+  }
+  if (!commit) {
+    console.log(`\n[DRY RUN] no documents written. Re-run with --commit to write.`);
+    return listings.length;
   }
   const count = await client.fetch<number>('count(*[_type == "listing"])');
   console.log(`\nDone. Dataset now contains ${count} listing document(s).`);
@@ -163,10 +183,17 @@ export async function seed() {
 }
 
 // Run when executed directly (via `tsx scripts/seed.ts`).
+// Dry-run by default; writes require the explicit --commit flag.
+const commit = process.argv.includes('--commit');
 const shouldClean = process.argv.includes('--clean');
 (async () => {
-  if (shouldClean) await clean();
-  await seed();
+  console.log(
+    commit
+      ? '*** LIVE SEED (--commit) — writing to Sanity ***\n'
+      : '*** DRY RUN (default) — no writes. Re-run with --commit to write. ***\n',
+  );
+  if (shouldClean) await clean(commit);
+  await seed(commit);
 })().catch((err) => {
   console.error(err);
   process.exit(1);

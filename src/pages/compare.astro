@@ -521,7 +521,7 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
     </div>
 
     {canCompare && (
-      <script type="application/json" id="vboard-data" is:inline set:html={JSON.stringify(cars)} />
+      <script type="application/json" id="vboard-data" is:inline set:html={JSON.stringify(cars).replace(/</g, '\\u003c')} />
     )}
 
     <!-- Continuity-journey beacon: record this comparison (fail-open, best-effort). -->

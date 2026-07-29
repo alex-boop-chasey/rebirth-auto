@@ -172,12 +172,21 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (!draft) return json({ error: 'Listing not found.' }, 400);
 
-  configureAI({
-    openrouterApiKey: env.OPENROUTER_API_KEY,
-    referer: APP_URL,
-    appTitle: APP_TITLE,
-    attemptTimeoutMs: REQUEST_TIMEOUT_MS,
-  });
+  // Config object kept byte-for-byte identical to /api/chat and /api/search so a
+  // warm isolate that already configured for one path is a no-op here (the
+  // configureAI guard throws only on a *different* config). Degrade gracefully
+  // rather than 500 if an unexpected mismatch ever slips through.
+  try {
+    configureAI({
+      openrouterApiKey: env.OPENROUTER_API_KEY,
+      referer: APP_URL,
+      appTitle: APP_TITLE,
+      attemptTimeoutMs: REQUEST_TIMEOUT_MS,
+      streamAttemptTimeoutMs: REQUEST_TIMEOUT_MS,
+    });
+  } catch (err) {
+    console.error('[generate-description] configureAI mismatch, using existing isolate config', err);
+  }
 
   // Compose the prompt from the draft's facts. Dealer name/tone/locale from config.
   const facts: DescriptionFacts = {

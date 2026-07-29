@@ -22,14 +22,18 @@ export const POST: APIRoute = async ({ request }) => {
   // values a no-op. Only configure when the key exists — otherwise core.ts's
   // own guard returns the "not configured" 500, preserving today's behaviour.
   if (env.OPENROUTER_API_KEY) {
-    configureAI({
-      openrouterApiKey: env.OPENROUTER_API_KEY,
-      referer: APP_URL,
-      appTitle: APP_TITLE,
-      // Match the chatbot's existing per-attempt budget for parity.
-      attemptTimeoutMs: REQUEST_TIMEOUT_MS,
-      streamAttemptTimeoutMs: REQUEST_TIMEOUT_MS,
-    });
+    try {
+      configureAI({
+        openrouterApiKey: env.OPENROUTER_API_KEY,
+        referer: APP_URL,
+        appTitle: APP_TITLE,
+        // Match the chatbot's existing per-attempt budget for parity.
+        attemptTimeoutMs: REQUEST_TIMEOUT_MS,
+        streamAttemptTimeoutMs: REQUEST_TIMEOUT_MS,
+      });
+    } catch (err) {
+      console.error('[chat] configureAI mismatch, using existing isolate config', err);
+    }
   }
   return handleChatRequest(request, env);
 };

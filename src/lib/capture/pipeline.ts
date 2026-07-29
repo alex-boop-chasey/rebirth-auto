@@ -72,8 +72,11 @@ export function parseVoiceTranscript(transcript: string | undefined): ParsedVoic
 
   const lower = text.toLowerCase();
 
-  // Odometer: "142,000 km" / "142000 kms" / "142k km" → number of km.
-  const odoMatch = lower.match(/(\d[\d,]*)\s*(k)?\s*(?:km|kms|kilometres|k on the clock)/);
+  // Odometer: "142,000 km" / "142000 kms" / "142k km" / "142k on the clock" → km.
+  // The unit alternatives are unit-only ("on the clock", not "k on the clock") so
+  // the optional `k` multiplier group is captured independently and the ×1000 at
+  // line below fires for "142k on the clock" too (was lost — see 8.2).
+  const odoMatch = lower.match(/(\d[\d,]*)\s*(k)?\s*(?:km|kms|kilometres|on the clock)/);
   if (odoMatch) {
     let n = Number(odoMatch[1].replace(/,/g, ''));
     if (odoMatch[2] === 'k') n *= 1000; // "142k km"
@@ -88,9 +91,13 @@ export function parseVoiceTranscript(transcript: string | undefined): ParsedVoic
   // right after "asking"/"price". A bare number without one of these cues is NOT
   // treated as a price (never guessed).
   let price: number | undefined;
-  const dollar = lower.match(/\$\s*(\d[\d,]*)/);
-  const grand = lower.match(/\b(\d[\d,]*)\s*(k|grand|thousand)\b/);
-  const asking = lower.match(/\b(?:asking|price)\D{0,8}(\d[\d,]*)/);
+  // Run the price cues on the transcript with the matched odometer span removed,
+  // so a "k"-suffixed odometer figure ("142k") can never be captured as a spoken
+  // price regardless of word order (see 8.1). Only the first occurrence is stripped.
+  const priceText = odoMatch ? lower.replace(odoMatch[0], ' ') : lower;
+  const dollar = priceText.match(/\$\s*(\d[\d,]*)/);
+  const grand = priceText.match(/\b(\d[\d,]*)\s*(k|grand|thousand)\b/);
+  const asking = priceText.match(/\b(?:asking|price)\D{0,8}(\d[\d,]*)/);
   if (dollar) {
     price = Number(dollar[1].replace(/,/g, ''));
   } else if (grand) {

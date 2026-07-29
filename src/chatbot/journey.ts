@@ -20,6 +20,7 @@ import type { D1Like } from './state';
 import type { ChatEnv } from './core';
 import { getDealerConfig } from '../config/dealer';
 import { resolveVisitor, withCookie } from './visitor';
+import { checkRateLimit } from '~/lib/rate-limit';
 
 /** The event kinds the journey tracks. Doubles as the stored `event_type`. */
 export type JourneyEventType = 'search' | 'listing' | 'compare' | 'chat';
@@ -37,6 +38,15 @@ export interface JourneyEvent {
 
 /** Hard cap on a stored `ref` (serialized filters / ids). Bounds row size. */
 const MAX_REF_LENGTH = 512;
+
+/**
+ * Per-IP rate limit for the beacon. Generous — the client fires one per
+ * navigation, so a real visitor never approaches it — but bounds the otherwise
+ * unbounded D1 INSERT-per-call surface. A distinct `journey:` key prefix keeps
+ * this counter from colliding with the chat / description / capture limiters.
+ */
+const JOURNEY_RATE_LIMIT = { windowSeconds: 60, maxRequests: 120 } as const;
+const JOURNEY_RATE_LIMIT_PREFIX = 'journey:';
 
 /**
  * Record one journey event. Best-effort and fully fail-open: a single INSERT
@@ -130,10 +140,30 @@ export async function handleJourneyBeacon(request: Request, env: ChatEnv): Promi
 
     const kind = normaliseKind(body.kind);
     if (kind && visitorId) {
-      const ref = typeof body.ref === 'string' ? body.ref.slice(0, MAX_REF_LENGTH) : null;
-      const label =
-        typeof body.label === 'string' ? body.label.slice(0, cfg.maxLabelLength) : null;
-      await recordJourneyEvent(env.CHAT_DB, visitorId, kind, ref, label);
+      // Per-IP throttle the D1 write. On limit we STILL return 204 (below) —
+      // the beacon must never break the page — we just skip the INSERT. Guard on
+      // the KV binding and fail OPEN so a KV hiccup never drops a real event.
+      let allowed = true;
+      if (env.RATE_LIMIT_KV) {
+        try {
+          const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+          const rl = await checkRateLimit(
+            env.RATE_LIMIT_KV,
+            ip,
+            JOURNEY_RATE_LIMIT,
+            JOURNEY_RATE_LIMIT_PREFIX,
+          );
+          allowed = rl.allowed;
+        } catch (err) {
+          console.error('[journey] rate limit check failed (allowing)', err);
+        }
+      }
+      if (allowed) {
+        const ref = typeof body.ref === 'string' ? body.ref.slice(0, MAX_REF_LENGTH) : null;
+        const label =
+          typeof body.label === 'string' ? body.label.slice(0, cfg.maxLabelLength) : null;
+        await recordJourneyEvent(env.CHAT_DB, visitorId, kind, ref, label);
+      }
     }
   } catch (err) {
     // Absolute fail-open: never let the beacon path throw.

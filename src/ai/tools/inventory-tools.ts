@@ -183,7 +183,7 @@ export async function executeSearchInventory(
     "odometer": vehicleSpecs.odometer
   }`;
   const query = `{
-    "items": *[${scoped}] | order(price asc) [0...${max}]${projection},
+    "items": *[${scoped}] | order(price asc, _id asc) [0...${max}]${projection},
     "total": count(*[${scoped}])
   }`;
 

@@ -75,7 +75,7 @@ export interface ScrubResult {
 export const CAR_MAKES: readonly string[] = [
   'toyota', 'holden', 'ford', 'mazda', 'hyundai', 'kia', 'mitsubishi', 'nissan',
   'subaru', 'volkswagen', 'vw', 'honda', 'suzuki', 'isuzu', 'jeep', 'mercedes',
-  'mercedes-benz', 'bmw', 'audi', 'lexus', 'land rover', 'range rover', 'jaguar',
+  'mercedes-benz', 'bmw', 'audi', 'leapmotor', 'lexus', 'land rover', 'range rover', 'jaecoo', 'jaguar',
   'volvo', 'porsche', 'tesla', 'mini', 'fiat', 'alfa romeo', 'peugeot', 'renault',
   'citroen', 'skoda', 'ldv', 'chery', 'mg', 'gwm', 'great wall', 'haval', 'ram',
   'dodge', 'chevrolet', 'ssangyong', 'genesis', 'infiniti', 'cupra', 'polestar',
