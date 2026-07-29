@@ -44,24 +44,21 @@ export const TIERS = {
     models: ['anthropic/claude-haiku-4-5'],
   },
   // Long-form generation (Sanity descriptions).
-  // Order matches `structured` — free primary while credits are dry; reorder to Haiku-primary is a one-line change per Decision 3.
+  // Order matches `structured` — Haiku restored as primary per Decision 3; the free gemma model stays as fallback.
   writing: {
     models: [
-      'google/gemma-4-26b-a4b-it:free', // primary, free, works today
-      'anthropic/claude-haiku-4-5',     // fallback, swap to primary after credit top-up
+      'anthropic/claude-haiku-4-5',     // primary (intended model, restored)
+      'google/gemma-4-26b-a4b-it:free', // fallback, free
     ],
     defaultTemperature: 0.7,
     defaultMaxTokens: 2048,
   },
-  // Anything needing reliable JSON output. gemma-4-26b:free is primary right now
-  // ONLY because OpenRouter has no credits for the paid tier — it is the only
-  // working option, so the user-facing AI bar actually returns extractions. Haiku
-  // is the INTENDED primary: it is better-calibrated on unambiguous
-  // single-attribute queries (e.g. "Petrol", where gemma tends to over-ask for
-  // clarification). Haiku is kept in the array as fallback so a future credit
-  // top-up is a one-line REORDER (put Haiku first), not a re-add.
+  // Anything needing reliable JSON output. Haiku is the primary: it is
+  // better-calibrated on unambiguous single-attribute queries (e.g. "Petrol",
+  // where gemma tends to over-ask for clarification). gemma-4-26b:free is kept in
+  // the array as a free fallback for when the paid tier is unavailable.
   structured: {
-    models: ['google/gemma-4-26b-a4b-it:free', 'anthropic/claude-haiku-4-5'],
+    models: ['anthropic/claude-haiku-4-5', 'google/gemma-4-26b-a4b-it:free'],
     defaultTemperature: 0,
     defaultMaxTokens: 2048,
   },
