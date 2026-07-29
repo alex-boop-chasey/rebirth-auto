@@ -120,3 +120,31 @@ export async function getSavedSearches(
     return [];
   }
 }
+
+/**
+ * Read saved searches by EMAIL, newest-first — the per-authenticated-user view
+ * used by /account (the tables are keyed by an anonymous visitor id + an email
+ * column, not the Supabase user id, so email is the correct per-user key). The
+ * match is case-insensitive (lower() both sides). Same fail-open contract as
+ * {@link getSavedSearches}: returns `[]` on a missing db, missing email, or ANY
+ * error (e.g. the table doesn't exist yet in prod).
+ */
+export async function getSavedSearchesByEmail(
+  db: D1Like | undefined,
+  email: string | null,
+  limit: number,
+): Promise<SavedSearch[]> {
+  if (!db || !email) return [];
+  try {
+    const { results } = await db
+      .prepare(
+        'SELECT * FROM saved_searches WHERE lower(email) = lower(?) ORDER BY created_at DESC LIMIT ?',
+      )
+      .bind(email, limit)
+      .all<SavedSearch>();
+    return results ?? [];
+  } catch (err) {
+    console.error('[saved-search] getSavedSearchesByEmail failed (returning none)', err);
+    return [];
+  }
+}

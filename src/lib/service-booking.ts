@@ -160,3 +160,31 @@ export async function getBookings(
     return [];
   }
 }
+
+/**
+ * Read service booking requests by EMAIL, newest-first — the per-authenticated-
+ * user view used by /account (the table is keyed by an anonymous visitor id + an
+ * `email` column, not the Supabase user id, so email is the correct per-user
+ * key). The match is case-insensitive (lower() both sides). Same fail-open
+ * contract as {@link getBookings}: returns `[]` on a missing db, missing email,
+ * or ANY error (e.g. the table doesn't exist yet in prod).
+ */
+export async function getBookingsByEmail(
+  db: D1Like | undefined,
+  email: string | null,
+  limit: number,
+): Promise<ServiceBooking[]> {
+  if (!db || !email) return [];
+  try {
+    const { results } = await db
+      .prepare(
+        'SELECT * FROM service_bookings WHERE lower(email) = lower(?) ORDER BY created_at DESC LIMIT ?',
+      )
+      .bind(email, limit)
+      .all<ServiceBooking>();
+    return results ?? [];
+  } catch (err) {
+    console.error('[service-booking] getBookingsByEmail failed (returning none)', err);
+    return [];
+  }
+}
