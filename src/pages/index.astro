@@ -177,6 +177,11 @@ const canonicalURL = new URL(
       <!-- Footer -->
       <footer class="mt-24 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
         © {year} Rebirth Auto · All vehicles subject to availability.
+        {dealerConfig.capture.enabled && (
+          <span class="mt-2 block text-xs text-slate-400">
+            <a href="/capture" class="underline underline-offset-2 hover:text-slate-600">Dealer: add a vehicle</a>
+          </span>
+        )}
       </footer>
     </div>
 

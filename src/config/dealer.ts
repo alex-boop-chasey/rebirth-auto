@@ -991,7 +991,7 @@ export const dealerConfig: DealerConfig = {
     // opts into. While off, /capture redirects home and /api/capture/* return 404.
     // Even when enabled EVERY external is stubbed and the Sanity write is
     // owner-gated (a mock draft id, never a real write) — see TODO_KEYS.md.
-    enabled: false,
+    enabled: true,
     // Studio-style authoring volume; still capped per-IP to bound abuse + stub cost.
     rateLimit: { windowSeconds: 3600, maxRequests: 40 },
     allowedOrigins: [
