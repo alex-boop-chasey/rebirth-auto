@@ -181,15 +181,21 @@ This is an **npm** project (`package-lock.json`; `packageManager` is pinned to n
 build runs `npm ci`, which **fails the deploy** if `package.json` and `package-lock.json` drift — the
 common Cloudflare Workers pain point. Rules:
 
-- After ANY dependency change, run a **full `npm install`** (never a partial or offline install) and
-  commit the updated `package-lock.json` **in the same commit**.
-- **Verify with a REAL `npm ci` before pushing — NOT `npm ci --dry-run`.** Dry-run on macOS does not
-  rebuild the full ideal dependency tree, so it reports "in sync" against a lock that Cloudflare's
-  Linux `npm ci` rejects (e.g. stale or missing transitive optional deps like `@emnapi/*` under
-  `@tailwindcss/oxide-wasm32-wasi`). A real `npm ci` reproduces Cloudflare's exact `npm clean-install`
-  and is the only check that catches this. If the lock is truly wedged, regenerate it cleanly:
-  `rm -rf node_modules package-lock.json && npm install`, then confirm with a real `npm ci` (exit 0)
-  plus `npm run build`.
+- **Use Cloudflare's exact npm for ALL lock operations: `npx npm@10.9.2 …`** (the pinned
+  `packageManager`), never the ambient local `npm`. The local `npm` here is 11.x and is NOT
+  corepack-managed, so the `packageManager` pin is not enforced automatically — you must call
+  `npx npm@10.9.2` explicitly. **npm 11 and npm 10.9.2 disagree about optional-peer packages:** npm 11
+  prunes `@emnapi/*@2.0.0-alpha.3` (optional peers under `@tailwindcss/oxide-wasm32-wasi`) that npm
+  10.9.2 requires, so a lock written by local npm 11 passes `npm ci` locally but Cloudflare's npm
+  10.9.2 rejects it as out-of-sync. This has broken the deploy **twice**.
+- After ANY dependency change, run a **full `npx npm@10.9.2 install`** (never a partial or offline
+  install) and commit the updated `package-lock.json` **in the same commit**.
+- **Verify with a REAL `npx npm@10.9.2 ci` before pushing — NOT `npm ci --dry-run`, and NOT the local
+  npm 11.** Dry-run doesn't rebuild the full ideal tree; the wrong npm version produces a lock
+  Cloudflare rejects (e.g. missing `@emnapi/*` optional peers). `npx npm@10.9.2 ci` reproduces
+  Cloudflare's exact `npm clean-install` and is the only check that catches both. If the lock is truly
+  wedged, regenerate cleanly: `rm -rf node_modules package-lock.json && npx npm@10.9.2 install`, then
+  confirm with `npx npm@10.9.2 ci` (exit 0) plus `npm run build`.
 - Never hand-edit dependency versions in `package.json` without re-running `npm install`.
 - Do **not** introduce a second package manager (pnpm/yarn) or a second lockfile — the repo is
   npm-only. (`npm ci` is already the frozen-lockfile guard; that's a feature — it surfaces drift at
@@ -233,6 +239,8 @@ common Cloudflare Workers pain point. Rules:
   Reuse it for any new endpoint that needs per-IP throttling, passing a distinct `keyPrefix` so
   counters do not collide.
 - **Cloudflare Worker, not Pages.** Repeated here because it has caused real bugs more than once.
-- **Real `npm ci`, never `--dry-run`.** See *Dependencies & lockfile* — this one has bitten a deploy.
+- **Lock ops use `npx npm@10.9.2`, and verify with real `npx npm@10.9.2 ci` — never `--dry-run` or
+  the local npm 11.** See *Dependencies & lockfile* — the npm-version mismatch on `@emnapi` optional
+  peers has bitten the deploy twice.
 
 Add to this section whenever something costs an hour to work out. That's what it's for.
