@@ -1,27 +1,33 @@
 # DECISIONS.md — True North & Architecture Decisions
 
-This document records the big directional decisions for Rebirth Auto and — more
-importantly — *why* they were made. It's written in plain language, not code, so the project owner
-(the "ideas person") can read it any time to confirm the build is still pointed at true north,
-without needing to read the code. Any future collaborator, security reviewer, or AI agent should
-read this first to understand not just *what* was decided but *why*, so decisions don't get
-silently reversed by someone who doesn't know the reasoning.
+This document records the big directional decisions for Rebirth Auto and — more importantly —
+*why* they were made. It's written in plain language, not code, so the project owner (the "ideas
+person") can read it any time to confirm the build is still pointed at true north, without needing
+to read the code. Any future collaborator, security reviewer, or AI agent should read this first to
+understand not just *what* was decided but *why*, so decisions don't get silently reversed by
+someone who doesn't know the reasoning.
 
-When a major decision is made or changed, record it here with its reasoning and the date in
-`docs/log.txt` at the repo root.
+**This file is the record.** When a major decision is made or changed, it is written here, in full,
+with its reasoning and the date. `docs/log.txt` is a running changelog of activity — it is not a
+substitute for this document, and a decision that exists only in the log has not been recorded.
+
+**The companion documents:**
+- **`VISION.md`** — what the product is trying to become, and why that's worth building
+- **`LENSES.md`** — durable ways of looking at the product that shape design judgment
+- **`AGENTS.md`** — the operating rules and hard constraints for Claude Code in this repo
 
 ---
 
 ## TRUE NORTH (the one-paragraph version)
 
-Rebirth Auto is a world-class car-sales website with AI features as the **core product**,
-not bolted on. The near-term goal is to build it as a **single-tenant** site (one dealership —
-first target: Bundaberg Motor Group), land that first paying dealer, and prove the product. The
-long-term goal is a **multi-tenant SaaS platform** sold to car dealers across Australia for
-significant upfront fees plus recurring monthly subscriptions, running as the owner's flagship for
-the next ~20 years. Therefore: **build single-tenant now, but keep every door open so the eventual
-transition to multi-tenant is an evolution, not a rewrite.** That "keep the doors open" discipline
-is the north star. Every decision is checked against it.
+Rebirth Auto is a world-class car-sales website with AI features as the **core product**, not bolted
+on. The near-term goal is to build it as a **single-tenant** site (one dealership — first target:
+Bundaberg Motor Group), land that first paying dealer, and prove the product. The long-term goal is
+a **multi-tenant SaaS platform** sold to car dealers across Australia for significant upfront fees
+plus recurring monthly subscriptions, running as the owner's flagship for the next ~20 years.
+Therefore: **build single-tenant now, but keep every door open so the eventual transition to
+multi-tenant is an evolution, not a rewrite.** That "keep the doors open" discipline is the north
+star. Every decision is checked against it.
 
 ---
 
@@ -34,8 +40,8 @@ converting it to serve many dealerships later is a contained change, not a demol
 multi-tenant platform before having a single customer would delay revenue to build machinery for a
 scale that doesn't exist yet — the classic way solo software founders stall. But building in a way
 that *forecloses* multi-tenancy (by hardcoding one dealer's details everywhere) would force an
-expensive rewrite later. Single-tenant-but-ready threads that needle: fast to a first sale, no
-rewrite later.
+expensive rewrite later — exactly the "too busy to rebuild" wall the owner wants to avoid.
+Single-tenant-but-ready threads that needle: fast to a first sale, no rewrite later.
 
 **What "multi-tenant-ready" concretely means (the conventions we always follow):**
 - **Config as data, never hardcoded.** Everything specific to the dealer — name, logo, colours,
@@ -49,34 +55,43 @@ rewrite later.
 - The AI provider layer is already config-driven and feature-scoped, so it's naturally
   tenant-ready.
 
-**Alternatives considered:** Full multi-tenant now (too much before first revenue); separate repos
-per dealer (creates an unmanageable deployment-drift problem as dealer count grows).
+**Alternatives considered:** Full multi-tenant now — too much machinery before first revenue.
+Separate repos per dealer — rejected because it creates an unmanageable deployment-drift problem as
+dealer count grows: every security patch, model upgrade and new feature would have to be deployed
+into each dealer's separate codebase individually, and those codebases would diverge over time until
+they were effectively different products. That destroys the whole economic argument for the
+platform, which is that one improvement lifts every dealer at once.
 
 ---
 
 ## Decision 2 — When we DO go multi-tenant, how dealers' data stays separated
 
 **The call (decided in principle now, not yet built):** One shared database where every piece of
-data is tagged with which dealer owns it, and the isolation rule is enforced in ONE mandatory
-central checkpoint that every data request must pass through — rather than trusting each feature to
-remember the rule.
+data is tagged with which dealer owns it, and the "only show a dealer their own data" rule is
+enforced in ONE mandatory central checkpoint that every data request must pass through — rather than
+trusting each feature to remember the rule.
 
-**Why:** A shared, centrally-guarded database is how most successful multi-tenant SaaS platforms
-are built — it lets a small team serve many customers without drowning in per-customer maintenance.
-The alternative (a fully separate database per dealer) is safer against leaks but recreates the
-per-customer maintenance burden at scale.
+**Why:** A shared, centrally-guarded database is how most successful multi-tenant SaaS platforms are
+built, because it lets a small team serve many customers without drowning in per-customer
+maintenance — which is the whole point of the platform. The alternative (a fully separate database
+per dealer) is safer against leaks but recreates the per-customer maintenance burden at scale.
 
-**The risk and how it will be controlled (planned, not yet implemented):**
-The shared model's danger is a data leak — one dealer seeing another's cars or customer leads,
-which would be business-ending and could carry legal weight under Australian privacy law.
-1. One mandatory checkpoint every data request passes through — the safe way is the only way.
-2. Automated tests that actively try to break isolation — run on every change.
-3. Tenant identity resolved server-side from the domain, never from user-supplied input.
-4. A paid human security review before any real dealer customer data flows through a multi-tenant
-   version — non-negotiable, and the one thing neither the owner nor AI agents can personally catch.
+**The risk and how it is controlled — by structure, not by hope:** The shared model's danger is a
+data leak — one dealer seeing another's cars or customer leads, which would be business-ending and
+could carry legal weight under Australian privacy law.
 
-**Status:** Decided in principle. Not built yet. Recorded now so the future transition follows this
-model rather than being reinvented.
+1. **One mandatory checkpoint** every data request passes through, so the isolation rule can't be
+   accidentally skipped — the safe way is the only way.
+2. **Automated tests that actively try to break in** (pretend to be dealer A, attempt to read dealer
+   B's data, fail loudly if it ever succeeds) — run on every change.
+3. **Tenant identity resolved server-side from the domain**, never trusted from user-supplied input
+   that could be tampered with.
+4. **A paid human security review before go-live** — see Decision 7 for exactly what triggers it.
+   This is a non-negotiable budget line, and the one thing neither the owner nor the AI agents can
+   personally catch.
+
+**Status:** Decided in principle. Not built yet (we're single-tenant). Recorded now so the future
+transition follows this model rather than being reinvented.
 
 ---
 
@@ -92,9 +107,13 @@ per-feature (cheap models for high-volume features, better models for high-value
 fallbacks so a provider outage doesn't break features, and keep the whole thing future-proof as
 better models arrive.
 
-**Cost decision:** Routed through OpenRouter, which reaches every model with consolidated billing.
-No direct single-provider integration — it buys nothing here and costs more. Free-tier models
-during the build; paid models switched on when revenue justifies them.
+**Cost decision:** Routed through OpenRouter, which already reaches every model including top-tier
+ones, with consolidated billing. **No direct single-provider integration** — not Anthropic's API,
+not OpenAI's, not anyone's. It buys nothing here and costs more. Free-tier models during the build;
+paid models switched on when revenue justifies them.
+
+**Note:** Any older document describing a feature as "powered by the Anthropic API key" predates
+this decision and is superseded.
 
 ---
 
@@ -104,37 +123,137 @@ during the build; paid models switched on when revenue justifies them.
 been fully removed; this is now an automotive-only product.
 
 **Why:** Focus. The flagship is a car-sales platform. The listing data model still uses flexible
-structures that could support other verticals later, but the product intent is cars.
+structures that *could* support other verticals later, but the product intent is cars.
+
+**On the "any website" future:** `VISION.md` describes a possible later use of the same AI grounding
+kernel — pointing it at a law firm, a medical practice, a hospitality group. That is a possible
+downstream use, **not a design constraint now and not a reason to generalise anything today.**
+Building an abstraction for a customer who doesn't exist yet would make the product worse at cars and
+better at nothing. If the kernel turns out to be portable, that will be upside earned by having
+built it properly for one vertical first. The dealership platform is the flagship product, not a
+stepping stone to something else.
 
 ---
 
-## Decision 5 — Build for scale where it's cheap to do so
+## Decision 5 — Build for scale from day one where it's cheap to do so
 
 **The call:** Where building the scalable version now costs little extra, do it now rather than
 retrofit later (e.g. server-side filtering with pagination built in from the start, even though
 current inventory fits on one page).
 
-**Why:** Retrofitting scale-critical things into code that assumed small scale is exactly the kind
-of rewrite to avoid. This applies where the extra cost is small — it does NOT mean over-building
-speculative machinery for scale that may never come (we did not build the full multi-tenant
-platform now — see Decision 1).
+**Why:** The owner is not on a deadline and would rather build it right once than rebuild under
+pressure once the business is busy. Retrofitting scale-critical things (like pagination) into code
+that assumed small scale is exactly the kind of rewrite to avoid. This applies where the extra cost
+is small; it does NOT mean over-building speculative machinery for scale that may never come — we
+did not build the full multi-tenant platform now (see Decision 1).
+
+---
+
+## Decision 6 — Private dealer data never reaches a shopper-facing surface
+
+**The call:** Anything the dealer holds privately — internal notes (`dealerNotes`), cost or floor
+pricing, private condition flags, acquisition detail, and anything else marked private — must never
+reach a shopper-facing surface. Not as rendered text. Not in an API response a shopper could read.
+Not paraphrased or summarised by Rebi. **Not as an input to ranking, sorting, or recommendation.**
+
+**Why — this is a commercial promise, not just a technical guardrail:** A dealer will only put their
+real internal knowledge into the system if they are certain a buyer can never see it. That knowledge
+is precisely what makes the AI good — descriptions written from real notes instead of brochure
+filler, honest context, accurate answers. If a dealer feels they have to sanitise what they type,
+the product loses the one thing that makes it better than a template site. The promise is what earns
+the data, and the data is what earns the subscription.
+
+**The subtle failure is ranking, not text.** Private data can leak through behaviour rather than
+words. If a car with a thin margin is quietly pushed down the results, a shopper can't read the
+floor price — but the ordering exposes it in aggregate to anyone paying attention, including a
+competitor. The same applies to AI answers: a model handed private context will paraphrase it under
+mild pressure no matter how firmly it was told not to.
+
+**So the rule is exclusion at the source, not instruction at the output:**
+- Private fields are excluded from the shared public projection (`LISTING_FIELDS`).
+- Shopper-facing AI (Rebi) is grounded on a corpus built **only** from the public projection. Private
+  data never enters the corpus, the digest, or the context window on a shopper path.
+- Private context is passed only to dealer-facing AI features (description generation, Studio tools)
+  on dealer-facing paths.
+- Ranking, sorting and recommendation inputs are drawn from public fields only.
+- A test should attempt to find each private field in shopper-facing output and fail loudly if it
+  ever appears.
+
+**Status:** Partly enforced (`dealerNotes` is excluded from `LISTING_FIELDS`). The broader rule —
+pricing, ranking inputs, and the Rebi grounding corpus — needs explicit enforcement and tests.
+
+---
+
+## Decision 7 — What triggers the paid human security review
+
+**The call:** The paid human security review is triggered by **whichever comes first**:
+
+**(a)** the platform serving more than one dealer from shared infrastructure, **or**
+**(b)** real customer personal information entering any system an AI can read.
+
+**Why:** The original gate was multi-tenancy alone. But `VISION.md` plans for Rebi to eventually
+reach the dealer's service history and customer records, and to remember returning shoppers — and
+either of those could land while the platform is still single-tenant. Customer personal information
+sitting inside an AI-reachable corpus is arguably a larger exposure than multi-tenancy: it sits
+behind a shopper-facing surface anyone on the internet can reach, and it sits inside a system that
+can be talked into repeating what it was given. Tying the review to tenancy alone means the riskier
+of the two changes could ship completely ungated.
+
+**Also unresolved, and needing its own decision before it is built:** "the returning shopper is
+remembered" is a data-retention product, not just a nice touch. Before it is built we need an
+explicit position on what is stored, for how long, on what basis, how a shopper turns it off, and how
+it is deleted on request. Under Australian privacy law those are not optional details. This is
+flagged here so it doesn't get built as a side-effect of a chat-memory feature.
+
+**Status:** Decided. Neither trigger has been reached. No customer records or service history are in
+the system today.
 
 ---
 
 ## How we keep pointing at true north
 
-- **This document** records decisions and reasoning so intent survives across time and work sessions.
-- **`AGENTS.md`** carries the operating rules for Claude Code — roles, conventions, and hard
-  constraints — so every session starts already knowing them.
+- **This document** records the decisions and reasoning so intent survives across time and across
+  many work sessions.
+- **`AGENTS.md`** carries the operating rules and hard constraints for Claude Code — so every session
+  starts already knowing them, and so sub-agents can't miss a constraint the orchestrator forgot to
+  mention.
 - **Enforcement in code** (a lint rule or test) should fail the build if dealer-specific values are
-  hardcoded outside the central config — structure beats memory.
+  hardcoded outside the central config, and if any private field appears in shopper-facing output.
+  Structure beats memory.
 - **Periodic audits** — occasionally a task should audit the codebase against these conventions and
-  report any drift.
+  report any drift. Audit records are append-only (see `AGENTS.md`).
 
-## Working method
+---
 
-See `AGENTS.md` for the full operating detail. In short: the owner makes business decisions and
-signs off on anything significant; the orchestrator plans and delegates **all** coding to
-sub-agents (it never writes code itself — that keeps its context sharp for planning and review, and
-lets several sub-agents work in parallel); the orchestrator reviews their work and brings decisions
-back to the owner before implementing.
+## Working method (how this project is built)
+
+- **The owner** is the ideas and business person, not a coder. They make the high-level
+  business-shaped and architectural decisions. They do not read or write code. They sign off on every
+  major decision, every contest outcome, and anything irreversible before it proceeds.
+
+- **The planning surface** (the Claude.ai project, where `VISION.md`, `DECISIONS.md`, `LENSES.md` and
+  `AGENTS.md` live alongside the owner) turns the owner's decisions into architecture and into
+  written tickets — plain language for the owner, precise instructions for the coding agent. This is
+  where genuinely competitive design decisions get made, because it's the surface with the most
+  context on intent and the least on implementation detail.
+
+- **The orchestrator** (the main Claude Code CLI session) executes tickets. It plans the work,
+  delegates **all** coding to sub-agents, and reviews and integrates their output. It never writes
+  application code itself — that keeps its context sharp for judgment and review, and lets several
+  sub-agents work in parallel. When a ticket arrives already specified, the orchestrator implements
+  it rather than quietly re-planning it; if it disagrees with the plan, it says so and brings it back
+  to the owner rather than silently substituting its own.
+
+- **Sub-agents** (background Claude Code sessions) do all the actual coding, under precisely scoped
+  task briefs. They do not make architectural decisions.
+
+- **Guardrails:** two-phase tickets (investigate and propose, stop for approval, then execute); dry
+  runs before any data write; deletions and patches target explicit document IDs, never a broad query
+  match; determinism over guessing — anything ambiguous is logged as a warning, never silently
+  defaulted.
+
+Because the owner cannot personally review the code, correctness is not protected by review. It is
+protected by **structure**: enforced guardrails, two-phase tickets, automated tests that try to break
+the rules, and — for anything holding real dealer or customer data (see Decision 7) — a paid human
+expert review before go-live. Any change that weakens one of those structures is a bigger decision
+than it looks, and belongs in this document.
