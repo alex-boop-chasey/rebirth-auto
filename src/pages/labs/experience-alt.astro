@@ -1,0 +1,123 @@
+---
+/**
+ * /labs/experience-alt — EXPERIMENTAL, UNLINKED prototype (Contest Candidate B).
+ * ---------------------------------------------------------------------------
+ * "Experience Mode — The After-Hours Walk": an opt-in premium mode where Rebi
+ * walks the shopper through the lot one car at a time, cinematic and full-bleed,
+ * and READS THEIR REACTIONS (love / not-for-me / tell-me-more) to steer which car
+ * it walks them to next. See ShowroomTour.tsx for the interpretation and the three
+ * beats (onboarding → standby → boom), and taste.ts for the honest, deterministic
+ * reaction→taste engine.
+ *
+ * Additive + isolated: not linked from nav, touches no existing page/component/
+ * config, and does not touch Candidate A's files. SSR so it reads real inventory
+ * at request time via the SHARED LISTING_FIELDS projection. All dealer values come
+ * from dealerConfig; prices are formatted server-side via formatPrice.
+ */
+export const prerender = false;
+
+import '../../styles/global.css';
+import { client } from '../../sanity/lib/client';
+import { urlFor } from '../../sanity/lib/image';
+import { LISTING_FIELDS, formatPrice, type Listing } from '../../lib/listing';
+import { dealerConfig } from '../../config/dealer';
+import ShowroomTour from '../../components/experience-alt/ShowroomTour.tsx';
+import type { TourVehicle, TasteBands } from '../../components/experience-alt/taste';
+
+// Real inventory via the SHARED projection — active vehicles that carry specs and
+// an image (the cinematic walk leans on a photogenic, honest picture per car).
+const query = `*[_type == "listing" && category == "automotive" && status == "active"
+  && defined(vehicleSpecs) && defined(price) && defined(images)][0...24]{${LISTING_FIELDS}}`;
+let listings: Listing[] = [];
+try {
+  listings = await client.fetch<Listing[]>(query);
+} catch {
+  listings = []; // fail-open: the island renders a graceful "lot's empty" state
+}
+
+// Map to the slim client payload. Image URL + display price resolved server-side
+// so the island does no Sanity work and carries no dealer literals.
+const vehicles: TourVehicle[] = listings
+  .filter((l) => l && l.title)
+  .map((l) => ({
+    id: l._id,
+    slug: l.slug?.current ?? null,
+    title: l.title,
+    make: l.make ?? null,
+    model: l.model ?? null,
+    year: l.vehicleSpecs?.year ?? null,
+    price: typeof l.price === 'number' ? l.price : null,
+    priceLabel: formatPrice(l.price, l.currency),
+    image: l.images?.[0] ? urlFor(l.images[0]).width(1600).height(1000).fit('crop').url() : null,
+    bodyType: l.vehicleSpecs?.bodyType ?? null,
+    fuelType: l.vehicleSpecs?.fuelType ?? null,
+    driveType: l.vehicleSpecs?.driveType ?? null,
+    transmission: l.vehicleSpecs?.transmission ?? null,
+    seatCount: l.vehicleSpecs?.seatCount ?? null,
+    odometer: l.vehicleSpecs?.odometer ?? null,
+    condition: l.vehicleSpecs?.condition ?? null,
+  }));
+
+// Dealer-tunable thresholds read from config (never hardcoded in the engine). The
+// price bands + low-km threshold reuse the dealer's existing grounding tunables so
+// the taste engine speaks the same "budget/family/low-kms" language as the rest of
+// the site. currentYear is read here (request-time clock), never at module load.
+const bands: TasteBands = {
+  priceBands: dealerConfig.chat.grounding.overview.priceBands,
+  lowKmThreshold: dealerConfig.chat.grounding.lookup.lowKmThreshold,
+  nearNewWithinYears: 3,
+  familySeats: Math.min(...dealerConfig.chat.grounding.lookup.familySeats),
+  currentYear: new Date().getFullYear(),
+};
+
+const dealerName = dealerConfig.identity.name;
+const title = `Experience Mode — ${dealerName}`;
+const description =
+  'An opt-in premium mode: Rebi walks you through the lot and reads your reactions. Experimental preview.';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+    <style is:global>
+      /* Cinematic + ambient motion for the walk. All gated by prefers-reduced-motion
+         at the component level (the island drops the animated classes), and again
+         here as a belt-and-braces stop. Scoped to this isolated page. */
+      @keyframes reb-alt-breathe {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.12); }
+        50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgba(15, 23, 42, 0); }
+      }
+      .orb-breathe { animation: reb-alt-breathe 3.6s ease-in-out infinite; }
+
+      @keyframes reb-alt-kb {
+        0% { transform: scale(1.02) translate3d(0, 0, 0); }
+        100% { transform: scale(1.12) translate3d(-1.5%, -1.5%, 0); }
+      }
+      .kb-zoom { animation: reb-alt-kb 12s ease-out forwards; will-change: transform; }
+
+      @keyframes reb-alt-car-enter {
+        0% { opacity: 0; transform: scale(1.04); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      .car-enter { animation: reb-alt-car-enter 700ms ease-out both; }
+
+      @keyframes reb-alt-more-enter {
+        0% { opacity: 0; transform: translateY(6px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .more-enter { animation: reb-alt-more-enter 260ms ease-out both; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .orb-breathe, .kb-zoom, .car-enter, .more-enter { animation: none !important; }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-800 antialiased">
+    <ShowroomTour client:load vehicles={vehicles} bands={bands} dealerName={dealerName} />
+  </body>
+</html>
