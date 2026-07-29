@@ -40,9 +40,16 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     aria-expanded="false"
     aria-controls="reb-panel"
   >
-    <svg class="reb-ico-chat" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-    </svg>
+    <!-- Rebi orb — the brand mark ported from the Experience Mode prototype
+         (src/components/experience-alt/ShowroomTour.tsx <Orb>): a filled circle
+         with a smaller circle orbiting it. Copied, not imported, so this widget
+         stays self-contained. Rendered in white to read cleanly on the blue
+         launcher (it replaces the old white chat-bubble icon). Keeps the
+         `reb-ico-chat` class so rebi.css still swaps it for the ✕ on open. -->
+    <span class="reb-ico-chat reb-orb" aria-hidden="true">
+      <span class="reb-orb-core"></span>
+      <span class="reb-orb-track"><span class="reb-orb-dot"></span></span>
+    </span>
     <svg class="reb-ico-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <line x1="18" y1="6" x2="6" y2="18"></line>
       <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -170,6 +177,58 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     </div>
   </div>
 </div>
+
+<style>
+  /* Rebi orb launcher mark — self-contained copy of the Experience Mode <Orb>
+     (outer filled circle + a smaller circle) with an orbit added so the mark
+     reads as "alive". Sized to sit inside the 3.5rem launcher; white-on-blue to
+     match the icon it replaces. The `reb-ico-chat` class it also carries lets
+     rebi.css hide it on `.reb-open` and reveal the ✕ — open/close is untouched. */
+  .reb-orb {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  /* The core circle — the orb body (was bg-slate-900 in the prototype; white here
+     so it contrasts with the blue launcher). */
+  .reb-orb-core {
+    width: 0.82rem;
+    height: 0.82rem;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+  }
+  /* Full-size track that spins; the dot rides its top edge, so rotating the track
+     orbits the dot around the core. */
+  .reb-orb-track {
+    position: absolute;
+    inset: 0;
+    animation: reb-orb-spin 3s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  .reb-orb-dot {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0.34rem;
+    height: 0.34rem;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 92%);
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 1.5px rgb(1 97 239 / 55%); /* thin blue rim = clear off the core */
+  }
+  @keyframes reb-orb-spin {
+    to { transform: rotate(360deg); }
+  }
+  /* Reduced motion: freeze the orbit (mirrors rebi.css's @media reduce block and
+     the prototype's own gate). The dot rests at the top — a calm static mark. */
+  @media (prefers-reduced-motion: reduce) {
+    .reb-orb-track { animation: none; }
+  }
+</style>
 
 <script>
   // Shared filter-URL driver + URL contract helpers — the "type it to Rebi"
