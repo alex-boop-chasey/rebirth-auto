@@ -1,6 +1,6 @@
 # Task brief — Phase 0: Foundation quick wins
 
-You are a sub-agent working in the Rebirth Listings Auto repo (an Astro 7 SSR car-dealership
+You are a sub-agent working in the Rebirth Auto repo (an Astro 7 SSR car-dealership
 site deployed as a Cloudflare Worker). Fresh context — this brief is everything you need.
 Make FOUR small, low-risk changes. Do not touch anything outside the scope below.
 

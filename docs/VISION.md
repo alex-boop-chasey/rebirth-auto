@@ -1,6 +1,6 @@
 # VISION.md — What we're building and why it matters
 
-This document is the expanded north star for Rebirth Listings Auto. It's written in plain language
+This document is the expanded north star for Rebirth Auto. It's written in plain language
 so the owner, any collaborator, and any AI agent can read it and understand not just what the
 product does, but what it's trying to become and why that matters. Read this before a planning
 session to stay aligned with the ambition, not just the constraints.
@@ -9,7 +9,7 @@ session to stay aligned with the ambition, not just the constraints.
 
 ## The one-paragraph version
 
-Rebirth Listings Auto is a world-class car-dealership platform where AI is the core product, not
+Rebirth Auto is a world-class car-dealership platform where AI is the core product, not
 an afterthought. The near-term goal is to prove the product with one real dealership — Bundaberg
 Motor Group — and land them as a paying customer. The long-term goal is a multi-tenant SaaS
 platform sold to car dealers across Australia: a significant upfront setup fee plus a recurring

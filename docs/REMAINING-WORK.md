@@ -1,4 +1,4 @@
-# What's left to do — Rebirth Listings Auto
+# What's left to do — Rebirth Auto
 
 The single source of truth for outstanding work. Everything the chatbot pipeline and the
 shopper/dealer features needed is built; this is what remains. Plain-language, grouped by who

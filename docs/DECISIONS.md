@@ -1,6 +1,6 @@
 # DECISIONS.md — True North & Architecture Decisions
 
-This document records the big directional decisions for Rebirth Listings Auto and — more
+This document records the big directional decisions for Rebirth Auto and — more
 importantly — *why* they were made. It's written in plain language, not code, so the project owner
 (the "ideas person") can read it any time to confirm the build is still pointed at true north,
 without needing to read the code. Any future collaborator, security reviewer, or AI agent should
@@ -14,7 +14,7 @@ When a major decision is made or changed, record it here with its reasoning and 
 
 ## TRUE NORTH (the one-paragraph version)
 
-Rebirth Listings Auto is a world-class car-sales website with AI features as the **core product**,
+Rebirth Auto is a world-class car-sales website with AI features as the **core product**,
 not bolted on. The near-term goal is to build it as a **single-tenant** site (one dealership —
 first target: Bundaberg Motor Group), land that first paying dealer, and prove the product. The
 long-term goal is a **multi-tenant SaaS platform** sold to car dealers across Australia for
