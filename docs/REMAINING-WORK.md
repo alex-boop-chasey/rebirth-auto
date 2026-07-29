@@ -49,16 +49,16 @@ Directional decisions recorded here (this section is the §3 checkpoint before e
 
 ## 1. Real gaps — features that are built but a shopper can't fully reach
 
-- [ ] 🟡 **Dealer "create a listing" tool (`/capture`) is unreachable.** The whole photo→voice→VIN→draft
-      flow is built, but it's turned off and nothing on the site links to it. Decide where dealers enter
-      it (a dealer-only link / a "Studio" area), then turn it on. *Right now it just redirects home.*
-- [ ] 🟡 **Saved searches can be saved but not viewed.** The "Save this search" button works and stores
-      the search, but there's no page where a shopper can see their saved searches. Build a
-      **"My saved searches"** view and surface it in the account.
-- [ ] 🟡 **The account dashboard is mostly empty.** Login/logout works, but the "service history" and
-      "saved searches" sections on `/account` are placeholders — wire them to real per-user data.
+- [x] 🟡 **Dealer "create a listing" tool (`/capture`) is unreachable.** ✅ *Run 4:* flipped
+      `capture.enabled` on and added a discreet, flag-gated "Dealer: add a vehicle" footer link. Flow now
+      reachable (verified `/capture` → 200). The Sanity draft-write stays the owner-gated stub.
+- [x] 🟡 **Saved searches can be saved but not viewed.** ✅ *Run 4:* folded into the account dashboard —
+      the "Saved searches" card now lists the user's saved searches (by email) with re-run links.
+- [x] 🟡 **The account dashboard is mostly empty.** ✅ *Run 4:* "service history" and "saved searches"
+      cards wired to real per-user D1 data keyed by the logged-in email (new by-email helpers; no migration).
 - [ ] 🟢 **Compare pages have no direct link.** `/compare` and `/compare-tools` are only reachable by
-      tagging 2+ cars into the compare tray. Fine as-is, but add a nav entry if you want them easier to find.
+      tagging 2+ cars into the compare tray. *Run 4 decision: SKIP — a nav link lands on an empty-state
+      compare page (needs 2+ tagged cars), worse UX than the tray. Left as-is; owner can override.*
 
 ## 2. Built but switched off — turn on when you're ready
 
@@ -77,9 +77,13 @@ These work; they're just disabled by default so nothing shows fake/unfinished da
       Studio and Rebi/compare start using it.
 - [ ] 👤 **Business info** — fill the real phone, hours, brands, address, services (a dry-run script is
       ready; until then Rebi uses placeholder facts).
-- [ ] 👤 **Brand list** — reconcile the brands Rebi thinks are stocked with the real inventory (the diff is
-      ready: claimed-but-absent = Jeep, Leapmotor; present-but-unclaimed = Ford, GWM, Holden, Mazda,
-      Mitsubishi, Toyota).
+- [ ] 👤 **Brand list** — reconcile the brands Rebi thinks are stocked with the real inventory.
+      *Run 4 finding: the automated diff is INVALID and must not be applied blindly.* Rebi's list is
+      **new-vehicle franchise brands** ("…new-vehicle brands, alongside a Quality Used Cars department"),
+      but the reconcile script compares it against **all** inventory makes incl. used stock — so it wrongly
+      flags used-only makes (Ford, GWM, **Holden** [discontinued 2020, cannot be a new franchise], Mazda,
+      Mitsubishi, Toyota) as "unclaimed", and flags stockless franchises (Jeep, Leapmotor) as "absent".
+      Needs the owner's real new-vehicle franchise list; determinism rule forbids guessing. Owner-blocked.
 
 ## 4. Integrations to switch from demo to live (credential + flag) 🔌
 
@@ -101,8 +105,8 @@ and exact steps live in `TODO_KEYS.md`.
 - [ ] 👤 **Security headers** — the safe ones are live; add a full Content-Security-Policy + Permissions-
       Policy (needs careful per-source testing so Turnstile/Supabase/chat still work).
 - [ ] 👤 **Optional**: grounding cache (`GROUNDING_KV`), Sanity MCP plugin — both nice-to-have, work without.
-- [ ] 🟢 **Restore the better chat model** — the chat reply already uses Haiku; the description/extraction
-      tiers still use the free stop-gap model. Point them back at Haiku for the demo (one-line change).
+- [x] 🟢 **Restore the better chat model** — ✅ *Run 4:* `writing` + `structured` tiers reordered so
+      Haiku is primary (free gemma retained as fallback) in `src/ai/tiers.ts`.
 
 ## 6. Bigger / future (for this site)
 
