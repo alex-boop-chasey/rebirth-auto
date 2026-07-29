@@ -118,5 +118,6 @@ and exact steps live in `TODO_KEYS.md`.
 ---
 
 *Reference docs (not todos): `VISION.md`, `DECISIONS.md`, `LENSES.md` (product/architecture direction),
+`SYSTEM-MAP.md` (whole-codebase system map & audit checklist — audit the site whole or by subsystem),
 `TODO_KEYS.md` (exact go-live steps per integration), `cloudflare-security.md`, `dependency-tracking.md`.
-Per-feature build specs are in `docs/briefs/`.*
+Per-feature build specs are in `docs/briefs/` (incl. the Experience Mode contest candidates A/B + critique).*
