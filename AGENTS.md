@@ -60,6 +60,15 @@ Orchestrator then synthesises the winner (one proposal whole, or the best parts 
 
 One commit per completed ticket. Push only when the owner explicitly approves — never push unilaterally. Use `git push --force-with-lease` if a history rewrite is ever needed, never plain `--force`.
 
+## Audit records — append-only (never overwrite)
+
+`docs/AUDIT-LEDGER.md` (the shipped/deferred findings ledger) and the audit artefacts it references
+(`docs/AUDIT-FINDINGS.md`, `docs/AUDIT-PUSHBACK.md`, and any future `audits/` folder) are a **permanent,
+append-only historical record**. They MUST NOT be overwritten, regenerated, truncated, or deleted by any
+process — **including `/auto` and any other autonomous run**. A new audit **appends** a new dated section;
+a correction **appends** a dated note — history is never rewritten. `/auto`'s authority to refresh status
+docs (e.g. `docs/REMAINING-WORK.md`) explicitly does **not** extend to these files.
+
 ## Dependencies & lockfile (prevents Cloudflare build failures)
 
 This is an **npm** project (`package-lock.json`; `packageManager` is pinned to npm). Cloudflare's build runs `npm ci`, which **fails the deploy** if `package.json` and `package-lock.json` drift — the common Cloudflare Workers pain point. Rules:
