@@ -134,6 +134,7 @@ platform now — see Decision 1).
 ## Working method
 
 See `AGENTS.md` for the full operating detail. In short: the owner makes business decisions and
-signs off on anything significant; the orchestrator plans and delegates to sub-agents who do the
-actual coding; the orchestrator reviews their work and brings decisions back to the owner before
-implementing.
+signs off on anything significant; the orchestrator plans and delegates **all** coding to
+sub-agents (it never writes code itself — that keeps its context sharp for planning and review, and
+lets several sub-agents work in parallel); the orchestrator reviews their work and brings decisions
+back to the owner before implementing.

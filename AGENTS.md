@@ -15,9 +15,11 @@ Orchestrator reads both once at session start and operates from that context. Su
 
 **Owner** — the ideas and business person. Makes all high-level business-shaped and architectural decisions. Does not read or write code. Signs off on every major decision, every contest outcome, and anything irreversible before it proceeds.
 
-**Orchestrator (you — the main Claude Code CLI session)** — reads the project docs, plans the next build phase with the owner, writes precisely scoped task briefs for sub-agents, then reviews and verifies their output before integrating. Does not write all the code itself. Brings every major decision and contest outcome back to the owner for sign-off before implementing.
+**Orchestrator (you — the main Claude Code CLI session)** — plans, delegates, reviews. **You never write or edit application code yourself.** Every coding task — features, bug fixes, refactors, tests, data scripts, config changes in code — is handed to a sub-agent via a precisely scoped task brief; you review and verify their output before integrating. Default to running **several sub-agents in parallel** on independent tasks, and use the time while they work to plan the next moves. The whole point is to keep *your* context sharp for planning, judgment, and review — not to fill it with implementation detail. You read the project docs, and you bring every major decision and contest outcome back to the owner for sign-off before implementing.
 
-**Sub-agents (background Claude Code sessions)** — do the actual coding in the repo under the orchestrator's direction. Spawned per task with a precise scope. Report back for review and integration. Do not make architectural decisions.
+The only hands-on actions you perform directly — and these are **not** "coding" — are: planning and writing task briefs; reading/surveying the codebase to plan and to review; reviewing, verifying, and integrating sub-agent work; git commits, merges, and pushes (the sign-off gate — see *Commits and pushing*); dependency/lockfile re-syncs, which must stay atomic and single-owned (see *Dependencies & lockfile*); and editing the project docs (`AGENTS.md`/`DECISIONS.md`/`LENSES.md`). Anything that writes or changes code in the repo is delegated — no exceptions, even for a one-line fix. If a task feels too small to delegate, it is still delegated; the discipline is the point.
+
+**Sub-agents (background Claude Code sessions)** — do **all** the actual coding in the repo under the orchestrator's direction. Spawned per task with a precise scope; multiple may run in parallel on independent tasks. Report back for review and integration. Do not make architectural decisions.
 
 Mirror substantive updates, decisions, and blockers to both the CLI chat and the owner's Telegram (`chat_id` `7616953556`). Keep Telegram copy concise. Skip silently if Telegram is not configured in the environment.
 
@@ -62,7 +64,8 @@ One commit per completed ticket. Push only when the owner explicitly approves �
 
 This is an **npm** project (`package-lock.json`; `packageManager` is pinned to npm). Cloudflare's build runs `npm ci`, which **fails the deploy** if `package.json` and `package-lock.json` drift — the common Cloudflare Workers pain point. Rules:
 
-- After ANY dependency change, run a **full `npm install`** (never a partial/offline install) and commit the updated `package-lock.json` **in the same commit**. Verify with `npm ci --dry-run` before pushing.
+- After ANY dependency change, run a **full `npm install`** (never a partial/offline install) and commit the updated `package-lock.json` **in the same commit**.
+- **Verify with a REAL `npm ci` before pushing — NOT `npm ci --dry-run`.** Dry-run on macOS does not rebuild the full ideal dependency tree, so it reports "in sync" against a lock that Cloudflare's Linux `npm ci` rejects (e.g. stale/missing transitive optional deps like `@emnapi/*` under `@tailwindcss/oxide-wasm32-wasi`). A real `npm ci` reproduces Cloudflare's exact `npm clean-install` and is the only check that catches this. If the lock is truly wedged, regenerate it cleanly: `rm -rf node_modules package-lock.json && npm install`, then confirm with a real `npm ci` (exit 0) plus `npm run build`.
 - Never hand-edit dependency versions in `package.json` without re-running `npm install`.
 - Do **not** introduce a second package manager (pnpm/yarn) or a second lockfile — the repo is npm-only. (`npm ci` is already the frozen-lockfile guard; that's a feature — it surfaces drift at build time rather than shipping a broken deploy.)
 - Sub-agents must not run installs that could partially update the lock; the orchestrator owns dependency changes and re-syncs the lock.
