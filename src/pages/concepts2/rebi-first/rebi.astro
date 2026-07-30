@@ -1,0 +1,124 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import { BASE, vehicles, icon, fmt } from './_shell/data';
+export const prerender = false;
+const picks = [vehicles[0], vehicles[3]];
+---
+<Shell title="Rebi — your AI navigator">
+  <section class="site-container" style="padding-block:24px 60px; display:grid; grid-template-columns:260px 1fr 300px; gap:24px; align-items:start">
+
+    <!-- LEFT: what Rebi can do / recent (each a nav shortcut) -->
+    <div style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="card" style="padding:20px">
+        <div class="rf-row" style="gap:11px; margin-bottom:16px">
+          <span class="orb orb-halo" style="width:38px;height:38px"></span>
+          <div><b style="font-family:var(--font-display); font-size:17px">Rebi</b>
+          <div style="font-size:11.5px; color:var(--teal-deep)">Online · grounded on 305 cars</div></div>
+        </div>
+        <a href={`${BASE}/rebi`} class="btn btn-primary btn-sm" style="width:100%; justify-content:center"><span class="spark" set:html={icon('spark',15)}></span> New chat</a>
+      </div>
+      <div class="glass" style="padding:16px 18px">
+        <div class="rf-mono-eyebrow" style="margin-bottom:10px">Take me to…</div>
+        {[
+          ['calc','Finance calculator',`${BASE}/finance`],
+          ['tag','Sell / trade-in',`${BASE}/sell`],
+          ['leaf','Electric hub',`${BASE}/electric`],
+          ['play','Book a test drive',`${BASE}/test-drive`],
+          ['star','Offers',`${BASE}/offers`],
+          ['wrench','Parts enquiry',`${BASE}/parts`],
+          ['phone','Talk to a person',`${BASE}/contact`],
+        ].map(([ic, t, href]) => (
+          <a href={href} class="rf-row" style="gap:10px; font-size:13px; color:var(--ink-soft); padding:8px 6px; text-decoration:none; border-radius:8px"><span set:html={icon(ic as string,15)} style="color:var(--teal-deep)"></span> {t}<span set:html={icon('arrow',13)} style="color:var(--ink-faint); margin-left:auto"></span></a>
+        ))}
+      </div>
+    </div>
+
+    <!-- CENTRE: the conversation -->
+    <div class="card" style="display:flex; flex-direction:column; overflow:hidden; min-height:80vh">
+      <div class="rf-row" style="gap:11px; padding:16px 22px; border-bottom:1px solid var(--line); background:linear-gradient(120deg, rgba(15,181,166,.06), rgba(85,102,240,.06))">
+        <span class="orb orb-halo" style="width:30px;height:30px"></span>
+        <div style="flex:1"><b style="font-family:var(--font-display); font-size:15px">Chat with Rebi</b>
+        <div style="font-size:11.5px; color:var(--ink-faint)">Grounded only on public listing data — never your private details</div></div>
+        <span class="chip chip-teal"><span set:html={icon('shield',13)}></span> Private &amp; honest</span>
+      </div>
+
+      <div style="flex:1; padding:26px 22px; display:flex; flex-direction:column; gap:20px">
+        <!-- turn 1: shortlist with in-chat cards -->
+        <div class="rf-user" style="align-self:flex-end">We're a family of five near Bundaberg. Lots of highway plus gravel to the farm. Budget ~$55k. What should we look at?</div>
+        <div class="rf-rebi">
+          <div class="rf-rebi-head"><span class="orb" style="width:24px;height:24px"></span><b style="font-size:12.5px; color:var(--indigo-deep)">Rebi</b></div>
+          <div class="ai-summary scan" style="padding:16px 18px">
+            <p style="margin:0; font-size:14.5px; color:var(--ink); line-height:1.6">Good brief — that mix wants full-time AWD with real clearance, not a soft crossover. Two 5-star ANCAP picks under $55k, both room for five:</p>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px; max-width:92%">
+          {picks.map((p, i) => (
+            <a href={`${BASE}/rebi`} class="card card-lift rf-listing" style="padding:12px">
+              <div class="rf-listing-img" style={`background:${p.hue}`}></div>
+              <div style="flex:1">
+                <div class="rf-row" style="gap:8px; margin-bottom:3px"><span class="chip chip-ai" style="padding:3px 9px">{i === 0 ? 'Top match' : 'Value pick'}</span><span class="faint" style="font-size:11.5px">{p.condition}</span></div>
+                <div style="font-family:var(--font-display); font-weight:600; font-size:15px">{p.year} {p.make} {p.model}</div>
+                <div class="faint" style="font-size:12.5px">{p.aiLine}</div>
+              </div>
+              <div style="text-align:right"><div style="font-family:var(--font-display); font-weight:700; font-size:16px">{fmt(p.price)}</div><div class="faint" style="font-size:11px">drive away</div></div>
+            </a>
+          ))}
+        </div>
+        <!-- action buttons that DO / GO -->
+        <div class="rf-quick" style="max-width:92%">
+          <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Work out repayments</a>
+          <a class="rf-action" href={`${BASE}/test-drive`}><span class="spark" set:html={icon('play',13)}></span> Book a test drive</a>
+          <a class="rf-action" href={`${BASE}/sell`}><span class="spark" set:html={icon('tag',13)}></span> Add my trade-in</a>
+          <a class="rf-action" href={`${BASE}/electric`}><span class="spark" set:html={icon('leaf',13)}></span> See EV alternatives</a>
+        </div>
+
+        <!-- turn 2: "take me to" navigation -->
+        <div class="rf-user" style="align-self:flex-end">Actually, how much would the Outback cost me a week? And can I sell my old Ranger to you outright?</div>
+        <div class="rf-rebi">
+          <div class="rf-rebi-head"><span class="orb" style="width:24px;height:24px"></span><b style="font-size:12.5px; color:var(--indigo-deep)">Rebi</b></div>
+          <div class="ai-summary" style="padding:16px 18px">
+            <p style="margin:0; font-size:14.5px; color:var(--ink); line-height:1.6">On a 5-year term with $5k down the Outback lands near <b>$149/week</b>. I can open the calculator with those numbers pre-filled. And yes — we buy cars outright, no purchase required; the sell page gives an indicative figure in about a minute.</p>
+          </div>
+        </div>
+        <div class="rf-quick" style="max-width:92%">
+          <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Open calculator (pre-filled)</a>
+          <a class="rf-action" href={`${BASE}/sell`}><span class="spark" set:html={icon('tag',13)}></span> Sell my car outright</a>
+          <a class="rf-action" href={`${BASE}/offers`}><span class="spark" set:html={icon('star',13)}></span> Any deals on this?</a>
+          <a class="rf-action" href={`${BASE}/contact`}><span class="spark" set:html={icon('phone',13)}></span> Talk to Sales</a>
+        </div>
+
+        <!-- typing -->
+        <div class="rf-row" style="gap:9px; color:var(--ink-faint)"><span class="orb" style="width:22px;height:22px"></span><span class="dots"><i></i><i></i><i></i></span></div>
+      </div>
+
+      <!-- composer -->
+      <div style="padding:14px 18px; border-top:1px solid var(--line)">
+        <div class="aisearch" style="box-shadow:none">
+          <span set:html={icon('chat',18)} style="color:var(--ink-faint)"></span>
+          <input type="text" placeholder="Message Rebi — try “take me to parts” or “which is cheaper to service?”" readonly />
+          <button class="btn btn-primary btn-sm" style="pointer-events:none"><span class="spark" set:html={icon('send',15)}></span></button>
+        </div>
+        <p class="faint" style="font-size:11px; text-align:center; margin-top:9px">Rebi can make mistakes — confirm details with our team before you buy. Demo interface.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: Rebi's working notes + human handoff -->
+    <div style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="glass" style="padding:20px">
+        <div class="rf-mono-eyebrow" style="margin-bottom:12px">Rebi's working notes</div>
+        {[['users','Household','5 people'],['map','Use','Highway + gravel'],['tag','Budget','~$55,000'],['drive','Needs','AWD + clearance']].map(([ic, k, val]) => (
+          <div class="rf-row" style="justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px">
+            <span class="rf-row" style="gap:9px; color:var(--ink-soft)"><span set:html={icon(ic as string,15)} style="color:var(--teal-deep)"></span> {k}</span>
+            <b>{val}</b>
+          </div>
+        ))}
+        <p class="faint" style="font-size:11.5px; margin-top:12px">Public data only — Rebi never sees dealer notes or your finances.</p>
+      </div>
+      <a href={`${BASE}/contact`} class="card card-lift" style="padding:18px; display:flex; gap:12px; align-items:center; text-decoration:none; color:inherit">
+        <span class="avatar" style="width:42px; height:42px">BT</span>
+        <div><div style="font-size:13.5px; font-weight:600">Prefer a human?</div><div class="faint" style="font-size:12px">Talk to the Bundaberg team →</div></div>
+      </a>
+    </div>
+  </section>
+</Shell>

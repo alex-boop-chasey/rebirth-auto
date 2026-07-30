@@ -1,0 +1,30 @@
+---
+/** In-grid listing card (NFY). Taps through to a vehicle detail — here, the Rebi
+ *  chat, since this isolated demo has no vehicle route. */
+import { BASE, icon, fmt, fmtKm, type Vehicle } from './data';
+interface Props { v: Vehicle; }
+const { v } = Astro.props as Props;
+---
+<a href={`${BASE}/rebi`} class="card card-lift" style="overflow:hidden; text-decoration:none; color:inherit; display:flex; flex-direction:column">
+  <div style={`height:150px; background:${v.hue}; position:relative`}>
+    {v.badge && <span class="chip chip-teal" style="position:absolute; top:12px; left:12px">{v.badge}</span>}
+    <span class="chip" style="position:absolute; top:12px; right:12px; background:rgba(255,255,255,.85)">{v.condition}</span>
+  </div>
+  <div style="padding:16px 18px; display:flex; flex-direction:column; gap:8px; flex:1">
+    <div style="font-family:var(--font-display); font-weight:600; font-size:16px">{v.year} {v.make} {v.model}</div>
+    <div class="faint" style="font-size:12.5px; margin-top:-4px">{v.variant}</div>
+    <div class="rf-row" style="gap:14px; font-size:12px; color:var(--ink-soft); flex-wrap:wrap">
+      <span class="rf-row" style="gap:5px"><span set:html={icon('fuel',14)} style="color:var(--teal-deep)"></span>{v.fuel}</span>
+      <span class="rf-row" style="gap:5px"><span set:html={icon('drive',14)} style="color:var(--teal-deep)"></span>{v.drive}</span>
+      <span class="rf-row" style="gap:5px"><span set:html={icon('gauge',14)} style="color:var(--teal-deep)"></span>{fmtKm(v.odo)}</span>
+    </div>
+    <div class="ai-summary" style="padding:10px 12px; margin-top:2px">
+      <div class="rf-row" style="gap:6px; margin-bottom:4px"><span class="spark" set:html={icon('spark',12)} style="color:var(--indigo)"></span><b style="font-size:11.5px; color:var(--indigo-deep)">Rebi's take</b></div>
+      <p style="font-size:12.5px; color:var(--ink-soft); line-height:1.45; margin:0">{v.aiLine}</p>
+    </div>
+    <div class="rf-row" style="justify-content:space-between; margin-top:6px">
+      <div style="font-family:var(--font-display); font-weight:700; font-size:19px">{fmt(v.price)}</div>
+      <span class="btn btn-ghost btn-sm">Ask Rebi <span set:html={icon('arrow',15)}></span></span>
+    </div>
+  </div>
+</a>

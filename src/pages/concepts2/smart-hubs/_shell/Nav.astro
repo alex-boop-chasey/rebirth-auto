@@ -1,0 +1,110 @@
+---
+/**
+ * Smart Hubs Nav — lean top nav with three HUB destinations, each opening a
+ * progressive-disclosure mega-menu of its drill-in pages. Reuses shipped NFY
+ * primitives (.site-nav / .btn / .ai-badge from global.css); the hub mega-menu
+ * chrome is inlined + scoped under .sh-. Static CSS hover (demo only).
+ */
+import { hubs, icon, base } from './data';
+const { active = '' } = Astro.props;
+const spark = icon('spark', 15);
+---
+<header class="site-nav sh-nav">
+  <div class="site-container site-nav-inner">
+    <a class="site-brand" href={base + '/'} aria-label="Rebirth Auto home">
+      <span class="brand-mark" set:html={spark}></span>
+      <span>Rebirth Auto<small>Smart Hubs · IA demo</small></span>
+    </a>
+
+    <nav class="site-navlinks sh-navlinks" aria-label="Primary">
+      {hubs.map((hub) => (
+        <div class="sh-hub">
+          <a href={hub.href} class={active === hub.key ? 'is-active' : ''} aria-haspopup="true">
+            {hub.label}
+            <svg class="sh-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </a>
+          <div class="sh-mega" role="menu">
+            <div class="sh-mega-lead">
+              <div class="eyebrow">{hub.label} hub</div>
+              <p>{hub.tagline}</p>
+              <a href={hub.href} class="sh-mega-all">Open the {hub.label} hub <span set:html={icon('arrow',14)}></span></a>
+            </div>
+            <div class="sh-mega-grid">
+              {hub.items.map((it) => (
+                <a href={it.href} class="sh-mega-item" role="menuitem">
+                  <span class="sh-mega-ic" set:html={icon(it.icon, 18)}></span>
+                  <span>
+                    <b>{it.label}</b>
+                    <small>{it.blurb}</small>
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </nav>
+
+    <div class="site-nav-right">
+      <a href={base + '/rebi'} class="ai-badge" aria-label="Ask Rebi">
+        <span set:html={spark}></span> Ask Rebi
+      </a>
+      <a href={base + '/browse'} class="btn btn-primary btn-sm">Browse inventory</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  /* hub trigger + progressive-disclosure mega-menu (desktop demo) */
+  .sh-navlinks { gap: 2px; }
+  .sh-hub { position: relative; }
+  .sh-hub > a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 14.5px; font-weight: 600; color: var(--ink-soft);
+    padding: 9px 13px; border-radius: 10px; text-decoration: none; cursor: pointer;
+    transition: background 0.16s, color 0.16s;
+  }
+  .sh-hub > a:hover, .sh-hub:hover > a { background: rgba(15,181,166,0.09); color: var(--ink); }
+  .sh-hub > a.is-active { color: var(--ink); background: rgba(13,22,38,0.05); }
+  .sh-caret { opacity: 0.55; transition: transform 0.18s ease; }
+  .sh-hub:hover .sh-caret { transform: rotate(180deg); }
+
+  .sh-mega {
+    position: absolute; top: calc(100% + 10px); left: 0;
+    width: 620px; padding: 20px; z-index: 60;
+    display: grid; grid-template-columns: 220px 1fr; gap: 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.9));
+    backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-3);
+    opacity: 0; visibility: hidden; transform: translateY(6px);
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+  }
+  .sh-hub:hover .sh-mega, .sh-hub:focus-within .sh-mega {
+    opacity: 1; visibility: visible; transform: translateY(0);
+  }
+  /* hover bridge so the menu doesn't vanish crossing the gap */
+  .sh-mega::before { content:""; position:absolute; top:-12px; left:0; right:0; height:12px; }
+
+  .sh-mega-lead p { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin: 10px 0 14px; }
+  .sh-mega-all {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 600; color: var(--teal-deep); text-decoration: none;
+  }
+  .sh-mega-all:hover { color: var(--teal); }
+  .sh-mega-grid { display: flex; flex-direction: column; gap: 4px; }
+  .sh-mega-item {
+    display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px;
+    border-radius: 12px; text-decoration: none; color: inherit; transition: background 0.14s;
+  }
+  .sh-mega-item:hover { background: var(--bg-2); }
+  .sh-mega-ic {
+    flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--mint-glow); color: var(--teal-deep);
+  }
+  .sh-mega-item b { display: block; font-size: 13.5px; color: var(--ink); }
+  .sh-mega-item small { display: block; font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+
+  @media (max-width: 900px) {
+    .sh-navlinks { display: none; }
+  }
+</style>

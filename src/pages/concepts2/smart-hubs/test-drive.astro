@@ -1,0 +1,53 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { vehicles, icon, base } from './_shell/data';
+export const prerender = false;
+const car = vehicles[0];
+---
+<Layout title="Book a test drive — Smart Hubs" active="buy-own" dockPrompt="Which car do you want to drive? I’ll book it.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Buy & Own', base + '/buy-own'], ['Book a test drive']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="buy-own" current={base + '/test-drive'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow"><span set:html={icon('key',13)}></span> Book a test drive</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Pick a car, pick a time.</h1>
+    <p class="sh-sub">Reachable from any vehicle page or straight from here. Rebi can book it in one line.</p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid" style="grid-template-columns:1fr 1.1fr; gap:22px">
+      <!-- chosen vehicle + what to bring -->
+      <div style="display:flex; flex-direction:column; gap:18px">
+        <div class="card sh-panel" style="padding:0; overflow:hidden">
+          <div style={`aspect-ratio:16/9; background:${car.hue}`}></div>
+          <div style="padding:16px; display:flex; align-items:center; justify-content:space-between">
+            <div><b style="font-family:var(--font-display); font-size:16px">{car.year} {car.make} {car.model}</b><div style="font-size:12.5px; color:var(--ink-faint)">{car.variant}</div></div>
+            <a href={base + '/browse'} class="sh-jump" style="padding:7px 12px; font-size:12.5px">Change car</a>
+          </div>
+        </div>
+        <div class="card sh-panel">
+          <div class="eyebrow" style="margin-bottom:10px">What to bring</div>
+          {[['Current driver licence','Full, valid'],['~45 minutes','On-road + Q&amp;A'],['Your questions','Rebi can pre-answer some']].map(([t,d]) => (
+            <div style="display:flex; gap:10px; padding:7px 0; font-size:13.5px; color:var(--ink-soft)"><span set:html={icon('check',15)} style="color:var(--teal-deep)"></span> <span><b style="color:var(--ink)">{t}</b> — {d}</span></div>
+          ))}
+        </div>
+      </div>
+
+      <!-- booking form -->
+      <div class="card sh-panel">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('play',18)}></span><b style="font-size:16px">Your booking</b></div>
+        <div class="sh-grid sh-cols-2" style="gap:0 14px">
+          <div class="sh-field"><label>Name</label><input placeholder="Your name" /></div>
+          <div class="sh-field"><label>Phone</label><input placeholder="04.. (demo)" /></div>
+          <div class="sh-field"><label>Preferred date</label><input type="date" /></div>
+          <div class="sh-field"><label>Preferred time</label><select><option>Morning</option><option>Midday</option><option>Afternoon</option></select></div>
+        </div>
+        <div class="sh-field"><label>Anything we should prep?</label><textarea rows="2" placeholder="e.g. want to test towing"></textarea></div>
+        <div class="sh-jumprow"><button class="btn btn-primary btn-sm"><span set:html={icon('key',15)}></span> Request test drive</button><a href={base + '/rebi'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('spark',15)}></span> Book it via Rebi</a></div>
+        <p class="sh-note" style="margin-top:12px">We’ll confirm by phone. Demo form — nothing is submitted.</p>
+      </div>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,46 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import { hubs, icon, base } from './_shell/data';
+export const prerender = false;
+const hub = hubs.find((h) => h.key === 'buy-own')!;
+---
+<Layout title="Buy & Own — Rebirth Auto Smart Hubs" active="buy-own" dockPrompt="Budget, trade-in, repayments — I can work it out.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Buy & Own']]} /></section>
+  <section class="sh-wrap sh-hero" style="padding-block:20px 24px">
+    <div class="eyebrow">Buy &amp; Own hub</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">From price to plates.</h1>
+    <p class="sh-sub">{hub.tagline} Finance and offers, sell and trade-in — the overlapping money jobs sit
+      together here, so you never bounce between siloed pages.</p>
+    <div class="sh-jumprow" style="margin-top:20px">
+      <a href={base + '/finance'} class="btn btn-primary btn-sm"><span set:html={icon('calc',15)}></span> Open the calculator</a>
+      <a href={base + '/rebi'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('spark',15)}></span> Ask Rebi to pre-qualify me</a>
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:8px">
+    <div class="sh-grid sh-cols-3">
+      {hub.items.map((it) => (
+        <a href={it.href} class="card card-lift sh-panel" style="text-decoration:none; color:inherit; display:flex; flex-direction:column">
+          <div class="sh-tile-ic" set:html={icon(it.icon, 22)}></div>
+          <h2 class="sh-h2" style="font-size:19px">{it.label}</h2>
+          <p style="font-size:14px; color:var(--ink-soft); line-height:1.5; margin:4px 0 14px; flex:1">{it.blurb}</p>
+          <span class="sh-jump" style="align-self:flex-start"><span class="sh-jic" set:html={icon('arrow',15)}></span> Go</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- overlap explainer: sell vs trade-in, finance vs offers -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="glass sh-panel">
+      <div class="eyebrow" style="margin-bottom:10px">Why these live together</div>
+      <div class="sh-grid sh-cols-2">
+        <div style="display:flex; gap:12px"><span set:html={icon('swap',20)} style="color:var(--teal-deep)"></span>
+          <p style="font-size:14px; color:var(--ink-soft)"><b style="color:var(--ink)">Sell vs trade-in</b> — same car, two paths. <a href={base + '/trade-in'} style="color:var(--teal-deep)">Trade in</a> against a purchase, or <a href={base + '/sell'} style="color:var(--teal-deep)">sell outright</a> for cash. Rebi compares both.</p></div>
+        <div style="display:flex; gap:12px"><span set:html={icon('dollar',20)} style="color:var(--teal-deep)"></span>
+          <p style="font-size:14px; color:var(--ink-soft)"><b style="color:var(--ink)">Finance ↔ offers</b> — every <a href={base + '/offers'} style="color:var(--teal-deep)">drive-away offer</a> flows straight into the <a href={base + '/finance'} style="color:var(--teal-deep)">repayment calculator</a> and pre-approval.</p></div>
+      </div>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,29 @@
+---
+/**
+ * Inline-Contextual Nav — the near-zero top nav that is the whole point of this
+ * IA. Only three things live up here: the logo (home), "Ask Rebi", and ONE
+ * "Browse" CTA. No dropdowns, no marketing links. Everything else is reached
+ * inline (in situ, on a related page), from the footer directory, or via Rebi.
+ * Uses the shipped NFY chrome classes (.site-nav) from theme.css.
+ */
+import { icon, BASE } from './data';
+const { active = '' } = Astro.props;
+---
+<header class="site-nav">
+  <div class="site-container site-nav-inner">
+    <a class="site-brand" href={`${BASE}/`} aria-label="Rebirth Auto home">
+      <span class="brand-mark" set:html={icon('spark', 18)}></span>
+      <span>Rebirth Auto<small>Near-Future Yard</small></span>
+    </a>
+
+    <!-- deliberately empty: no primary link list. Wayfinding lives inline. -->
+    <div class="site-nav-right">
+      <button type="button" class="ai-badge" data-rebi-open aria-label="Ask Rebi">
+        <span set:html={icon('spark', 14)}></span> Ask Rebi
+      </button>
+      <a href={`${BASE}/listings`} class={`btn btn-primary btn-sm ${active === 'listings' ? 'is-here' : ''}`}>
+        <span set:html={icon('filter', 15)}></span> Browse
+      </a>
+    </div>
+  </div>
+</header>

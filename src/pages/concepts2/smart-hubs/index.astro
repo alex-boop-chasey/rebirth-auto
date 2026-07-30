@@ -1,0 +1,86 @@
+---
+import Layout from './_shell/Layout.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { hubs, vehicles, brands, icon, base } from './_shell/data';
+export const prerender = false;
+const featured = [vehicles[3], vehicles[0], vehicles[1], vehicles[5]];
+---
+<Layout title="Rebirth Auto — Smart Hubs home" active="">
+  <!-- HERO: AI search is the front door; brands + facets are contextual chips -->
+  <section class="sh-wrap sh-hero">
+    <div class="eyebrow">Near-Future Yard · Smart Hubs</div>
+    <h1 class="sh-h1">Find your next car in three moves,<br />not thirty menu items.</h1>
+    <p class="sh-sub">Everything lives under three hubs — <b>Browse</b>, <b>Buy&nbsp;&amp;&nbsp;Own</b>,
+      and <b>Service&nbsp;&amp;&nbsp;Parts</b>. Ask Rebi, or dive into a hub. No sprawl, nothing buried.</p>
+
+    <div class="aisearch" style="margin-top:26px; max-width:720px">
+      <span set:html={icon('spark',20)} style="color:var(--indigo)"></span>
+      <input type="text" placeholder="Tell Rebi what you need — “7-seater under $45k for gravel roads”" readonly />
+      <a href={base + '/rebi'} class="btn btn-primary btn-sm"><span set:html={icon('send',15)}></span> Ask Rebi</a>
+    </div>
+
+    <!-- contextual chips: brands + fuel facet as buttons, NOT nav items -->
+    <div class="sh-jumprow" style="margin-top:16px; max-width:820px">
+      <a href={base + '/electric'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('plug',15)}></span> Electric &amp; hybrid</a>
+      {brands.slice(0,6).map((b) => (
+        <a href={base + '/brand'} class="sh-jump"><span class="sh-jic" set:html={icon('tag',14)}></span> {b}</a>
+      ))}
+      <a href={base + '/brand'} class="sh-jump"><span class="sh-jic" set:html={icon('grid',14)}></span> All brands</a>
+    </div>
+  </section>
+
+  <!-- THE THREE HUBS: the backbone, each opening its drill-in destinations -->
+  <section class="sh-wrap section-tight">
+    <div class="sh-grid sh-cols-3">
+      {hubs.map((hub) => (
+        <div class="card sh-panel" style="display:flex; flex-direction:column">
+          <div class="sh-tile-ic" set:html={icon(hub.key === 'browse' ? 'grid' : hub.key === 'buy-own' ? 'key' : 'wrench', 22)}></div>
+          <h2 class="sh-h2">{hub.label}</h2>
+          <p style="font-size:14px; color:var(--ink-soft); line-height:1.5; margin:2px 0 16px; flex:1">{hub.tagline}</p>
+          <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:16px">
+            {hub.items.map((it) => (
+              <a href={it.href} style="display:flex; align-items:center; gap:9px; padding:8px 10px; margin:0 -10px; border-radius:10px; text-decoration:none; color:var(--ink); font-size:13.5px; font-weight:500" class="sh-hublink">
+                <span set:html={icon(it.icon,15)} style="color:var(--teal-deep); display:inline-flex"></span> {it.label}
+              </a>
+            ))}
+          </div>
+          <a href={hub.href} class="btn btn-primary btn-sm" style="justify-content:center"><span set:html={icon('arrow',15)}></span> Open {hub.label}</a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- FEATURED STOCK -->
+  <section class="sh-wrap section-tight">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px">
+      <div>
+        <div class="eyebrow">Fresh in the yard</div>
+        <h2 class="sh-h2" style="margin-top:8px">Featured stock</h2>
+      </div>
+      <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('grid',15)}></span> Browse all 305 cars</a>
+    </div>
+    <div class="sh-grid sh-cols-4">
+      {featured.map((v) => <VehicleCard v={v} />)}
+    </div>
+  </section>
+
+  <!-- REBI as navigator band -->
+  <section class="sh-wrap section-tight">
+    <div class="ai-summary scan" style="display:flex; gap:24px; align-items:center; flex-wrap:wrap">
+      <span class="orb orb-halo" style="width:56px; height:56px"></span>
+      <div style="flex:1; min-width:280px">
+        <div class="chip chip-ai" style="margin-bottom:10px"><span set:html={icon('spark',13)}></span> Rebi navigates for you</div>
+        <h2 class="sh-h2">Don’t know which hub? Just ask.</h2>
+        <p style="font-size:14.5px; color:var(--ink-soft); max-width:60ch; margin-top:6px">Rebi answers “where do I…?” by taking you there — clickable car cards and one-tap actions like <i>Work out repayments</i> or <i>Book a test drive</i> come back inside the chat.</p>
+      </div>
+      <div class="sh-jumprow" style="flex-direction:column; align-items:stretch; min-width:220px">
+        <a href={base + '/rebi'} class="btn btn-primary"><span set:html={icon('chat',16)}></span> Chat with Rebi</a>
+        <a href={base + '/finance'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('calc',15)}></span> Work out repayments</a>
+        <a href={base + '/trade-in'} class="sh-jump"><span class="sh-jic" set:html={icon('swap',15)}></span> Value my trade-in</a>
+      </div>
+    </div>
+  </section>
+
+  <div style="height:48px"></div>
+  <style>.sh-hublink:hover { background: var(--bg-2); }</style>
+</Layout>

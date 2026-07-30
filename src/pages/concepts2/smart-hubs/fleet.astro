@@ -1,0 +1,45 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { brands, icon, base } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Fleet & business — Smart Hubs" active="service-parts" dockPrompt="ABN buyer? Tell me your fleet size and use.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Service & Parts', base + '/service-parts'], ['Fleet & business']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="service-parts" current={base + '/fleet'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow"><span set:html={icon('briefcase',13)}></span> Fleet &amp; business</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Fewer forms, more wheels on the road.</h1>
+    <p class="sh-sub">One point of contact for ABN buyers — bulk pricing, novated leases, and priority servicing
+      across the brands we carry.</p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-4">
+      {[['dollar','Fleet pricing','Volume discounts &amp; fixed running costs'],['doc','Novated leasing','Salary-packaged, ATO-friendly (demo)'],['wrench','Priority servicing','Loan cars &amp; after-hours drop-off'],['users','One account manager','A real human, not a queue']].map(([ic,t,d]) => (
+        <div class="card sh-panel"><span set:html={icon(ic,20)} style="color:var(--teal-deep)"></span><b style="display:block; margin:10px 0 4px; font-size:14.5px">{t}</b><p style="font-size:13px; color:var(--ink-soft)">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="eyebrow" style="margin-bottom:12px">Brands available for fleet</div>
+    <div class="sh-jumprow">{brands.map((b) => <a href={base + '/brand'} class="sh-jump" style="padding:8px 14px; font-size:13px">{b}</a>)}</div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="card sh-panel" style="max-width:720px">
+      <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('briefcase',18)}></span><b style="font-size:16px">Fleet enquiry</b></div>
+      <div class="sh-grid sh-cols-2" style="gap:0 14px">
+        <div class="sh-field"><label>Business name</label><input placeholder="Your company" /></div>
+        <div class="sh-field"><label>ABN</label><input placeholder="00 000 000 000" /></div>
+        <div class="sh-field"><label>Fleet size</label><select><option>1–5</option><option>6–20</option><option>20+</option></select></div>
+        <div class="sh-field"><label>Contact email</label><input placeholder="you@business.com.au" /></div>
+      </div>
+      <div class="sh-field"><label>What do you need?</label><textarea rows="3" placeholder="e.g. six utes on a 3-year cycle"></textarea></div>
+      <div class="sh-jumprow"><button class="btn btn-primary btn-sm"><span set:html={icon('send',15)}></span> Send enquiry</button><a href={base + '/rebi'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('spark',15)}></span> Scope it with Rebi</a></div>
+    </div>
+  </section>
+</Layout>

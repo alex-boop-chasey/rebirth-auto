@@ -1,0 +1,63 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, offers, brands, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="Offers & specials — Rebirth Auto" active="Offers & specials">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Offers &amp; specials</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:16ch">This week's drive-away deals.</h1>
+    <p class="lead" style="margin-top:16px">Live specials across the yard. Ask Rebi to filter these to your budget and the way you actually drive.</p>
+    <div class="rf-quick" style="margin-top:18px">
+      <span class="chip">All</span>
+      {['SUV','Ute','EV','Hybrid','Under $40k'].map((t) => <span class="chip">{t}</span>)}
+    </div>
+  </section>
+
+  <!-- FEATURED OFFERS GRID -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-3">
+      {offers.map((o) => (
+        <div class="card card-lift" style="overflow:hidden; display:flex; flex-direction:column">
+          <div style={`height:150px; background:${o.hue}; position:relative`}>
+            <span class="chip chip-amber" style="position:absolute; top:12px; left:12px">{o.tag}</span>
+          </div>
+          <div style="padding:18px; display:flex; flex-direction:column; gap:8px; flex:1">
+            <b style="font-family:var(--font-display); font-size:16px">{o.title}</b>
+            <span class="faint" style="font-size:12.5px; margin-top:-4px">{o.sub}</span>
+            <div style="font-family:var(--font-display); font-weight:700; font-size:22px; margin-top:auto">{o.price}</div>
+            <div class="rf-quick" style="margin-top:6px">
+              <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Repayments</a>
+              <a class="rf-action" href={`${BASE}/test-drive`}><span class="spark" set:html={icon('play',13)}></span> Test drive</a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- BRAND FILTER (contextual → brand hub) -->
+  <section class="site-container section-tight">
+    <div class="card" style="padding:22px 26px">
+      <div class="rf-mono-eyebrow" style="margin-bottom:14px">Browse offers by brand</div>
+      <div class="rf-quick">
+        {brands.map((b) => <a href={`${BASE}/brand`} class="chip" style="text-decoration:none">{b}</a>)}
+      </div>
+    </div>
+    <p class="faint" style="font-size:12px; margin-top:14px">Fine print: drive-away pricing on selected stock while it lasts; excludes government/fleet buyers. Placeholder figures — not a live offer.</p>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Find me a deal that fits — SUV, around $40k, cheap to run."
+      reply="Two current specials fit: the Chery Tiggo 7 Pro hybrid at $37,990 drive-away (5.6L/100km) and the used Tucson at $41,990 with $3k off. Want repayments on either, or a test drive booked?"
+      actions={[
+        { label: 'Work out repayments', href: `${BASE}/finance`, icon: 'calc' },
+        { label: 'Book a test drive', href: `${BASE}/test-drive`, icon: 'play' },
+        { label: 'Compare EV options', href: `${BASE}/electric`, icon: 'leaf' },
+      ]}
+    />
+  </section>
+</Shell>
