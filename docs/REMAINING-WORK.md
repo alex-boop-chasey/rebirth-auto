@@ -32,22 +32,20 @@ careers, test-drive) are **built by the contest teams as themed mockups** rather
 separately (owner: "build them into our site … and run a contest … build out pages to look
 like the final builds").
 
-**Phase 3 — CONTEST (deferred to end · OWNER JUDGES · §6).**
-Structure per owner's explicit instruction (a deliberate override of the default 3-sequential
-contest format in AGENTS.md — recorded per §6): **3 teams of 2 designers = 6 agents, all run
-SIMULTANEOUSLY.** Each team = ONE **traditional** web designer + ONE **futuristic/experimental**
-web designer who **collaborate to produce their team's single unique themed entry** (NOT two
-separate entries, NOT one layering on the other). Each team has a unique orchestrator-assigned
-theme + a shared team brief (`docs/briefs/contest/team-<n>-<theme>.md`) fixing exact tokens,
-nav and footer so the two halves read as ONE cohesive site. Page-ownership is split so the pair
-build in parallel without conflict: the **traditional** designer owns inventory + vehicle +
-finance(+calculator) + PLAN.md; the **experimental** designer owns the showpiece home + one
-signature new page. Each entry lives in `src/pages/concepts/team-<n>-<theme>/`. Desktop-only,
-non-functional, light-theme, dummy content, fully isolated. Owner judges the 3 team entries at
-the very end — not self-selected.
+**Phase 3 — CONTEST (deferred to end · OWNER JUDGES · §6).** Restated per the owner's final brief
+(2026-07-30, supersedes earlier team-based drafts): **3 INDEPENDENT solo design agents**, each
+assigned ONE theme, run **simultaneously**, **no agent sees another's work**. Each agent produces:
+a `DIRECTION.md` (theme/rationale/palette/type/how it reflects the AI-native product), desktop-only
+static mockups for the **core 4** (home/hero, listings+filter panel, vehicle detail *with Edmunds
+review attribution*, Rebi AI chat interface) **plus every Bundaberg-parity page** (finance+calculator,
+offers, EV, sell, parts, fleet, about, contact, careers, test-drive, brand hub) in dummy content, and
+a `STRUCTURE.md`. Shared brief: `docs/briefs/contest/SHARED-BRIEF.md`. Isolated under
+`src/pages/concepts/<theme>/`; additive only (nothing shipped is altered). AI features prominent
+throughout; regional-AU-credible. Dark theme permitted for these non-shipped concepts. Alex judges.
 
-Teams/themes: **T1 Concierge** (editorial luxury) · **T2 Velocity** (kinetic sport) ·
-**T3 Clarity** (calm, AI-forward).
+Themes (one per agent): **Dark Precision** (high-contrast dark; configurator-meets-trading-terminal;
+AI surgical/expert) · **Regional Trust** (warm, light, approachable; AI as knowledgeable local) ·
+**Near-Future Yard** (tech-forward but locally grounded; modern showroom meets sleek app).
 
 **Three themes (orchestrator's call — all light-first per the binding light-theme standard):**
 - **Team 1 — "Concierge" (Refined Editorial):** boutique quiet-luxury; ivory/paper + charcoal,
