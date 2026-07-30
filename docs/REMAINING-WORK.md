@@ -34,11 +34,16 @@ like the final builds").
 
 **Phase 3 — CONTEST (deferred to end · OWNER JUDGES · §6).**
 Structure per owner's explicit instruction (a deliberate override of the default 3-sequential
-contest format in AGENTS.md — recorded here per §6): **3 teams, 2 agents each, run in
-parallel**; within a team a *traditional* agent owns IA/layout/usability and an *experimental*
-agent owns the distinctive visual/interaction language; the team fuses them into ONE cohesive
-entry + a structure plan, then builds desktop-only, non-functional mockups under
-`src/pages/concepts/<team>/`. Owner picks the winner at the very end — not self-selected.
+contest format in AGENTS.md — recorded here per §6): **3 teams, 2 agents each. All agents run
+SIMULTANEOUSLY (6 in parallel).** Each team has a unique orchestrator-assigned theme. Within a
+team the two agents work at the same time — one **traditional** design focus, one **modern/
+experimental** — and **each independently produces their own complete themed page-set + a
+design/structure plan** (they do NOT layer on each other; there is no synthesis/critic step —
+exactly two agents per team). Each agent proposes the new pages/features THEY come up with
+(Bundaberg parity list = input/inspiration, not a fixed spec). The team's entry = its two takes
+(traditional + experimental) under the shared theme. Isolated, desktop-only, non-functional
+mockups under `src/pages/concepts/team-<n>-<theme>/<traditional|experimental>/`. Owner picks the
+winner at the very end — not self-selected.
 
 **Three themes (orchestrator's call — all light-first per the binding light-theme standard):**
 - **Team 1 — "Concierge" (Refined Editorial):** boutique quiet-luxury; ivory/paper + charcoal,
