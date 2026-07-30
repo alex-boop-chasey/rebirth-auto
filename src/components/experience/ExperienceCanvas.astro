@@ -116,6 +116,9 @@ const payload = JSON.stringify({ vehicles, dealerName });
   .xp-orb-ring--2 { animation-delay: 1.4s; border-color: rgb(109 40 217 / 0.18); }
 
   /* Orb states set by the engine. */
+  /* Onboarding: the orb sits ABOVE the headline (not over it) so the hero reads
+     as a vertical stack — orb, then eyebrow/headline/CTA — optically centred. */
+  .xp-orb.is-idle { top: 8.5rem; width: 7.5rem; height: 7.5rem; }
   .xp-orb.is-standby { width: 13rem; height: 13rem; }
   .xp-orb.is-question {
     /* Recedes to the top so it presides over, but doesn't block, the questions. */
@@ -177,7 +180,9 @@ const payload = JSON.stringify({ vehicles, dealerName });
   .xp-eyebrow .xp-dotmark { width: 0.45rem; height: 0.45rem; border-radius: 9999px; background: var(--xp-grad); }
 
   /* ---------------- Onboarding ---------------- */
-  .xp-onboard { margin-top: 9rem; }
+  /* Small top offset only — clears the orb above without dropping the block far
+     below the optical centre (the orb + this content read as one centred stack). */
+  .xp-onboard { margin-top: 4rem; }
   .xp-headline {
     margin: 1.4rem 0 0; font-size: clamp(2.2rem, 6vw, 3.6rem);
     line-height: 1.05; font-weight: 800; letter-spacing: -0.03em;
