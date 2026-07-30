@@ -19,8 +19,7 @@ interface Props {
 }
 
 const { initialMode = 'login' } = Astro.props;
-const TURNSTILE_SITE_KEY =
-  import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE_SITE_KEY;
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_USER_TURNSTILE_KEY;
 const brand = dealerConfig.identity.name;
 
 const tabBase =

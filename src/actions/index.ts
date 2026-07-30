@@ -8,7 +8,7 @@
  * Env adaptation for the Cloudflare Worker runtime (this project, NOT node):
  *   - The Supabase URL/anon key are PUBLIC_ vars read via import.meta.env inside
  *     getSupabase().
- *   - TURNSTILE_SECRET_KEY is a SERVER secret and must be read from the Worker
+ *   - SECRET_USER_TURNSTILE_KEY is a SERVER secret and must be read from the Worker
  *     runtime, not import.meta.env. We mirror src/chatbot/get-env.ts:
  *     `import { env } from 'cloudflare:workers'` with an import.meta.env fallback
  *     for non-Cloudflare local runs. get-env.ts itself is left untouched.
@@ -29,7 +29,7 @@ import { getSupabase } from '../lib/supabase';
  */
 function getTurnstileSecret(): string | undefined {
   const e = cfEnv as unknown as Record<string, unknown>;
-  return (e.TURNSTILE_SECRET_KEY as string | undefined) ?? import.meta.env.TURNSTILE_SECRET_KEY;
+  return (e.SECRET_USER_TURNSTILE_KEY as string | undefined) ?? import.meta.env.SECRET_USER_TURNSTILE_KEY;
 }
 
 /** Resolve the site origin for email redirect links (config: PUBLIC_SITE_URL). */

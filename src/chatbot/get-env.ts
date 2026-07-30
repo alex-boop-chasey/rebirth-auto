@@ -31,10 +31,10 @@ export function getChatEnv(): ChatEnv {
       (e.TELEGRAM_CHAT_ID as string | undefined) ?? import.meta.env.TELEGRAM_CHAT_ID,
     TELEGRAM_WEBHOOK_SECRET:
       (e.TELEGRAM_WEBHOOK_SECRET as string | undefined) ?? import.meta.env.TELEGRAM_WEBHOOK_SECRET,
+    // Chatbot Turnstile secret, sourced from the SECRET_BOT_TURNSTILE_KEY env var
+    // (the ChatEnv field name stays CHATBOT_TURNSTILE_SECRET_KEY — core.ts reads it).
     CHATBOT_TURNSTILE_SECRET_KEY:
-      (e.CHATBOT_TURNSTILE_SECRET_KEY as string | undefined) ??
-      (e.TURNSTILE_RB_LISTINGS_AUTO_SECRET_KEY as string | undefined) ??
-      import.meta.env.CHATBOT_TURNSTILE_SECRET_KEY ??
-      import.meta.env.TURNSTILE_RB_LISTINGS_AUTO_SECRET_KEY,
+      (e.SECRET_BOT_TURNSTILE_KEY as string | undefined) ??
+      import.meta.env.SECRET_BOT_TURNSTILE_KEY,
   };
 }

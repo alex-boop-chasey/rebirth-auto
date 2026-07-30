@@ -50,9 +50,10 @@ export const POLL_INTERVAL_MS = 3000;
 export const SESSION_STALE_SECONDS = 24 * 60 * 60; // 24 hours
 
 // Cloudflare Turnstile — DEDICATED widget for the chatbot (separate from the
-// contact form's). The site key is public (rendered client-side in the widget);
-// the matching secret is the CHATBOT_TURNSTILE_SECRET_KEY env var / Cloudflare secret,
-// validated server-side in core.ts.
+// contact form's). The site key is public (rendered client-side in the widget)
+// and comes from the PUBLIC_BOT_TURNSTILE_KEY build-time env var; the matching
+// secret is the SECRET_BOT_TURNSTILE_KEY env var / Cloudflare secret, validated
+// server-side in core.ts.
 //
 // MASTER SWITCH: gates BOTH the widget challenge and the server-side check.
 // Turnstile is automatically bypassed on localhost/127.0.0.1 (see core.ts +
@@ -60,11 +61,11 @@ export const SESSION_STALE_SECONDS = 24 * 60 * 60; // 24 hours
 // — so local dev isn't blocked while production stays protected. Flip this to
 // `false` if you ever need to kill the gate entirely.
 export const TURNSTILE_ENABLED = true;
-// Public Turnstile site key for the demo domain. Safe to bake into the page at
-// build time — the site key is public by design; the matching secret key lives
-// in the Worker env as CHATBOT_TURNSTILE_SECRET_KEY. Turnstile is auto-bypassed
-// on localhost, so local dev works regardless.
-export const TURNSTILE_SITE_KEY = '0x4AAAAAAD5QEzrSVw6w9Fg9';
+// Public Turnstile site key, read from PUBLIC_BOT_TURNSTILE_KEY at build time.
+// The site key is public by design and safe to inline into the page; the
+// matching secret key lives in the Worker env as SECRET_BOT_TURNSTILE_KEY.
+// Turnstile is auto-bypassed on localhost, so local dev works regardless.
+export const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_BOT_TURNSTILE_KEY ?? '';
 
 // Per-IP rate limiting. Requires a Cloudflare KV namespace bound as RATE_LIMIT_KV
 // (see chatbot/README.md). If the binding is absent (e.g. local dev without KV),
