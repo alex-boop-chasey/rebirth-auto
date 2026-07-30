@@ -191,24 +191,21 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
      rebi.css `.reb-launcher` rules without touching that shared file. The size,
      shape, badge anchor and the ✕-swap all stay in rebi.css, untouched. */
   #reb-launcher.reb-launcher {
-    background: #fff;
-    color: #0f172a; /* the ✕ stroke (currentColor) reads dark on white */
-    border: 1px solid rgb(203 213 225 / 90%); /* hairline slate-300 */
-    box-shadow:
-      0 10px 24px -8px rgb(15 23 42 / 28%),
-      0 2px 6px -2px rgb(15 23 42 / 16%);
+    background: var(--surface, #fff);
+    color: var(--ink, #0d1626); /* the ✕ stroke (currentColor) reads dark on white */
+    border: 1px solid var(--line, rgb(13 22 38 / 9%)); /* NFY hairline */
+    box-shadow: var(--sh-2, 0 6px 22px rgb(13 22 38 / 9%));
   }
-  /* Keep rebi.css's -2px hover lift (transform is left to it) but stay white. */
+  /* Keep rebi.css's -2px hover lift (transform is left to it); add an aurora glow
+     bloom on hover so the white button reads as Rebi's living presence. */
   #reb-launcher.reb-launcher:hover {
-    background: #f8fafc; /* slate-50 — subtle press feedback, still light */
-    box-shadow:
-      0 14px 30px -8px rgb(15 23 42 / 34%),
-      0 3px 8px -2px rgb(15 23 42 / 18%);
+    background: var(--surface, #fff);
+    box-shadow: var(--sh-3, 0 20px 50px rgb(13 22 38 / 14%)), var(--sh-glow, 0 10px 40px -12px rgb(15 181 166 / 45%));
   }
   /* rebi.css focuses with a WHITE outline — invisible on a white button. Swap it
-     for a dark slate ring so the focus-visible affordance is preserved + visible. */
+     for an indigo ring so the focus-visible affordance is preserved + visible. */
   #reb-launcher.reb-launcher:focus-visible {
-    outline: 2px solid #0f172a;
+    outline: 2px solid var(--indigo, #5566f0);
     outline-offset: 2px;
   }
   /* The waiting-conversation badge ringed itself in blue to sit on the old disc;
@@ -216,10 +213,10 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   #reb-badge.reb-badge { border-color: #fff; }
 
   /* ── Rebi orb ──────────────────────────────────────────────────────────────
-     Faithful copy of the Experience Mode <Orb>: a filled MAIN circle with a
-     smaller centred circle at 0.34× its diameter. Recoloured for the white
-     launcher — the main circle is BLACK, the centre dot white — and wrapped in a
-     slowly-spinning thin grey outer ring. The `reb-ico-chat` class on the wrapper
+     The NFY "living aurora bead": a filled MAIN circle painted with the aurora
+     gradient and a smaller white centre dot at 0.34× its diameter, wrapped in a
+     soft blurred aurora halo. Structure kept from the Experience Mode <Orb>; only
+     recoloured to the NFY aurora skin. The `reb-ico-chat` class on the wrapper
      lets rebi.css hide the orb on `.reb-open` and reveal the ✕ — open/close is
      untouched. */
   .reb-orb {
@@ -230,28 +227,20 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     width: 1.9rem;
     height: 1.9rem;
   }
-  /* Thin grey OUTER RING. A conic gradient sweeps from transparent up to grey and
-     back, then a radial mask carves it down to a ~1.6px stroke — so it's a fading
-     arc, not a uniform circle, which makes the continuous rotation actually read.
-     Slate-400 at the arc's peak, calm on the white button. */
+  /* Soft AURORA HALO. A blurred aurora bloom behind the core (mirrors theme.css's
+     .orb-halo::before) that gently pulses — the "living aurora bead" mark. */
   .reb-orb-ring {
     position: absolute;
-    inset: 0;
+    inset: -5px;
     border-radius: 9999px;
-    background: conic-gradient(
-      from 0deg,
-      rgb(148 163 184 / 0) 0deg,
-      rgb(148 163 184 / 0) 40deg,
-      rgb(148 163 184 / 85%) 300deg,
-      rgb(148 163 184 / 0) 360deg
-    );
-    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
-    mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
-    animation: reb-orb-spin 4s linear infinite;
-    transform-origin: 50% 50%;
+    background: var(--aurora);
+    opacity: 0.32;
+    filter: blur(8px);
+    z-index: -1;
+    animation: reb-orb-halo 2.8s ease-in-out infinite;
   }
-  /* The MAIN circle — black, inset from the ring so a clear gap shows between them.
-     Carries the source <Orb>'s gentle breathe pulse (copied below). */
+  /* The MAIN circle — the aurora bead, a slow-shifting gradient carrying a gentle
+     breathe pulse (mirrors theme.css .orb). Inset from the halo so it reads sharp. */
   .reb-orb-core {
     position: relative;
     display: inline-flex;
@@ -260,33 +249,52 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     width: 1.35rem;
     height: 1.35rem;
     border-radius: 9999px;
-    background: #000;
-    animation: reb-orb-breathe 3.6s ease-in-out infinite;
+    background: var(--aurora);
+    background-size: 180% 180%;
+    animation: reb-orb-breathe 3.6s ease-in-out infinite,
+      reb-orb-aurora 6s ease infinite;
   }
   /* The centre dot — white, at 0.34× the main circle (1.35rem × 0.34 ≈ 0.459rem),
-     centred inside the black circle (the "smaller circle" from the source). */
+     centred inside the aurora bead, softly pulsing (the .orb::after motif). */
   .reb-orb-dot {
     width: 0.459rem;
     height: 0.459rem;
     border-radius: 9999px;
-    background: #fff;
+    background: rgb(255 255 255 / 0.92);
+    animation: reb-orb-dot 2.6s ease-in-out infinite;
   }
-  /* Spin drives the ring's rotation. */
-  @keyframes reb-orb-spin {
-    to { transform: rotate(360deg); }
+  /* Aurora drift across the bead. */
+  @keyframes reb-orb-aurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
-  /* Breathe — copied verbatim from the experience-alt page's `reb-alt-breathe`
-     keyframes (src/pages/labs/experience-alt.astro), the source of the <Orb>'s
-     `orb-breathe` pulse: a gentle scale + expanding-then-fading slate halo. */
+  /* Halo pulse. */
+  @keyframes reb-orb-halo {
+    0%, 100% { opacity: 0.22; transform: scale(0.92); }
+    50% { opacity: 0.4; transform: scale(1.06); }
+  }
+  /* Centre-dot pulse. */
+  @keyframes reb-orb-dot {
+    0%, 100% { transform: scale(0.82); opacity: 0.9; }
+    50% { transform: scale(1); opacity: 1; }
+  }
+  /* Breathe — a gentle scale + expanding-then-fading indigo halo on the bead. */
   @keyframes reb-orb-breathe {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(15 23 42 / 12%); }
-    50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgb(15 23 42 / 0); }
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35), 0 0 0 0 rgb(85 102 240 / 0.18);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35), 0 0 0 12px rgb(85 102 240 / 0);
+    }
   }
-  /* Reduced motion: freeze BOTH the ring spin and the breathe (mirrors the
-     source's own gate + rebi.css's reduce block). A calm static mark remains. */
+  /* Reduced motion: freeze the halo, bead and dot. A calm static aurora mark remains. */
   @media (prefers-reduced-motion: reduce) {
     .reb-orb-ring,
-    .reb-orb-core { animation: none; }
+    .reb-orb-core,
+    .reb-orb-dot { animation: none; }
   }
 </style>
 

@@ -23,14 +23,14 @@ import { client } from '../sanity/lib/client';
 import { urlFor } from '../sanity/lib/image';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
 import AskRebiButton from '../components/AskRebiButton.astro';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
 import Dial from '../components/compare/Dial.astro';
 import Contender from '../components/compare/Contender.astro';
 import { dealerConfig } from '../config/dealer';
 import { type Listing, LISTING_FIELDS, formatPrice, iconSvg } from '../lib/listing';
 import { type CompareCar, LENSES } from '../lib/compare-verdict';
 import { DIM_ORDER, DIM_META, reckon, type Weights } from '../components/compare/reckon';
-
-const year = new Date().getFullYear();
 
 // --- Data loading ------------------------------------------------------------
 // Parse ?ids=a,b,c — trim, drop blanks, dedupe, cap at 3 (a 2–3 car head-to-head
@@ -129,9 +129,10 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
     <div class="glow-a" aria-hidden="true"></div>
     <div class="glow-b" aria-hidden="true"></div>
 
+    <SiteNav active="inventory" />
+
     <div class="wrap">
-      <div class="topbar">
-        <a class="brand" href="/">Rebirth<span> Auto</span></a>
+      <div class="tools-back">
         <a class="back" href={`/compare?ids=${ids.join(',')}`}>
           <Fragment set:html={iconSvg('arrowLeft', 'ic')} />
           Back to comparison
@@ -316,11 +317,12 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
         }
       </main>
 
-      <footer>
-        © {year} {dealerConfig.identity.name} · All vehicles subject to availability. Comparison is
-        indicative only.
-      </footer>
+      <p class="board-fineprint">
+        All vehicles subject to availability. Comparison is indicative only.
+      </p>
     </div>
+
+    <SiteFooter />
 
     {canCompare && (
       <script type="application/json" id="balance-data" is:inline set:html={JSON.stringify(cars).replace(/</g, '\\u003c')} />
@@ -376,8 +378,8 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
          light-only.
          ========================================================================== */
       .balance-page {
-        --paper: #f8fafc; /* slate-50 — exact site page colour */
-        --ink: #0f172a; /* slate-900 — headings */
+        --paper: #F5F8FC; /* slate-50 — exact site page colour */
+        --ink: #0D1626; /* slate-900 — headings */
         --ink-2: #1e293b; /* slate-800 — body */
         --mut: #64748b; /* slate-500 — muted */
         --dim: #94a3b8; /* slate-400 — dim */
@@ -385,9 +387,9 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
         --glass-2: rgba(255, 255, 255, 0.52);
         --hair: rgba(15, 23, 42, 0.1); /* the site's ring-slate-900/10 signature */
         --hair-2: rgba(15, 23, 42, 0.06); /* softer inner hairline */
-        --rebi: rgb(1 97 239);
-        --rebi-2: rgb(1 84 207);
-        --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
+        --rebi: #5566F0;
+        --rebi-2: #3A46C8;
+        --rebi-grad: linear-gradient(135deg, #5566F0, #0FB5A6);
         --track: rgba(15, 23, 42, 0.08);
         --good: #059669; /* emerald-600 — winner text/badge */
         --good-strong: #047857; /* emerald-700 — strong winner */
@@ -429,7 +431,7 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
         z-index: 0;
         pointer-events: none;
         background:
-          radial-gradient(1150px 560px at 78% -10%, rgba(1, 97, 239, 0.07), transparent 60%),
+          radial-gradient(1150px 560px at 78% -10%, rgba(85, 102, 240, 0.07), transparent 60%),
           radial-gradient(900px 520px at 8% 6%, rgba(20, 184, 166, 0.055), transparent 58%);
       }
       .balance-page .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
@@ -438,7 +440,7 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
 
       .balance-page .glow-a,
       .balance-page .glow-b { position: fixed; z-index: 0; border-radius: 50%; filter: blur(90px); pointer-events: none; opacity: 0.55; }
-      .balance-page .glow-a { top: -170px; right: -70px; width: 560px; height: 560px; background: radial-gradient(circle, rgba(1, 97, 239, 0.26), transparent 68%); }
+      .balance-page .glow-a { top: -170px; right: -70px; width: 560px; height: 560px; background: radial-gradient(circle, rgba(85, 102, 240, 0.26), transparent 68%); }
       .balance-page .glow-b { bottom: -220px; left: -120px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(20, 184, 166, 0.16), transparent 68%); }
 
       /* Align to the site-wide gutter system (defined once in global.css). */
@@ -451,11 +453,13 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
       .balance-page .back { display: inline-flex; align-items: center; gap: 7px; color: var(--mut); text-decoration: none; font-size: 13.5px; font-weight: 500; transition: color 0.2s var(--ease); }
       .balance-page .back:hover { color: var(--ink); }
       .balance-page .back svg { width: 14px; height: 14px; }
+      .balance-page .tools-back { padding: 22px 0 4px; }
+      .balance-page .board-fineprint { position: relative; z-index: 1; color: var(--dim); font-size: 12.5px; text-align: center; padding: 44px 0 8px; }
 
       /* masthead */
       .balance-page .mast { padding: 30px 0 8px; max-width: 70ch; }
       .balance-page .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rebi-2); }
-      .balance-page .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rebi); box-shadow: 0 0 0 4px rgba(1, 97, 239, 0.14); }
+      .balance-page .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rebi); box-shadow: 0 0 0 4px rgba(85, 102, 240, 0.14); }
       .balance-page h1 { font-size: clamp(30px, 5vw, 52px); line-height: 1.02; letter-spacing: -0.035em; margin: 0.3em 0 0; font-weight: 800; text-wrap: balance; }
       .balance-page h1 .grad { background: var(--rebi-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
       .balance-page .lede { color: var(--mut); font-size: 15px; margin: 14px 0 0; max-width: 62ch; }
@@ -508,19 +512,19 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
       .balance-page .presets-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin-right: 2px; }
       .balance-page .preset { appearance: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--mut); background: transparent; border: 0; box-shadow: inset 0 0 0 1px var(--hair); padding: 7px 13px; border-radius: 999px; transition: 0.16s var(--ease); white-space: nowrap; }
       .balance-page .preset:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--dim); }
-      .balance-page .preset.active { color: #fff; background: var(--rebi-grad); box-shadow: 0 8px 20px -8px rgba(1, 97, 239, 0.55); }
+      .balance-page .preset.active { color: #fff; background: var(--rebi-grad); box-shadow: 0 8px 20px -8px rgba(85, 102, 240, 0.55); }
 
       /* ---- VERDICT ------------------------------------------------------------ */
       .balance-page .verdict { position: relative; overflow: hidden; border-radius: var(--r); background: var(--glass); backdrop-filter: blur(18px) saturate(1.3); box-shadow: var(--shadow), inset 0 0 0 1px var(--hair); padding: 22px 22px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-      .balance-page .v-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(460px 220px at 50% -25%, rgba(1, 97, 239, 0.16), transparent 70%); }
+      .balance-page .v-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(460px 220px at 50% -25%, rgba(85, 102, 240, 0.16), transparent 70%); }
       .balance-page .verdict > *:not(.v-glow) { position: relative; z-index: 1; }
       .balance-page .v-kick { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rebi-2); }
-      .balance-page .rebi-orb { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; color: #fff; background: var(--rebi-grad); box-shadow: 0 6px 16px -6px rgba(1, 97, 239, 0.6); }
+      .balance-page .rebi-orb { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; color: #fff; background: var(--rebi-grad); box-shadow: 0 6px 16px -6px rgba(85, 102, 240, 0.6); }
       .balance-page .rebi-orb svg { width: 14px; height: 14px; }
       .balance-page .v-gauge { position: relative; width: 132px; height: 132px; margin: 14px 0 4px; }
       .balance-page .ring { width: 132px; height: 132px; transform: rotate(-90deg); }
       .balance-page .ring-bg { fill: none; stroke: var(--track); stroke-width: 9; }
-      .balance-page .ring-fill { fill: none; stroke: var(--rebi); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.7s var(--ease); filter: drop-shadow(0 4px 12px rgba(1, 97, 239, 0.4)); }
+      .balance-page .ring-fill { fill: none; stroke: var(--rebi); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.7s var(--ease); filter: drop-shadow(0 4px 12px rgba(85, 102, 240, 0.4)); }
       .balance-page .v-gauge-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
       .balance-page .v-gauge-num .num { font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
       .balance-page .v-pct { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mut); margin-top: 3px; }
@@ -532,8 +536,8 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
       .balance-page .v-chip.caveat svg { color: var(--gold-deep); }
       .balance-page .v-weigh { font-size: 12px; color: var(--dim); margin: 14px 0 0; line-height: 1.5; }
       .balance-page .v-weigh b { font-weight: 800; }
-      .balance-page .ask { margin-top: 16px; width: 100%; border-radius: var(--r-sm); background: var(--rebi-grad); box-shadow: 0 12px 26px -12px rgba(1, 97, 239, 0.6); transition: transform 0.14s var(--ease), box-shadow 0.2s var(--ease); }
-      .balance-page .ask:hover { transform: translateY(-1px); background: var(--rebi-grad); box-shadow: 0 16px 34px -12px rgba(1, 97, 239, 0.6); }
+      .balance-page .ask { margin-top: 16px; width: 100%; border-radius: var(--r-sm); background: var(--rebi-grad); box-shadow: 0 12px 26px -12px rgba(85, 102, 240, 0.6); transition: transform 0.14s var(--ease), box-shadow 0.2s var(--ease); }
+      .balance-page .ask:hover { transform: translateY(-1px); background: var(--rebi-grad); box-shadow: 0 16px 34px -12px rgba(85, 102, 240, 0.6); }
 
       /* ---- LEADERBOARD -------------------------------------------------------- */
       .balance-page .board { margin-top: 28px; }
@@ -607,7 +611,7 @@ const description = 'Weigh what matters and watch Rebi re-rank your shortlist li
       .balance-page .empty-ic { display: flex; justify-content: center; color: var(--dim); margin-bottom: 16px; }
       .balance-page .empty h2 { font-size: 19px; font-weight: 700; color: var(--ink); }
       .balance-page .empty p { margin-top: 6px; color: var(--mut); font-size: 14px; }
-      .balance-page .empty-cta { margin-top: 24px; display: inline-flex; align-items: center; gap: 7px; border-radius: var(--r-sm); background: var(--rebi-grad); padding: 12px 20px; font-weight: 700; color: #fff; text-decoration: none; box-shadow: 0 12px 26px -12px rgba(1, 97, 239, 0.6); transition: transform 0.14s var(--ease); }
+      .balance-page .empty-cta { margin-top: 24px; display: inline-flex; align-items: center; gap: 7px; border-radius: var(--r-sm); background: var(--rebi-grad); padding: 12px 20px; font-weight: 700; color: #fff; text-decoration: none; box-shadow: 0 12px 26px -12px rgba(85, 102, 240, 0.6); transition: transform 0.14s var(--ease); }
       .balance-page .empty-cta:hover { transform: translateY(-1px); }
       .balance-page .empty-cta svg { width: 15px; height: 15px; }
 

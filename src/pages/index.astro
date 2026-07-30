@@ -9,6 +9,8 @@ import { client } from '../sanity/lib/client';
 import CompareTray from '../components/CompareTray.astro';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
 import SearchDock from '../components/search/SearchDock.astro';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
 import FilterDrawer from '../components/filters/FilterDrawer.astro';
 import InventoryResults from '../components/filters/InventoryResults.astro';
 import { dealerConfig } from '../config/dealer';
@@ -39,7 +41,6 @@ const { items: listings, total } = await client.fetch<InventoryResult>(query, pa
 const priceDrops = priceDropsFor(listings, Date.now());
 
 const activeCount = activeChips(filterState).length;
-const year = new Date().getFullYear();
 
 const title = 'Rebirth Auto — quality vehicles, ready to drive away';
 const description =
@@ -72,129 +73,91 @@ const canonicalURL = new URL(
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased text-[15px] leading-relaxed">
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
     <a
       href="#main-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
     >
       Skip to content
     </a>
 
-    <div class="site-container">
-      <!-- Header -->
-      <header class="flex items-center justify-between py-6">
-        <a href="/" class="text-base font-semibold tracking-tight text-slate-900">
-          Rebirth<span class="text-slate-400"> Auto</span>
-        </a>
-        <nav class="flex items-center gap-6 text-sm">
-          <a href="#inventory" class="text-slate-500 transition hover:text-slate-900">
-            Inventory
-          </a>
-          {dealerConfig.tradeIn.enabled && (
-            <a href="/trade-in" class="text-slate-500 transition hover:text-slate-900">
-              {dealerConfig.tradeIn.copy.navLabel}
-            </a>
-          )}
-          {dealerConfig.service.enabled && (
-            <a href="/service" class="text-slate-500 transition hover:text-slate-900">
-              {dealerConfig.service.copy.navLabel}
-            </a>
-          )}
-          {dealerConfig.accounts.enabled && (
-            <a href="/account" class="text-slate-500 transition hover:text-slate-900">
-              {dealerConfig.accounts.copy.navLabel}
-            </a>
-          )}
-          <a
-            href="#"
-            id="nav-contact"
-            class="text-slate-500 transition hover:text-slate-900"
-          >
-            Contact
-          </a>
-        </nav>
-      </header>
+    <!-- Reusable sticky glass nav (NFY). "Ask Rebi" carries the data-rebi-open seam. -->
+    <SiteNav active="inventory" />
 
-      <main id="main-content" tabindex="-1">
-        <!-- Hero -->
-        <section class="mx-auto max-w-3xl pt-16 pb-8 text-center md:pt-24 md:pb-10">
-          {/* On ≥sm the heading rides ON TOP of the Focus Stage (the "carousel"
-              space where Rebi's cards recede) as a higher stacking layer, so the
-              AI search bar sits a comfortable distance below the heading rather
-              than being pushed down by a full-height heading band above the
-              stage. On small screens the two stack normally — a tall mobile
-              heading has no room to overlay the stage. */}
-          <div class="hero-stack">
-            <div class="hero-copy">
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
-              >
-                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse motion-reduce:animate-none"></span>
-                In stock now
-              </span>
-              <h1 class="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
-                Your next car is waiting.
-              </h1>
-              <p id="hero-subhead" class="mx-auto mt-5 max-w-2xl text-lg text-slate-600">
-                Browse the current range at Rebirth Auto — quality vehicles, full specs,
-                and a team ready to help you drive away happy.
-              </p>
-              <div class="mt-8 flex flex-col items-center gap-2">
-                <a
-                  href="/labs/experience"
-                  class="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
-                >
-                  Let Rebi find your car →
-                </a>
-                <span class="text-xs font-medium text-slate-500">
-                  Experience Mode — answer 3 questions, skip the filters
-                </span>
-              </div>
-            </div>
-
-            {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
-                drawer below stays the no-JS fallback). */}
-            <SearchDock />
-          </div>
-        </section>
-
-        {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
-        <div id="inventory" class="mt-8 flex items-end justify-between border-b border-slate-200 pb-4">
-          <h2 id="inventory-heading" class="text-xl font-semibold tracking-tight text-slate-900">Current inventory</h2>
-          <button
-            type="button"
-            id="filters-trigger"
-            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          >
-            <Fragment set:html={iconSvg('filter', 'h-4 w-4')} />
-            Filters
-            <span
-              data-filter-count
-              hidden={activeCount === 0}
-              class="inline-flex min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 py-0.5 text-xs font-semibold text-white"
-            >
-              {activeCount}
+    <main id="main-content" class="site-container" tabindex="-1">
+      <!-- Hero -->
+      <section class="mx-auto max-w-3xl pt-14 pb-8 text-center md:pt-20 md:pb-10">
+        {/* On ≥sm the heading rides ON TOP of the Focus Stage (the "carousel"
+            space where Rebi's cards recede) as a higher stacking layer, so the
+            AI search bar sits a comfortable distance below the heading rather
+            than being pushed down by a full-height heading band above the
+            stage. On small screens the two stack normally — a tall mobile
+            heading has no room to overlay the stage. */}
+        <div class="hero-stack">
+          <div class="hero-copy">
+            <span class="eyebrow justify-center">
+              <span class="hero-live-dot"></span>
+              In stock now
             </span>
-          </button>
+            <h1 class="mt-5 text-4xl font-bold tracking-tight text-ink md:text-6xl">
+              Your next car is waiting.
+            </h1>
+            <p id="hero-subhead" class="lead mx-auto mt-5">
+              Browse the current range at Rebirth Auto — quality vehicles, full specs,
+              and a team ready to help you drive away happy.
+            </p>
+            <div class="mt-8 flex flex-col items-center gap-2">
+              <a href="/labs/experience" class="btn btn-primary">
+                Let Rebi find your car →
+              </a>
+              <span class="faint text-xs font-medium">
+                Experience Mode — answer 3 questions, skip the filters
+              </span>
+            </div>
+          </div>
+
+          {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
+              drawer below stays the no-JS fallback). */}
+          <SearchDock />
         </div>
+      </section>
 
-        <!-- Filter drawer (persistent; lives outside the swappable results) -->
-        <FilterDrawer state={filterState} triggerId="filters-trigger" />
-
-        <!-- Swappable inventory results (chips + grid + pagination) -->
-        <InventoryResults listings={listings} total={total} state={filterState} priceDrops={priceDrops} />
-      </main>
-
-      <!-- Footer -->
-      <footer class="mt-24 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        © {year} Rebirth Auto · All vehicles subject to availability.
-        {dealerConfig.capture.enabled && (
-          <span class="mt-2 block text-xs text-slate-400">
-            <a href="/capture" class="underline underline-offset-2 hover:text-slate-600">Dealer: add a vehicle</a>
+      {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
+      <div id="inventory" class="mt-8 flex items-end justify-between border-b border-line pb-4">
+        <div>
+          <span class="eyebrow">Live inventory</span>
+          <h2 id="inventory-heading" class="mt-2 text-2xl font-bold tracking-tight text-ink">
+            Current inventory
+          </h2>
+        </div>
+        <button type="button" id="filters-trigger" class="btn btn-ghost btn-sm">
+          <Fragment set:html={iconSvg('filter', 'h-4 w-4')} />
+          Filters
+          <span
+            data-filter-count
+            hidden={activeCount === 0}
+            class="inline-flex min-w-5 items-center justify-center rounded-full bg-ink px-1.5 py-0.5 text-xs font-semibold text-white"
+          >
+            {activeCount}
           </span>
-        )}
-      </footer>
-    </div>
+        </button>
+      </div>
+
+      <!-- Filter drawer (persistent; lives outside the swappable results) -->
+      <FilterDrawer state={filterState} triggerId="filters-trigger" />
+
+      <!-- Swappable inventory results (chips + grid + pagination) -->
+      <InventoryResults listings={listings} total={total} state={filterState} priceDrops={priceDrops} />
+
+      {dealerConfig.capture.enabled && (
+        <p class="mt-16 mb-4 text-center text-xs text-ink-faint">
+          <a href="/capture" class="underline underline-offset-2 hover:text-ink-soft">Dealer: add a vehicle</a>
+        </p>
+      )}
+    </main>
+
+    <!-- Reusable dark footer (NFY) -->
+    <SiteFooter />
 
     <!-- Floating comparison tray (self-contained, appears when ≥1 selected) -->
     <CompareTray />
@@ -202,15 +165,20 @@ const canonicalURL = new URL(
     <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
     <ChatWidget />
 
-    <script>
-      // "Contact" in the nav opens the floating chat assistant.
-      document.getElementById('nav-contact')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('reb-launcher')?.click();
-      });
-    </script>
-
     <style>
+      /* Small "in stock now" live pulse dot inside the hero eyebrow. */
+      .hero-live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 9999px;
+        background: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 181, 166, 0.18);
+        animation: orb-pulse 2s ease-in-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .hero-live-dot { animation: none; }
+      }
+
       /* Hero layering: put the heading on a layer ON TOP of the Focus Stage (the
          "carousel" space where Rebi's message cards recede). The heading block
          (.hero-copy) and the SearchDock (#search-dock) share one grid cell; the

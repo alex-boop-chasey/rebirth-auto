@@ -108,17 +108,19 @@ const dockConfig = JSON.stringify({
   .search-dock[hidden] { display: none; }
 
   /* Brand tokens live LOCALLY on the stage (not :root) so nothing leaks and the
-     runtime cards inherit them down the cascade. */
+     runtime cards inherit them down the cascade. Mapped onto the NFY palette
+     (indigo = Rebi/AI, aurora gradient) so the dock + its receding cards read as
+     part of the Near-Future Yard system. */
   .rebi-stage {
-    --rebi-blue: rgb(1 97 239);
-    --rebi-blue-hover: rgb(1 84 207);
-    --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
-    --ink: rgb(15 23 42);
-    --muted: rgb(100 116 139);
+    --rebi-blue: var(--indigo);
+    --rebi-blue-hover: var(--indigo-deep);
+    --rebi-grad: var(--aurora);
+    --ink: #0D1626;
+    --muted: #47566B;
 
     position: relative;
     width: 100%;
-    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: var(--font-ui);
     color: var(--ink);
   }
 
@@ -141,9 +143,9 @@ const dockConfig = JSON.stringify({
     pointer-events: none;
     z-index: 5;
     background: linear-gradient(180deg,
-      rgb(248 250 252 / 0.92) 0%,
-      rgb(248 250 252 / 0.74) 42%,
-      rgb(248 250 252 / 0) 100%);
+      rgb(245 248 252 / 0.92) 0%,
+      rgb(245 248 252 / 0.74) 42%,
+      rgb(245 248 252 / 0) 100%);
     -webkit-backdrop-filter: blur(7px);
     backdrop-filter: blur(7px);
     -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
@@ -152,13 +154,14 @@ const dockConfig = JSON.stringify({
   .glass-shelf::after {
     content: "";
     position: absolute; left: 8%; right: 8%; bottom: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(1 97 239 / 0.35), rgb(109 40 217 / 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgb(15 181 166 / 0.4), rgb(85 102 240 / 0.35), transparent);
   }
   .shelf-label {
     position: absolute; top: 0.55rem; left: 50%; transform: translateX(-50%);
     z-index: 6; pointer-events: none;
+    font-family: var(--font-mono);
     font-size: 0.6rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-    color: rgb(100 116 139 / 0.8);
+    color: rgb(71 86 107 / 0.8);
     display: flex; align-items: center; gap: 0.4rem;
   }
   .shelf-label .dotmark {
@@ -177,7 +180,7 @@ const dockConfig = JSON.stringify({
     background: rgb(255 255 255 / 0.7);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     border: 1px solid transparent;
-    border-bottom: 2px solid rgb(1 97 239 / 0.3);
+    border-bottom: 2px solid rgb(85 102 240 / 0.3);
     transition: border-color 200ms ease, background 200ms ease;
   }
   .entry:focus-within {
@@ -211,7 +214,7 @@ const dockConfig = JSON.stringify({
     position: absolute; top: 0.5rem; right: 0.5rem; z-index: 7;
     width: 1.95rem; height: 1.95rem; border-radius: 9999px;
     display: inline-flex; align-items: center; justify-content: center;
-    border: 1px solid rgb(1 97 239 / 0.18);
+    border: 1px solid rgb(85 102 240 / 0.18);
     background: rgb(255 255 255 / 0.7);
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     color: var(--muted); cursor: pointer;

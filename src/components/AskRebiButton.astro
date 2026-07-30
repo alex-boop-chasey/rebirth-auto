@@ -9,9 +9,10 @@
  * just pass those (plus `id`/refs) straight through — they land on the <button>
  * via the attribute spread below, unchanged.
  *
- * Rebi-blue is the existing brand value (rgb(1 97 239) / hover rgb(1 84 207))
- * already used across the AI surfaces; centralising it here means a future
- * palette change touches one file.
+ * The NFY AI colour is indigo (`--indigo` / hover `--indigo-deep`, exposed as the
+ * Tailwind `indigo` / `indigo-deep` utilities via theme.css). Pages that need a
+ * different treatment (e.g. the compare board's `.ask`) still override by passing
+ * a `class`, which wins on specificity — the attribute spread is untouched.
  *
  * Props:
  *   - label:     button text (default "Ask Rebi").
@@ -38,7 +39,7 @@ const {
 } = Astro.props;
 
 const base =
-  'inline-flex items-center justify-center rounded-xl bg-[rgb(1_97_239)] font-semibold text-white transition hover:bg-[rgb(1_84_207)]';
+  'inline-flex items-center justify-center rounded-full bg-indigo font-semibold text-white shadow-sm transition hover:bg-indigo-deep hover:-translate-y-0.5';
 const sizing = size === 'block' ? 'w-full gap-2 px-5 py-3' : 'gap-1.5 px-4 py-2 text-sm';
 ---
 
