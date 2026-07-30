@@ -1,0 +1,94 @@
+---
+/**
+ * SiteFooter — the reusable dark footer (NFY design language).
+ *
+ * Token-driven (styles live in src/styles/theme.css → .site-footer). Dealer
+ * content comes from `dealerConfig`; the columns are built from enabled features
+ * so a toggle reshapes the footer with no code edit. Keeps an honest demo frame
+ * — this is a demo product, not a live dealership, and the copy says so.
+ *
+ * Props:
+ *   tagline  — optional small text under the brand name
+ *   blurb    — optional one-paragraph description under the brand
+ */
+import { dealerConfig } from '../../config/dealer';
+
+interface Props {
+  tagline?: string;
+  blurb?: string;
+}
+const { tagline, blurb } = Astro.props as Props;
+
+const dealerName = dealerConfig.identity.name;
+const year = new Date().getFullYear();
+
+// Config-derived link columns — only surfaces this dealer has enabled appear.
+type FootLink = [label: string, href: string];
+const shopLinks: FootLink[] = [['Browse inventory', '/#inventory']];
+const serviceLinks: FootLink[] = [
+  ...(dealerConfig.tradeIn.enabled
+    ? ([[dealerConfig.tradeIn.copy.navLabel, '/trade-in']] as FootLink[])
+    : []),
+  ...(dealerConfig.service.enabled
+    ? ([[dealerConfig.service.copy.navLabel, '/service']] as FootLink[])
+    : []),
+];
+const dealershipLinks: FootLink[] = [
+  ...(dealerConfig.accounts.enabled
+    ? ([[dealerConfig.accounts.copy.navLabel, '/account']] as FootLink[])
+    : []),
+];
+
+const columns: { h: string; links: FootLink[] }[] = [
+  { h: 'Shop', links: shopLinks },
+  { h: 'Services', links: serviceLinks },
+  { h: 'Dealership', links: dealershipLinks },
+].filter((c) => c.links.length > 0);
+
+const description =
+  blurb ??
+  `A modern, AI-native car yard. Local people, smarter tools — Rebi helps you find the right vehicle without the pressure.`;
+
+const sparkSvg =
+  '<svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
+---
+
+<footer class="site-footer">
+  <div class="site-container site-foot-grid">
+    <div>
+      <a class="site-brand site-brand-footer" href="/" aria-label={`${dealerName} home`}>
+        <span class="brand-mark" set:html={sparkSvg}></span>
+        <span>{dealerName}{tagline && <small>{tagline}</small>}</span>
+      </a>
+      <p style="margin-top:16px; font-size:14px; color:#9AA8BC; max-width:36ch">
+        {description}
+      </p>
+    </div>
+
+    {columns.map((c) => (
+      <div>
+        <div class="site-foot-h">{c.h}</div>
+        <ul>
+          {c.links.map(([label, href]) => (
+            <li><a href={href}>{label}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+
+    <div>
+      <div class="site-foot-h">Talk to us</div>
+      <p style="font-size:14px; color:#C4D0E0; margin-bottom:14px">
+        Rebi is online now, or leave a message and a real person will get back to you.
+      </p>
+      <button type="button" class="btn btn-primary btn-sm" data-rebi-open>
+        <span set:html={sparkSvg}></span> Chat with Rebi
+      </button>
+    </div>
+  </div>
+
+  <div class="site-container site-foot-bar">
+    <span>© {year} {dealerName} (demo). Placeholder content — not a live dealership.</span>
+    <span class="mono">AI-native car yard</span>
+  </div>
+</footer>

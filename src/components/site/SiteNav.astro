@@ -1,0 +1,77 @@
+---
+/**
+ * SiteNav — the reusable sticky glass navigation (NFY design language).
+ *
+ * Token-driven (styles live in src/styles/theme.css → .site-nav / .btn / .ai-badge);
+ * dealer content is read from `dealerConfig` — no hardcoded dealer literals. The
+ * "Ask Rebi" pill carries the shared `data-rebi-open` seam so it opens the chat
+ * widget wherever that widget is mounted.
+ *
+ * Props:
+ *   active   — key of the current nav link (highlights it)
+ *   links    — override the default config-derived link set
+ *   tagline  — optional small text under the brand name (e.g. a strapline)
+ *   cta      — override the primary call-to-action { label, href }
+ */
+import { dealerConfig } from '../../config/dealer';
+
+export interface NavLink {
+  label: string;
+  href: string;
+  key: string;
+}
+interface Props {
+  active?: string;
+  links?: NavLink[];
+  tagline?: string;
+  cta?: { label: string; href: string };
+}
+
+const { active = '', links, tagline, cta } = Astro.props as Props;
+
+const dealerName = dealerConfig.identity.name;
+
+// Default nav links are derived from config so a tenant swap / feature toggle
+// reshapes the nav with no code edit. Marketing hubs (Wave 3) are added later.
+const defaultLinks: NavLink[] = [
+  { label: 'Inventory', href: '/#inventory', key: 'inventory' },
+  ...(dealerConfig.tradeIn.enabled
+    ? [{ label: dealerConfig.tradeIn.copy.navLabel, href: '/trade-in', key: 'trade-in' }]
+    : []),
+  ...(dealerConfig.service.enabled
+    ? [{ label: dealerConfig.service.copy.navLabel, href: '/service', key: 'service' }]
+    : []),
+  ...(dealerConfig.accounts.enabled
+    ? [{ label: dealerConfig.accounts.copy.navLabel, href: '/account', key: 'account' }]
+    : []),
+];
+
+const navLinks = links ?? defaultLinks;
+const primaryCta = cta ?? { label: 'Browse inventory', href: '/#inventory' };
+
+// Self-contained inline icon (no dependency on the concept's data.ts helper).
+const sparkSvg =
+  '<svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
+---
+
+<header class="site-nav">
+  <div class="site-container site-nav-inner">
+    <a class="site-brand" href="/" aria-label={`${dealerName} home`}>
+      <span class="brand-mark" set:html={sparkSvg}></span>
+      <span>{dealerName}{tagline && <small>{tagline}</small>}</span>
+    </a>
+
+    <nav class="site-navlinks" aria-label="Primary">
+      {navLinks.map((l) => (
+        <a href={l.href} class={active === l.key ? 'is-active' : ''}>{l.label}</a>
+      ))}
+    </nav>
+
+    <div class="site-nav-right">
+      <button type="button" class="ai-badge" data-rebi-open aria-label="Ask Rebi">
+        <span set:html={sparkSvg}></span> Ask Rebi
+      </button>
+      <a href={primaryCta.href} class="btn btn-primary btn-sm">{primaryCta.label}</a>
+    </div>
+  </div>
+</header>
