@@ -1,0 +1,154 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, icon, fmt } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const v = vehicles[0]; // 2024 Subaru Outback AWD Touring
+const similar = vehicles.slice(2, 5);
+const specs = [
+  ['gauge','Odometer','12 km'],['fuel','Fuel','Petrol · 7.3L/100km'],['gear','Transmission','CVT Auto'],
+  ['drive','Drivetrain','Symmetrical AWD'],['body','Body','5-door Wagon'],['range','Seats','5'],
+  ['shield','ANCAP','5 stars (2021)'],['tag','Rego','Demo · unregistered'],
+];
+---
+<Layout title="2024 Subaru Outback AWD Touring — Rebirth Auto" active="listings" dockPrompt="Want me to compare this Outback with the Tucson?">
+  <section class="nfy-wrap" style="padding-top:22px">
+    <div class="nfy-row" style="gap:8px; font-size:13px; color:var(--ink-faint)">
+      <a href={`${base}/listings`}>Inventory</a> / <span>Subaru</span> / <span style="color:var(--ink-soft)">Outback AWD Touring</span>
+    </div>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:18px 30px; display:grid; grid-template-columns:1.5fr 1fr; gap:34px; align-items:start">
+    <!-- GALLERY -->
+    <div>
+      <div class="nfy-card" style={`overflow:hidden; position:relative; aspect-ratio:16/10; background:${v.hue}`}>
+        <div style="position:absolute; top:16px; left:16px; display:flex; gap:8px">
+          <span class="nfy-chip nfy-chip--ai" style="background:rgba(255,255,255,.9)">Demo</span>
+          <span class="nfy-chip nfy-chip--amber" style="background:rgba(255,255,255,.9)">Low km</span>
+        </div>
+        <div class="nfy-vcard-fav" set:html={icon('heart',18)} style="color:var(--ink-soft); width:40px; height:40px; top:16px; right:16px"></div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:10px">
+        {[0,1,2,3,4].map(i => <div class="nfy-card" style={`aspect-ratio:1; background:${v.hue}; opacity:${i===0?1:.7}`}></div>)}
+      </div>
+
+      <!-- AI SUMMARY -->
+      <div class="nfy-ai-summary nfy-scan" style="margin-top:26px; padding:24px">
+        <div class="nfy-row" style="gap:11px; margin-bottom:14px">
+          <span class="nfy-orb nfy-orb--halo" style="width:36px;height:36px"></span>
+          <div><b style="font-family:var(--font-display); font-size:16px">Rebi’s take on this Outback</b>
+          <div style="font-size:12px; color:var(--teal-deep)">Summarised from the listing, service history & specs</div></div>
+        </div>
+        <p style="font-size:15px; color:var(--ink-soft); line-height:1.6">A near-new demo with just 12km, so you get the new-car feel with a healthy saving off list. The full-time symmetrical AWD and 213mm ground clearance make it genuinely capable on the gravel roads out past Gin Gin, while 7.3L/100km keeps the Bundaberg-to-Brisbane run affordable. Balance of Subaru’s 5-year warranty transfers to you.</p>
+        <div class="nfy-row" style="gap:10px; margin-top:16px; flex-wrap:wrap">
+          <span class="nfy-chip nfy-chip--teal"><span set:html={icon('check',13)}></span> Great for gravel + highway</span>
+          <span class="nfy-chip nfy-chip--teal"><span set:html={icon('check',13)}></span> 5-star ANCAP</span>
+          <span class="nfy-chip"><span set:html={icon('bolt',13)}></span> Consider: not a tow-heavy hauler</span>
+        </div>
+        <div class="nfy-row" style="gap:12px; margin-top:18px">
+          <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary nfy-btn-sm"><span set:html={icon('spark',15)}></span> Ask Rebi about this car</a>
+          <a href={`${base}/rebi`} style="font-size:13.5px; color:var(--indigo-deep); font-weight:600; align-self:center">Is this good value? →</a>
+        </div>
+      </div>
+
+      <!-- EDMUNDS EXPERT REVIEW SLOT -->
+      <div class="nfy-card" style="margin-top:22px; padding:24px; border-color:rgba(13,22,38,.12)">
+        <div class="nfy-row" style="justify-content:space-between; margin-bottom:14px">
+          <div class="nfy-row" style="gap:10px">
+            <span set:html={icon('star',20)} style="color:var(--amber)"></span>
+            <h3 class="nfy-h3" style="font-size:20px">Expert review</h3>
+          </div>
+          <!-- attribution -->
+          <div class="nfy-row" style="gap:8px; padding:6px 12px; background:var(--bg-2); border-radius:var(--r-pill); font-size:12.5px; color:var(--ink-soft)">
+            Review by <b style="font-family:var(--font-display); color:var(--ink); letter-spacing:.01em">Edmunds</b>
+            <span style="width:1px; height:12px; background:var(--line)"></span>
+            <a href="#" style="color:var(--teal-deep); font-weight:600">edmunds.com ↗</a>
+          </div>
+        </div>
+        <div class="nfy-row" style="gap:20px; align-items:center; margin-bottom:14px">
+          <div style="text-align:center">
+            <div style="font-family:var(--font-display); font-size:40px; font-weight:700; line-height:1; color:var(--ink)">8.1</div>
+            <div style="font-size:11px; color:var(--ink-faint)">out of 10</div>
+          </div>
+          <div style="flex:1">
+            <div class="nfy-row" style="gap:6px; color:var(--amber)">{[1,1,1,1,0].map(f => <span set:html={icon('star',16)} style={f?'':'opacity:.3'}></span>)}</div>
+            <p style="font-size:14px; color:var(--ink-soft); margin-top:6px">“A rugged, comfortable wagon-SUV that quietly does everything well. Standard AWD and generous ground clearance set it apart from soft crossovers.”</p>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px">
+          {[['Comfort','8.5'],['Value','8.0'],['Off-road','7.8']].map(([k,val]) => (
+            <div style="background:var(--bg-2); border-radius:var(--r-sm); padding:12px 14px">
+              <div style="font-size:12px; color:var(--ink-faint)">{k}</div>
+              <div style="font-family:var(--font-display); font-size:20px; font-weight:600">{val}</div>
+            </div>
+          ))}
+        </div>
+        <p class="nfy-faint" style="font-size:11.5px; margin-top:14px">Placeholder attribution slot. Scores &amp; copy are demo content; a live build embeds the syndicated Edmunds expert rating and links to the full review.</p>
+      </div>
+
+      <!-- FEATURES -->
+      <div style="margin-top:26px">
+        <h3 class="nfy-h3" style="margin-bottom:16px">Features & specification</h3>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px 40px">
+          {['Adaptive cruise control','11.6" portrait touchscreen','Wireless Apple CarPlay','Heated leather seats','Power tailgate','X-MODE dual-function','Roof rails (tow-rated)','Driver monitoring system'].map(f => (
+            <div class="nfy-row" style="gap:10px; font-size:14.5px; padding:9px 0; border-bottom:1px solid var(--line)"><span set:html={icon('check',16)} style="color:var(--teal)"></span> {f}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- BUY RAIL -->
+    <div style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="nfy-card" style="padding:24px">
+        <span class="nfy-chip nfy-chip--ai">2024 Demo</span>
+        <h1 style="font-family:var(--font-display); font-size:26px; font-weight:600; margin-top:12px; line-height:1.15">2024 Subaru Outback<br/>AWD Touring</h1>
+        <div class="nfy-row" style="align-items:baseline; gap:8px; margin-top:14px">
+          <span style="font-family:var(--font-display); font-size:34px; font-weight:700">{fmt(v.price)}</span>
+          <span style="font-size:13px; color:var(--ink-faint)">drive away</span>
+        </div>
+        <!-- repayment inline estimate -->
+        <div class="nfy-row" style="gap:8px; margin-top:8px; font-size:13.5px; color:var(--teal-deep); font-weight:600">
+          <span set:html={icon('calc',15)}></span> ~$142/week est. · <a href={`${base}/finance`} style="color:var(--teal-deep); text-decoration:underline">adjust</a>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px">
+          <a href={`${base}/test-drive`} class="nfy-btn nfy-btn-primary nfy-btn-lg" style="justify-content:center"><span set:html={icon('play',17)}></span> Book a test drive</a>
+          <a href={`${base}/finance`} class="nfy-btn nfy-btn-ghost" style="justify-content:center"><span set:html={icon('calc',16)}></span> Get finance estimate</a>
+          <a href={`${base}/rebi`} class="nfy-btn nfy-btn-ghost" style="justify-content:center; color:var(--indigo-deep); border-color:rgba(85,102,240,.3)"><span set:html={icon('spark',16)}></span> Ask Rebi about it</a>
+        </div>
+      </div>
+
+      <!-- spec grid -->
+      <div class="nfy-card" style="padding:22px">
+        <h4 style="font-family:var(--font-display); font-size:15px; margin-bottom:14px">At a glance</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px 14px">
+          {specs.map(([ic,k,val]) => (
+            <div class="nfy-row" style="gap:11px">
+              <span set:html={icon(ic as string,18)} style="color:var(--teal-deep); margin-top:2px"></span>
+              <div><div style="font-size:11.5px; color:var(--ink-faint)">{k}</div><div style="font-size:14px; font-weight:600">{val}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- trade-in nudge -->
+      <div class="nfy-glass" style="padding:18px">
+        <div class="nfy-row" style="gap:9px; margin-bottom:8px"><span class="nfy-spark" set:html={icon('spark',15)} style="color:var(--indigo)"></span><b style="font-size:14px; font-family:var(--font-display)">Trade-in?</b></div>
+        <p style="font-size:13px; color:var(--ink-soft)">Rebi can value your current car in about a minute and fold it into your repayment.</p>
+        <a href={`${base}/sell`} class="nfy-btn nfy-btn-ghost nfy-btn-sm" style="margin-top:12px">Value my car <span set:html={icon('arrow',15)}></span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIMILAR -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div class="nfy-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:22px">
+      <div><span class="nfy-eyebrow">Rebi found alternatives</span><h2 class="nfy-h2" style="margin-top:10px; font-size:30px">You might also weigh up</h2></div>
+      <a href={`${base}/compare`} class="nfy-btn nfy-btn-ghost" style="pointer-events:none">Compare all <span set:html={icon('arrow',16)}></span></a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px">
+      {similar.map(sv => <VehicleCard v={sv} />)}
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,63 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const depts = [
+  ["Sales","(00) 0000 0001","Mon–Sat 08:30–17:30"],
+  ["Finance","(00) 0000 0002","Mon–Fri 09:00–17:00"],
+  ["Service","(00) 0000 0003","Mon–Fri 07:30–17:00"],
+  ["Parts","(00) 0000 0004","Mon–Fri 08:00–17:00"],
+  ["Fleet","(00) 0000 0005","By appointment"],
+];
+---
+<Layout title="Contact — Dark Precision" current="contact" dockHint="Ask me to route you to the right department">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Contact · find a dealer</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px">Talk to the right person, first time</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">Reach any department directly — or let Rebi read your question and route it. All details below are obvious placeholders for this demo.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start">
+      <div>
+        <div class="dp-panel dp-tick" style="padding:0;overflow:hidden">
+          <div style="aspect-ratio:16/9;background:radial-gradient(120% 90% at 40% 20%, #202935, #0c1015 78%);display:grid;place-items:center;border-bottom:1px solid var(--line);position:relative">
+            <span style="font-size:44px;opacity:0.5">📍</span>
+            <span class="dp-mono dp-mute" style="position:absolute;bottom:14px;left:14px;font-size:11px">MAP PLACEHOLDER · BUNDABERG REGION</span>
+          </div>
+          <div style="padding:24px">
+            <h3 class="dp-h3">Rebirth Auto — demo yard</h3>
+            <p class="dp-mono dp-dim" style="font-size:13px;line-height:1.8;margin-top:10px">
+              00 Example Drive<br/>Bundaberg region, QLD 4670<br/>
+              <span class="dp-mute">General</span> (00) 0000 0000<br/>
+              <span class="dp-mute">Email</span> hello@example-demo.com
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:16px">
+        <div class="dp-panel" style="padding:0;overflow:hidden">
+          <div class="dp-filter__head">Departments</div>
+          {depts.map(([d,ph,hrs],i) => (
+            <div class="dp-readout" style={`grid-template-columns:1fr 1fr auto;padding:14px 18px;${i<4?"":"border-bottom:0"}`}>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:14px">{d}</span>
+              <span class="dp-readout__v">{ph}</span>
+              <span class="dp-mute dp-mono" style="font-size:11px">{hrs}</span>
+            </div>
+          ))}
+        </div>
+        <div class="dp-ai" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span class="dp-rebi-avatar" style="width:22px;height:22px"></span><span class="dp-mono" style="font-size:11px;color:var(--signal)">OR ASK REBI</span></div>
+          <div style="display:flex;gap:10px;background:var(--base);border:1px solid var(--line-bright);border-radius:4px;padding:12px 14px">
+            <span style="color:var(--signal)">◈</span>
+            <span style="flex:1;font-size:13.5px;color:var(--ink-mute)">"When can I book a service for my Kona?"</span>
+            <span class="dp-btn dp-btn--primary dp-btn--sm">Ask</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

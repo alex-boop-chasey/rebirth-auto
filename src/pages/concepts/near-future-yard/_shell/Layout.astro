@@ -1,0 +1,27 @@
+---
+import './theme.css';
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+import RebiDock from './RebiDock.astro';
+const { title = 'Rebirth Auto — Near-Future Yard', active = '', dockPrompt, hideDock = false } = Astro.props;
+---
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>{title}</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body class="nfy">
+  <Nav active={active} />
+  <main>
+    <slot />
+  </main>
+  <Footer />
+  {!hideDock && <RebiDock prompt={dockPrompt} />}
+</body>
+</html>

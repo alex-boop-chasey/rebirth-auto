@@ -1,0 +1,64 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { brands, icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const offers = [
+  { brand:'Isuzu', title:'D-MAX drive-away deals', body:'Selected 4x4 utes with 5-year unlimited km warranty + capped-price servicing.', tag:'Drive away', hue:'linear-gradient(135deg,#5A3F2E,#9A7B62)', ends:'31 Aug' },
+  { brand:'Kia', title:'EV5 low-rate finance', body:'From 4.9% p.a. comparison on the all-electric EV5 across the range.', tag:'Finance', hue:'linear-gradient(135deg,#2E5E57,#5FA79A)', ends:'30 Sep' },
+  { brand:'Subaru', title:'Outback demo clearance', body:'Ex-demo AWD wagons at run-out pricing with balance of factory warranty.', tag:'Demo run-out', hue:'linear-gradient(135deg,#3C5A78,#7C93AC)', ends:'15 Aug' },
+  { brand:'Chery', title:'Tiggo hybrid bonus', body:'Complimentary 5-year service pack on new Tiggo 7 Pro Ultimate hybrids.', tag:'Bonus', hue:'linear-gradient(135deg,#4B3A52,#8C7396)', ends:'31 Aug' },
+  { brand:'Nissan', title:'Navara PRO-4X saver', body:'$3,000 factory bonus on remaining MY24 PRO-4X 4x4 stock.', tag:'$3k bonus', hue:'linear-gradient(135deg,#2F3A44,#69757F)', ends:'22 Aug' },
+  { brand:'Honda', title:'CR-V guaranteed value', body:'Guaranteed future value on new CR-V — know your trade figure up front.', tag:'GFV', hue:'linear-gradient(135deg,#3F4A55,#7E8A97)', ends:'30 Sep' },
+];
+---
+<Layout title="Offers & specials — Rebirth Auto" active="offers" dockPrompt="Want me to match an offer to your budget?">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 26px">
+      <span class="nfy-eyebrow"><span set:html={icon('tag',14)}></span> Current offers</span>
+      <h1 class="nfy-h1" style="font-size:46px; margin-top:14px">This month’s deals,<br/>across every brand.</h1>
+      <p class="nfy-lead" style="margin-top:16px">Factory bonuses, low-rate finance and demo run-outs — updated regularly. Rebi can tell you which one actually saves you the most on the car you want.</p>
+    </div>
+  </section>
+
+  <!-- brand filter row -->
+  <section class="nfy-wrap" style="padding-block:6px 20px">
+    <div class="nfy-pillrow">
+      <span class="nfy-chip nfy-chip--teal">All brands</span>
+      {brands.slice(0,8).map(b => <span class="nfy-chip">{b}</span>)}
+    </div>
+  </section>
+
+  <!-- AI feature banner -->
+  <section class="nfy-wrap" style="padding-bottom:8px">
+    <div class="nfy-ai-summary nfy-scan" style="display:flex; gap:16px; align-items:center; padding:20px 24px">
+      <span class="nfy-orb nfy-orb--halo" style="width:40px;height:40px"></span>
+      <div style="flex:1"><b style="font-size:15px; color:var(--indigo-deep)">Rebi cross-checks the fine print for you</b><p style="font-size:14px; color:var(--ink-soft); margin-top:3px">Tell it your budget and trade-in and it’ll rank these offers by real out-the-door cost — not just the headline.</p></div>
+      <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary"><span set:html={icon('spark',16)}></span> Find my best deal</a>
+    </div>
+  </section>
+
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:22px">
+      {offers.map(o => (
+        <div class="nfy-card nfy-card--lift" style="overflow:hidden; display:flex; flex-direction:column">
+          <div style={`aspect-ratio:16/9; background:${o.hue}; position:relative`}>
+            <span class="nfy-chip nfy-chip--amber" style="position:absolute; top:12px; left:12px; background:rgba(255,255,255,.92)">{o.tag}</span>
+            <span style="position:absolute; bottom:12px; left:14px; font-family:var(--font-display); color:#fff; font-weight:700; font-size:22px">{o.brand}</span>
+          </div>
+          <div style="padding:18px 20px; display:flex; flex-direction:column; gap:8px; flex:1">
+            <h3 style="font-family:var(--font-display); font-size:18px; font-weight:600">{o.title}</h3>
+            <p class="nfy-muted" style="font-size:13.5px; flex:1">{o.body}</p>
+            <div class="nfy-row" style="justify-content:space-between; margin-top:6px">
+              <span class="nfy-faint" style="font-size:12.5px"><span set:html={icon('clock',13)}></span> Ends {o.ends}</span>
+              <a href={`${base}/brand`} class="nfy-btn nfy-btn-ghost nfy-btn-sm">View offer <span set:html={icon('arrow',14)}></span></a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <p class="nfy-faint" style="font-size:12px; margin-top:22px">Demo offers only — indicative, not a contract. Terms, eligibility and end dates are placeholders for this concept.</p>
+  </section>
+</Layout>

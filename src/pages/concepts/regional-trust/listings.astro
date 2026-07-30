@@ -1,0 +1,87 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import FilterPanel from './_components/FilterPanel.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+import { vehicles } from './_data';
+const chips = ['Demo', 'SUV', 'Toyota', 'Under $60k'];
+---
+<Layout title="Browse vehicles" active="listings">
+  <section class="rt-wrap rt-list-head">
+    <div>
+      <span class="rt-eyebrow">636 vehicles in stock</span>
+      <h1>Find your next car</h1>
+      <p class="rt-list-sub">Browse the whole lot, or let Rebi narrow it down in plain English.</p>
+    </div>
+  </section>
+
+  <!-- prominent AI search bar spanning the browse header -->
+  <section class="rt-wrap">
+    <div class="rt-list-ai rt-rebi-panel">
+      <span class="rt-rebi-orb lg"></span>
+      <input class="rt-input" type="text" placeholder="Ask Rebi — “low-km hybrid SUV, room for the dog, under $50k”" />
+      <button class="rt-btn rt-btn-primary">Ask Rebi to filter</button>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-list-body">
+    <FilterPanel />
+
+    <div class="rt-list-results">
+      <div class="rt-list-toolbar">
+        <div class="rt-active-chips">
+          <span class="rt-active-label">Showing 636 ·</span>
+          {chips.map((c) => <span class="rt-active-chip">{c} <em>×</em></span>)}
+          <a class="rt-clear-link">Clear</a>
+        </div>
+        <div class="rt-sort">
+          <span>Sort</span>
+          <select class="rt-select"><option>Rebi’s picks for you</option><option>Price: low to high</option><option>Newest arrivals</option><option>Lowest km</option></select>
+        </div>
+      </div>
+
+      <!-- Rebi recommendation banner -->
+      <div class="rt-list-rec rt-card">
+        <span class="rt-rebi-orb"></span>
+        <p><strong>Based on what locals like you choose,</strong> I’ve floated a few reliable, low-running-cost picks to the top. Ask me if you want the honest pros and cons on any of them.</p>
+      </div>
+
+      <div class="rt-list-grid">
+        {vehicles.map((v) => <VehicleCard v={v} />)}
+      </div>
+
+      <div class="rt-pagination">
+        <span class="rt-page is-active">1</span><span class="rt-page">2</span><span class="rt-page">3</span>
+        <span class="rt-page">…</span><span class="rt-page">28</span>
+        <span class="rt-btn rt-btn-ghost rt-btn-sm">Next →</span>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-list-head { padding-block: 40px 20px; }
+  .rt-list-head h1 { font-size: 46px; margin: 12px 0 8px; }
+  .rt-list-sub { font-size: 17px; color: var(--ink-70); }
+  .rt-list-ai { display: flex; align-items: center; gap: 14px; padding: 16px 18px; }
+  .rt-list-ai .rt-input { flex: 1; }
+  .rt-list-body { display: grid; grid-template-columns: 300px 1fr; gap: 32px; padding-block: 32px 60px; align-items: start; }
+  .rt-list-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 20px; }
+  .rt-active-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rt-active-label { font-size: 14px; color: var(--muted); font-weight: 700; }
+  .rt-active-chip { display: inline-flex; gap: 6px; align-items: center; background: var(--green-soft); border: 1px solid var(--green-line); color: var(--green-deep); font-size: 13px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
+  .rt-active-chip em { font-style: normal; color: var(--green); cursor: pointer; }
+  .rt-clear-link { font-size: 13px; color: var(--clay); font-weight: 700; cursor: pointer; }
+  .rt-sort { display: flex; align-items: center; gap: 10px; }
+  .rt-sort span { font-size: 14px; font-weight: 700; color: var(--ink-70); }
+  .rt-sort .rt-select { width: auto; padding: 9px 30px 9px 14px; }
+  .rt-list-rec { display: flex; gap: 12px; align-items: center; padding: 14px 18px; margin-bottom: 22px; background: var(--green-soft); border-color: var(--green-line); }
+  .rt-list-rec .rt-rebi-orb { flex: 0 0 auto; }
+  .rt-list-rec p { font-size: 14px; color: var(--ink-70); }
+  .rt-list-rec strong { color: var(--green-deep); }
+  .rt-list-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-pagination { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 40px; }
+  .rt-page { min-width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--white); font-weight: 700; color: var(--ink-70); cursor: pointer; }
+  .rt-page.is-active { background: var(--green); color: #eef4f0; border-color: var(--green); }
+</style>

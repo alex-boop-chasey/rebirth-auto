@@ -1,0 +1,74 @@
+---
+import { dealer } from '../_data';
+interface Props { active?: string; }
+const { active = '' } = Astro.props;
+const base = '/concepts/regional-trust';
+const links = [
+  { href: `${base}/listings`, label: 'Browse', key: 'listings' },
+  { href: `${base}/finance`, label: 'Finance', key: 'finance' },
+  { href: `${base}/offers`, label: 'Offers', key: 'offers' },
+  { href: `${base}/electric`, label: 'Electric', key: 'electric' },
+  { href: `${base}/sell`, label: 'Sell', key: 'sell' },
+  { href: `${base}/about`, label: 'Our story', key: 'about' },
+  { href: `${base}/contact`, label: 'Contact', key: 'contact' },
+];
+---
+<header class="rt-nav">
+  <div class="rt-nav-top rt-wrap">
+    <span>{dealer.tagline} · {dealer.region}</span>
+    <span class="rt-nav-top-right">
+      <a href={`${base}/careers`}>Careers</a>
+      <a href={`${base}/fleet`}>Fleet &amp; business</a>
+      <a href={`${base}/parts`}>Parts</a>
+      <span class="rt-nav-phone">☎ {dealer.phonePlaceholder}</span>
+    </span>
+  </div>
+  <div class="rt-nav-main rt-wrap">
+    <a href={`${base}/`} class="rt-brand">
+      <span class="rt-brand-mark">RB</span>
+      <span class="rt-brand-name">
+        <strong>Riverbend</strong>
+        <em>Motor Co.</em>
+      </span>
+    </a>
+    <nav class="rt-nav-links">
+      {links.map((l) => (
+        <a href={l.href} class={active === l.key ? 'is-active' : ''}>{l.label}</a>
+      ))}
+    </nav>
+    <div class="rt-nav-cta">
+      <a href={`${base}/rebi`} class="rt-rebi-badge">
+        <span class="rt-rebi-orb"></span>
+        Ask Rebi
+      </a>
+      <a href={`${base}/test-drive`} class="rt-btn rt-btn-primary rt-btn-sm">Book a test drive</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .rt-nav { background: var(--cream); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 40; }
+  .rt-nav-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-block: 8px; font-size: 12.5px; color: var(--ink-70); border-bottom: 1px solid var(--line-soft);
+  }
+  .rt-nav-top-right { display: flex; gap: 20px; align-items: center; }
+  .rt-nav-top-right a:hover { color: var(--green); }
+  .rt-nav-phone { font-weight: 800; color: var(--green-deep); }
+  .rt-nav-main { display: flex; align-items: center; gap: 32px; padding-block: 16px; }
+  .rt-brand { display: flex; align-items: center; gap: 12px; }
+  .rt-brand-mark {
+    width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--green); color: #f2ede1; font-family: var(--ff-display); font-weight: 700; font-size: 18px;
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.12);
+  }
+  .rt-brand-name { display: flex; flex-direction: column; line-height: 1; }
+  .rt-brand-name strong { font-family: var(--ff-display); font-size: 21px; font-weight: 700; color: var(--ink); }
+  .rt-brand-name em { font-style: normal; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+  .rt-nav-links { display: flex; gap: 26px; margin-left: auto; }
+  .rt-nav-links a { font-weight: 700; font-size: 15px; color: var(--ink-70); padding-bottom: 3px; border-bottom: 2px solid transparent; }
+  .rt-nav-links a:hover { color: var(--green); }
+  .rt-nav-links a.is-active { color: var(--green-deep); border-bottom-color: var(--clay); }
+  .rt-nav-cta { display: flex; align-items: center; gap: 14px; }
+  .rt-nav-cta .rt-rebi-badge:hover { border-color: var(--green); }
+</style>

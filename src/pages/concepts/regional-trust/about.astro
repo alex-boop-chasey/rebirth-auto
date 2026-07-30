@@ -1,0 +1,103 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import { reviews } from './_data';
+const team = [
+  { name: 'Jo Whitfield', role: 'Dealer Principal · 2nd generation', av: 'linear-gradient(135deg,#d8b98a,#b98a4f)' },
+  { name: 'Marcus Lee', role: 'Sales Manager', av: 'linear-gradient(135deg,#8fae98,#4f6f5c)' },
+  { name: 'Priya Nair', role: 'Finance Manager', av: 'linear-gradient(135deg,#a9bccb,#5b7288)' },
+  { name: 'Dan Roberts', role: 'Service Manager', av: 'linear-gradient(135deg,#cf9a7a,#8a4f32)' },
+];
+const values = [
+  { h: 'Honest, always', p: 'We’d rather lose a sale than sell you the wrong car. It’s why families come back.' },
+  { h: 'Rooted here', p: 'We sponsor the footy club, employ locals, and see our customers at the shops.' },
+  { h: 'Yours for the long haul', p: 'Sales, service, parts and finance under one roof — for the life of your car.' },
+];
+---
+<Layout title="Our story" active="about">
+  <section class="rt-about-hero">
+    <div class="rt-wrap rt-about-hero-grid">
+      <div>
+        <span class="rt-eyebrow">Our story</span>
+        <h1>Two generations. One handshake that still means something.</h1>
+        <p>Riverbend started in 1978 with a single lot and a simple idea: treat people the way you’d want your own
+          family treated. Nearly fifty years on, that hasn’t changed — we’ve just added a few more brands, and a
+          helpful AI guide named Rebi.</p>
+      </div>
+      <div class="rt-photo g-sage rt-about-photo"><span>Founders / dealership, 1978</span></div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section rt-about-stats">
+    <div><strong>1978</strong><span>Family founded</span></div>
+    <div><strong>48</strong><span>Years serving the Wide Bay</span></div>
+    <div><strong>1,900+</strong><span>Local families served</span></div>
+    <div><strong>4.9★</strong><span>Average review</span></div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">What we stand for</span><h2>Why locals trust us</h2></div></div>
+    <div class="rt-about-values">
+      {values.map((v) => <div class="rt-about-value rt-card"><h3>{v.h}</h3><p>{v.p}</p></div>)}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">Say hello</span><h2>Meet the team</h2></div></div>
+    <div class="rt-about-team">
+      {team.map((t) => (
+        <div class="rt-about-member rt-card">
+          <div class="rt-about-av" style={`background:${t.av}`}></div>
+          <strong>{t.name}</strong><span>{t.role}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-about-rebi rt-rebi-panel">
+      <span class="rt-rebi-orb xl"></span>
+      <div><h2>And Rebi, our newest team member.</h2><p>Rebi is our AI guide — trained on our own stock and the way we do things. It’s here to help after hours,
+        answer honestly, and always hand you to a real local when it matters.</p></div>
+      <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-primary">Say g’day to Rebi</a>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-about-reviews">
+      {reviews.map((r) => (
+        <div class="rt-review rt-card"><span class="rt-stars">{'★'.repeat(r.stars)}</span><p>“{r.text}”</p><span class="rt-review-by">{r.name} · {r.town}</span></div>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-about-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-about-hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; padding-block: 56px; align-items: center; }
+  .rt-about-hero h1 { font-size: 44px; margin: 16px 0; }
+  .rt-about-hero p { font-size: 17px; color: var(--ink-70); }
+  .rt-about-photo { height: 320px; display: grid; place-items: center; color: rgba(255,255,255,.55); font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; box-shadow: var(--shadow-lg); }
+  .rt-about-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; text-align: center; }
+  .rt-about-stats div { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 26px; box-shadow: var(--shadow); }
+  .rt-about-stats strong { font-family: var(--ff-display); font-size: 38px; color: var(--green-deep); display: block; }
+  .rt-about-stats span { font-size: 13px; color: var(--muted); }
+  .rt-about-values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-about-value { padding: 26px; }
+  .rt-about-value h3 { font-size: 21px; margin-bottom: 8px; color: var(--green-deep); }
+  .rt-about-value p { font-size: 15px; color: var(--ink-70); }
+  .rt-about-team { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .rt-about-member { padding: 22px; text-align: center; }
+  .rt-about-av { width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 14px; }
+  .rt-about-member strong { display: block; font-size: 17px; }
+  .rt-about-member span { font-size: 13px; color: var(--muted); }
+  .rt-about-rebi { display: flex; align-items: center; gap: 22px; padding: 30px 32px; }
+  .rt-about-rebi h2 { font-size: 26px; }
+  .rt-about-rebi p { font-size: 15px; color: var(--ink-70); margin-top: 6px; max-width: 620px; }
+  .rt-about-rebi .rt-btn { margin-left: auto; flex: 0 0 auto; }
+  .rt-about-reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-review { padding: 24px; }
+  .rt-review p { font-family: var(--ff-display); font-size: 18px; line-height: 1.45; margin: 12px 0; }
+  .rt-review-by { font-size: 13px; color: var(--muted); font-weight: 700; }
+</style>

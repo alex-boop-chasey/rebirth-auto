@@ -1,0 +1,322 @@
+/* =============================================================================
+   NEAR-FUTURE YARD — theme system
+   Contest concept for Rebirth Auto. Desktop-only (~1440px), visual-only.
+   Light surfaces + soft depth (glass/tech cards), an aurora tech accent, and a
+   warm local-clay accent that keeps the high-tech feel grounded and credible to
+   a regional Australian dealership. Rebi (the AI) is an ambient teal→indigo
+   presence woven through every surface. Everything is namespaced under .nfy so
+   it can never bleed into shipped pages.
+   ========================================================================== */
+
+.nfy {
+  /* ---- palette ---------------------------------------------------------- */
+  --bg:        #F5F8FC;   /* page mist */
+  --bg-2:      #EBF1F8;   /* recessed panels */
+  --surface:   #FFFFFF;   /* cards */
+  --ink:       #0D1626;   /* primary text / deep slate-navy */
+  --ink-soft:  #47566B;   /* secondary text */
+  --ink-faint: #8494A8;   /* tertiary / captions */
+  --line:      rgba(13,22,38,0.09);
+  --line-2:    rgba(13,22,38,0.05);
+
+  --teal:      #0FB5A6;   /* tech accent (primary) */
+  --teal-deep: #0A867B;
+  --indigo:    #5566F0;   /* Rebi / AI */
+  --indigo-deep:#3A46C8;
+  --amber:     #E0813B;   /* local warmth / offers / established cues */
+  --amber-soft:#FBEBDD;
+  --mint-glow: rgba(15,181,166,0.14);
+  --indigo-glow: rgba(85,102,240,0.14);
+
+  --aurora: linear-gradient(115deg, #0FB5A6 0%, #2E86E4 48%, #5566F0 100%);
+  --aurora-soft: linear-gradient(115deg, rgba(15,181,166,.12), rgba(85,102,240,.12));
+
+  /* ---- depth ------------------------------------------------------------ */
+  --sh-1: 0 1px 2px rgba(13,22,38,.05), 0 2px 8px rgba(13,22,38,.04);
+  --sh-2: 0 6px 22px rgba(13,22,38,.09), 0 2px 6px rgba(13,22,38,.05);
+  --sh-3: 0 20px 50px rgba(13,22,38,.14), 0 6px 16px rgba(13,22,38,.08);
+  --sh-glow: 0 10px 40px -12px rgba(15,181,166,.45);
+
+  --r-sm: 10px; --r: 16px; --r-lg: 22px; --r-xl: 30px; --r-pill: 999px;
+
+  /* ---- type ------------------------------------------------------------- */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.55;
+  min-height: 100vh;
+  letter-spacing: -0.005em;
+}
+
+.nfy *, .nfy *::before, .nfy *::after { box-sizing: border-box; }
+
+/* soft ambient mesh painted behind the whole page */
+.nfy {
+  background-image:
+    radial-gradient(60rem 40rem at 82% -8%, var(--mint-glow), transparent 60%),
+    radial-gradient(50rem 40rem at -6% 8%, var(--indigo-glow), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* ---- layout -------------------------------------------------------------- */
+.nfy-wrap { max-width: 1440px; margin-inline: auto; padding-inline: 56px; }
+.nfy-section { padding-block: 76px; }
+.nfy-section--tight { padding-block: 48px; }
+.nfy h1,.nfy h2,.nfy h3,.nfy h4 { font-family: var(--font-display); letter-spacing: -0.02em; line-height: 1.08; margin: 0; color: var(--ink); }
+.nfy p { margin: 0; }
+.nfy a { color: inherit; text-decoration: none; }
+
+.nfy-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--teal-deep);
+}
+.nfy-eyebrow::before { content:""; width: 22px; height: 1.5px; background: var(--teal); display:inline-block; }
+.nfy-h1 { font-size: 58px; font-weight: 600; }
+.nfy-h2 { font-size: 38px; font-weight: 600; }
+.nfy-h3 { font-size: 24px; font-weight: 600; }
+.nfy-lead { font-size: 19px; color: var(--ink-soft); max-width: 60ch; }
+.nfy-muted { color: var(--ink-soft); }
+.nfy-faint { color: var(--ink-faint); }
+.nfy-mono { font-family: var(--font-mono); }
+
+/* ---- buttons ------------------------------------------------------------- */
+.nfy-btn {
+  display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+  font-family: var(--font-ui); font-weight: 600; font-size: 15px;
+  padding: 13px 22px; border-radius: var(--r-pill); border: 1px solid transparent;
+  transition: transform .18s ease, box-shadow .22s ease, background .2s ease;
+  white-space: nowrap;
+}
+.nfy-btn:hover { transform: translateY(-2px); }
+.nfy-btn-primary { background: var(--aurora); color: #fff; box-shadow: var(--sh-glow); background-size: 160% 160%; }
+.nfy-btn-primary:hover { box-shadow: 0 16px 46px -12px rgba(85,102,240,.55); animation: nfy-aurora-shift 3s ease infinite; }
+.nfy-btn-ghost { background: rgba(255,255,255,.7); border-color: var(--line); color: var(--ink); backdrop-filter: blur(8px); }
+.nfy-btn-ghost:hover { border-color: var(--teal); color: var(--teal-deep); }
+.nfy-btn-amber { background: var(--amber); color: #fff; box-shadow: 0 10px 30px -12px rgba(224,129,59,.6); }
+.nfy-btn-dark { background: var(--ink); color: #fff; }
+.nfy-btn-sm { padding: 9px 16px; font-size: 13.5px; }
+.nfy-btn-lg { padding: 16px 28px; font-size: 16px; }
+
+@keyframes nfy-aurora-shift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+
+/* ---- surfaces / glass cards --------------------------------------------- */
+.nfy-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--sh-1);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.nfy-card--lift:hover { transform: translateY(-4px); box-shadow: var(--sh-2); border-color: rgba(15,181,166,.28); }
+.nfy-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.62));
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,.7);
+  box-shadow: var(--sh-2);
+  border-radius: var(--r-lg);
+}
+
+/* ---- chips / tags -------------------------------------------------------- */
+.nfy-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 500;
+  background: var(--bg-2); color: var(--ink-soft); border: 1px solid var(--line-2);
+}
+.nfy-chip--teal { background: var(--mint-glow); color: var(--teal-deep); border-color: rgba(15,181,166,.22); }
+.nfy-chip--amber { background: var(--amber-soft); color: #B4611F; border-color: rgba(224,129,59,.25); }
+.nfy-chip--ai { background: var(--indigo-glow); color: var(--indigo-deep); border-color: rgba(85,102,240,.22); }
+
+/* ---- AI system: the ambient Rebi language -------------------------------- */
+.nfy-ai-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  padding: 5px 11px 5px 8px; border-radius: var(--r-pill);
+  background: var(--indigo-glow); color: var(--indigo-deep);
+  border: 1px solid rgba(85,102,240,.22);
+}
+.nfy-spark { width: 14px; height: 14px; display: inline-block; flex: none; }
+.nfy-spark path { fill: currentColor; }
+
+/* Rebi orb — the recurring AI mark. A living aurora bead. */
+.nfy-orb {
+  position: relative; border-radius: 50%;
+  background: var(--aurora); background-size: 180% 180%;
+  animation: nfy-aurora-shift 6s ease infinite;
+  box-shadow: 0 6px 18px -4px rgba(85,102,240,.55), inset 0 0 0 1px rgba(255,255,255,.35);
+  flex: none;
+}
+.nfy-orb::after {
+  content:""; position:absolute; inset: 22%;
+  border-radius: 50%; background: rgba(255,255,255,.9);
+  filter: blur(1px);
+  animation: nfy-orb-pulse 2.6s ease-in-out infinite;
+}
+@keyframes nfy-orb-pulse { 0%,100%{ transform: scale(.7); opacity:.85 } 50%{ transform: scale(1); opacity:1 } }
+.nfy-orb--halo::before {
+  content:""; position:absolute; inset:-6px; border-radius:50%;
+  background: var(--aurora); opacity:.35; filter: blur(9px); z-index:-1;
+  animation: nfy-orb-pulse 2.6s ease-in-out infinite;
+}
+
+/* AI summary card — the signature "Rebi read this for you" block */
+.nfy-ai-summary {
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, rgba(85,102,240,.05), rgba(15,181,166,.05));
+  border: 1px solid rgba(85,102,240,.18);
+  border-radius: var(--r-lg); padding: 22px 24px;
+}
+.nfy-ai-summary::before {
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background: var(--aurora);
+}
+/* animated scan line sweeping the summary — "AI reading" feel, purely visual */
+.nfy-scan { position: relative; overflow: hidden; }
+.nfy-scan::after {
+  content:""; position:absolute; left:0; right:0; top:0; height:100%;
+  background: linear-gradient(180deg, transparent, rgba(15,181,166,.10), transparent);
+  transform: translateY(-100%); animation: nfy-scan 4.5s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes nfy-scan { 0%,15%{transform:translateY(-100%)} 60%,100%{transform:translateY(100%)} }
+
+/* thinking dots */
+.nfy-dots { display: inline-flex; gap: 5px; align-items: center; }
+.nfy-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--indigo); display:inline-block; animation: nfy-dot 1.3s ease-in-out infinite; }
+.nfy-dots i:nth-child(2){ animation-delay:.18s } .nfy-dots i:nth-child(3){ animation-delay:.36s }
+@keyframes nfy-dot { 0%,100%{opacity:.3; transform: translateY(0)} 40%{opacity:1; transform: translateY(-3px)} }
+
+/* AI search bar — appears on inventory-facing surfaces */
+.nfy-aisearch {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1.5px solid transparent;
+  background-image: linear-gradient(var(--surface),var(--surface)), var(--aurora);
+  background-origin: border-box; background-clip: padding-box, border-box;
+  border-radius: var(--r-pill); padding: 8px 8px 8px 20px; box-shadow: var(--sh-2);
+}
+.nfy-aisearch input { flex:1; border:0; outline:0; background:transparent; font-size:16px; font-family: var(--font-ui); color: var(--ink); }
+.nfy-aisearch input::placeholder { color: var(--ink-faint); }
+
+/* ---- nav ----------------------------------------------------------------- */
+.nfy-nav { position: sticky; top: 0; z-index: 40;
+  background: linear-gradient(180deg, rgba(245,248,252,.9), rgba(245,248,252,.72));
+  backdrop-filter: blur(14px) saturate(1.15); border-bottom: 1px solid var(--line); }
+.nfy-nav-inner { display: flex; align-items: center; gap: 30px; height: 74px; }
+.nfy-logo { display:flex; align-items:center; gap:11px; font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing:-.02em; }
+.nfy-logo small { display:block; font-family: var(--font-mono); font-size:9.5px; letter-spacing:.22em; color: var(--ink-faint); font-weight:500; text-transform:uppercase; margin-top:-1px; }
+.nfy-navlinks { display:flex; gap:5px; align-items:center; margin-left: 8px; }
+.nfy-navlinks a { font-size: 14.5px; font-weight: 500; color: var(--ink-soft); padding: 9px 13px; border-radius: 10px; transition: background .16s, color .16s; }
+.nfy-navlinks a:hover { background: rgba(15,181,166,.09); color: var(--ink); }
+.nfy-navlinks a.is-active { color: var(--ink); background: rgba(13,22,38,.05); }
+.nfy-nav-right { margin-left: auto; display:flex; align-items:center; gap:12px; }
+
+/* ---- footer -------------------------------------------------------------- */
+.nfy-footer { background: var(--ink); color: #C4D0E0; margin-top: 40px; }
+.nfy-footer a { color: #C4D0E0; }
+.nfy-footer a:hover { color: #fff; }
+.nfy-foot-grid { display:grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1.3fr; gap: 40px; padding-block: 60px 44px; }
+.nfy-foot-h { font-size: 12px; letter-spacing:.14em; text-transform:uppercase; color:#7A8AA0; font-family: var(--font-mono); margin-bottom:16px; }
+.nfy-foot-grid ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; font-size:14px; }
+.nfy-foot-bar { border-top:1px solid rgba(255,255,255,.08); padding-block:22px; display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:#7A8AA0; }
+
+/* ---- hero mesh ----------------------------------------------------------- */
+.nfy-hero { position: relative; overflow: hidden; }
+.nfy-hero-mesh {
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(40rem 30rem at 78% 12%, rgba(15,181,166,.20), transparent 60%),
+    radial-gradient(38rem 30rem at 96% 78%, rgba(85,102,240,.20), transparent 60%),
+    radial-gradient(30rem 24rem at 12% 92%, rgba(224,129,59,.12), transparent 60%);
+}
+/* faint tech grid overlay to sell the "near-future" surface */
+.nfy-grid-lines::before {
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.5;
+  background-image:
+    linear-gradient(var(--line-2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-2) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent 85%);
+}
+
+/* ---- vehicle card -------------------------------------------------------- */
+.nfy-vcard { overflow: hidden; display:flex; flex-direction:column; }
+.nfy-vcard-img { position: relative; aspect-ratio: 16/10; background: linear-gradient(135deg, #DCE6F2, #C7D6E8); overflow:hidden; }
+.nfy-vcard-img::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg, transparent 55%, rgba(13,22,38,.28)); }
+.nfy-vcard-tags { position:absolute; top:12px; left:12px; z-index:2; display:flex; gap:6px; }
+.nfy-vcard-fav { position:absolute; top:12px; right:12px; z-index:2; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.85); display:grid; place-items:center; backdrop-filter: blur(6px); box-shadow: var(--sh-1); }
+.nfy-vcard-body { padding: 16px 18px 18px; display:flex; flex-direction:column; gap:10px; flex:1; }
+.nfy-vcard-price { font-family: var(--font-display); font-weight: 700; font-size: 22px; }
+.nfy-vcard-spec { display:grid; grid-template-columns: repeat(2,1fr); gap:7px 14px; font-size: 12.5px; color: var(--ink-soft); }
+.nfy-vcard-spec span { display:flex; align-items:center; gap:6px; }
+.nfy-vcard-ai { display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color: var(--ink-soft); background: var(--aurora-soft); border-radius: var(--r-sm); padding: 9px 11px; line-height:1.4; }
+
+/* stat tiles */
+.nfy-stat { text-align:left; }
+.nfy-stat b { font-family: var(--font-display); font-size: 34px; font-weight: 600; display:block; letter-spacing:-.02em; }
+.nfy-stat span { font-size: 13px; color: var(--ink-soft); }
+
+/* ---- forms --------------------------------------------------------------- */
+.nfy-field { display:flex; flex-direction:column; gap:7px; }
+.nfy-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.nfy-input, .nfy-select, .nfy-textarea {
+  width:100%; font-family: var(--font-ui); font-size: 15px; color: var(--ink);
+  background: var(--surface); border:1px solid var(--line); border-radius: var(--r-sm);
+  padding: 12px 14px; transition: border-color .16s, box-shadow .16s;
+}
+.nfy-input:focus, .nfy-select:focus, .nfy-textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(15,181,166,.15); outline: none; }
+.nfy-textarea { resize: vertical; min-height: 110px; }
+
+/* ---- filter panel -------------------------------------------------------- */
+.nfy-filter { position: sticky; top: 92px; align-self:start; }
+.nfy-filter-group { padding: 18px 0; border-top: 1px solid var(--line); }
+.nfy-filter-group:first-of-type { border-top: 0; }
+.nfy-filter-h { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing:.06em; color: var(--ink-soft); margin-bottom: 13px; }
+.nfy-seg { display:flex; background: var(--bg-2); border-radius: var(--r-pill); padding: 4px; gap:4px; }
+.nfy-seg button { flex:1; border:0; background:transparent; font-family: var(--font-ui); font-size: 13.5px; font-weight:600; color: var(--ink-soft); padding: 8px 4px; border-radius: var(--r-pill); cursor:pointer; }
+.nfy-seg button.is-on { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
+.nfy-check { display:flex; align-items:center; justify-content:space-between; padding: 7px 0; font-size:14px; color: var(--ink-soft); }
+.nfy-check span:last-child { font-size:12px; color: var(--ink-faint); }
+.nfy-box { width:18px; height:18px; border-radius:5px; border:1.5px solid var(--line); background:var(--surface); flex:none; }
+.nfy-box.is-on { background: var(--teal); border-color: var(--teal); box-shadow: inset 0 0 0 2px #fff; }
+
+/* range track (static) */
+.nfy-range { height:5px; border-radius:5px; background: var(--bg-2); position:relative; margin: 14px 2px; }
+.nfy-range i { position:absolute; height:100%; border-radius:5px; background: var(--aurora); left:14%; right:26%; }
+.nfy-range b { position:absolute; top:50%; width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid var(--teal); box-shadow: var(--sh-1); transform: translate(-50%,-50%); }
+
+/* divider */
+.nfy-hr { height:1px; background: var(--line); border:0; }
+
+/* pill row */
+.nfy-pillrow { display:flex; flex-wrap:wrap; gap:9px; }
+
+/* Rebi floating dock (fixed, every page) */
+.nfy-dock { position: fixed; right: 26px; bottom: 26px; z-index: 60; display:flex; flex-direction:column; align-items:flex-end; gap:12px; }
+.nfy-dock-card { width: 300px; background: var(--surface); border:1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-3); overflow:hidden; }
+.nfy-dock-head { display:flex; align-items:center; gap:10px; padding: 13px 15px; background: linear-gradient(120deg, rgba(15,181,166,.10), rgba(85,102,240,.10)); border-bottom:1px solid var(--line); }
+.nfy-dock-launch { display:flex; align-items:center; gap:11px; background: var(--surface); border:1px solid var(--line); border-radius: var(--r-pill); padding: 9px 18px 9px 10px; box-shadow: var(--sh-3); cursor:pointer; transition: transform .18s; }
+.nfy-dock-launch:hover { transform: translateY(-2px); }
+
+/* small helpers */
+.nfy-row { display:flex; align-items:center; }
+.nfy-grid { display:grid; }
+.nfy-avatar { border-radius:50%; background: linear-gradient(135deg,#CBD8EA,#AFC2DC); display:grid; place-items:center; font-family:var(--font-display); font-weight:600; color:#3A4A63; flex:none; }
+.nfy-logo-mark { width:36px; height:36px; border-radius:11px; background: var(--aurora); display:grid; place-items:center; box-shadow: var(--sh-glow); flex:none; }
+.nfy-brandtile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; aspect-ratio: 3/2; background: var(--surface); border:1px solid var(--line); border-radius: var(--r); transition: all .2s; }
+.nfy-brandtile:hover { border-color: var(--teal); transform: translateY(-3px); box-shadow: var(--sh-2); }
+.nfy-brandtile b { font-family: var(--font-display); font-size:17px; letter-spacing:.01em; }
+
+/* progress / steps */
+.nfy-steps { display:flex; align-items:center; gap:0; }
+.nfy-step { display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:600; color: var(--ink-faint); }
+.nfy-step-n { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:12.5px; background:var(--bg-2); color:var(--ink-faint); }
+.nfy-step.is-on .nfy-step-n { background: var(--aurora); color:#fff; }
+.nfy-step.is-on { color: var(--ink); }
+.nfy-step-line { width:46px; height:2px; background: var(--line); margin:0 12px; }
+
+/* table */
+.nfy-table { width:100%; border-collapse:collapse; font-size:14px; }
+.nfy-table td, .nfy-table th { text-align:left; padding: 11px 4px; border-bottom:1px solid var(--line); }
+.nfy-table th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color: var(--ink-faint); font-weight:600; }

@@ -1,0 +1,40 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+---
+<Layout title="Parts — Dark Precision" current="" dockHint="Ask me to identify a part from your VIN">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Genuine parts</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px">Genuine parts, correctly matched</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">Give Rebi your VIN and the part you need — it confirms the exact factory number before you order, so nothing arrives wrong.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:26px;align-items:start">
+      <div class="dp-panel dp-tick" style="padding:30px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:20px">Parts enquiry</span>
+        <div style="display:grid;gap:16px">
+          <label class="dp-field"><span class="dp-label">VIN or rego</span><input class="dp-input dp-mono" placeholder="17-char VIN" /></label>
+          <label class="dp-field"><span class="dp-label">Part needed</span><input class="dp-input" placeholder="e.g. front brake pads, cabin filter" /></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <label class="dp-field"><span class="dp-label">Name</span><input class="dp-input" placeholder="Your name" /></label>
+            <label class="dp-field"><span class="dp-label">Mobile</span><input class="dp-input" placeholder="04__ ___ ___" /></label>
+          </div>
+          <button class="dp-btn dp-btn--primary" style="justify-content:center">Send parts enquiry</button>
+        </div>
+      </div>
+      <div style="display:grid;gap:16px">
+        <div class="dp-insight">
+          <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI · PART LOOKUP</span>
+          <p>From your VIN, the correct pads are <strong>8-98342-billing</strong> (front) — in stock. I've also flagged a filter due at your next service.</p>
+        </div>
+        {[["Genuine only","Factory parts, full warranty retained."],["VIN-matched","No guesswork — Rebi confirms fitment first."],["Trade counter","Wholesale accounts for mechanics & fleets."]].map(([t,d]) => (
+          <div class="dp-panel" style="padding:20px"><h3 style="font-family:var(--font-display);font-weight:600;font-size:16px">{t}</h3><p class="dp-mute" style="font-size:13px;margin-top:6px;line-height:1.5">{d}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

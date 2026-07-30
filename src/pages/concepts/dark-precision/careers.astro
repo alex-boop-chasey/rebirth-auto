@@ -1,0 +1,42 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+const roles = [
+  ["Sales Consultant","Sales · Full-time","Bundaberg region","Own the buyer journey with Rebi as your co-pilot."],
+  ["F&I Business Manager","Finance · Full-time","Bundaberg region","Structure finance across 13 franchise brands."],
+  ["Automotive Technician","Service · Full-time","Bundaberg region","Factory-trained diagnostics and repair."],
+  ["Parts Interpreter","Parts · Full-time","Bundaberg region","VIN-match genuine parts with the parts desk."],
+  ["Digital & CRM Lead","Marketing · Full-time","Hybrid","Grow the AI-native buyer experience."],
+];
+---
+<Layout title="Careers — Dark Precision" current="" dockHint="Ask me which role fits your experience">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Careers</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px;max-width:18ch">Build the future of car retail with us</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">We pair experienced automotive people with tools that make them faster and sharper. If you like winning with data, you'll like it here.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;gap:12px">
+      {roles.map(([title,meta,loc,desc]) => (
+        <div class="dp-panel dp-tick" style="padding:22px 24px;display:grid;grid-template-columns:1.4fr 1fr 1.4fr auto;gap:20px;align-items:center">
+          <div>
+            <h3 style="font-family:var(--font-display);font-weight:600;font-size:18px">{title}</h3>
+            <p class="dp-mono dp-mute" style="font-size:11px;margin-top:4px">{meta}</p>
+          </div>
+          <span class="dp-mono dp-dim" style="font-size:12px">{loc}</span>
+          <p class="dp-mute" style="font-size:13px;line-height:1.5">{desc}</p>
+          <a class="dp-btn dp-btn--primary dp-btn--sm" href={`${base}/contact`}>Apply →</a>
+        </div>
+      ))}
+    </div>
+    <div class="dp-insight" style="margin-top:24px">
+      <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI · CANDIDATE HELPER</span>
+      <p>Not sure which role fits? Tell Rebi your background and it'll point you to the strongest match — and prep you for what the interview covers.</p>
+    </div>
+  </section>
+</Layout>

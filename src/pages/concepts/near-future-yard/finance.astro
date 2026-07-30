@@ -1,0 +1,127 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+---
+<Layout title="Finance & repayment calculator — Rebirth Auto" active="finance" dockPrompt="Want me to pre-fill this calculator from a car you liked?">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 30px">
+      <span class="nfy-eyebrow">Finance</span>
+      <h1 class="nfy-h1" style="font-size:46px; margin-top:14px">See the real number,<br/>before you fall in love.</h1>
+      <p class="nfy-lead" style="margin-top:16px">Estimate a weekly repayment in seconds. Rebi keeps it honest — every figure is an example, and a real person structures the final deal.</p>
+    </div>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:12px 40px; display:grid; grid-template-columns:1.15fr .85fr; gap:28px; align-items:start">
+    <!-- CALCULATOR -->
+    <div class="nfy-card" style="padding:30px 32px">
+      <div class="nfy-row" style="gap:11px; margin-bottom:22px"><span class="nfy-logo-mark" set:html={icon('calc',20)} style="color:#fff"></span><h2 style="font-family:var(--font-display); font-size:22px; font-weight:600">Repayment calculator</h2></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:22px">
+        <!-- vehicle price -->
+        <div style="grid-column:1 / -1">
+          <div class="nfy-row" style="justify-content:space-between; margin-bottom:6px"><span class="nfy-label">Vehicle price</span><b style="font-family:var(--font-display); font-size:18px">$52,990</b></div>
+          <div class="nfy-range"><i style="left:0; right:34%"></i><b style="left:66%"></b></div>
+          <div class="nfy-row" style="justify-content:space-between; font-size:12px; color:var(--ink-faint)"><span>$10,000</span><span>$120,000</span></div>
+        </div>
+        <!-- deposit -->
+        <div>
+          <div class="nfy-row" style="justify-content:space-between; margin-bottom:6px"><span class="nfy-label">Deposit</span><b style="font-family:var(--font-display); font-size:16px">$5,000</b></div>
+          <div class="nfy-range"><i style="left:0; right:82%"></i><b style="left:18%"></b></div>
+        </div>
+        <!-- trade in -->
+        <div>
+          <div class="nfy-row" style="justify-content:space-between; margin-bottom:6px"><span class="nfy-label">Trade-in</span><b style="font-family:var(--font-display); font-size:16px">$0</b></div>
+          <div class="nfy-range"><i style="left:0; right:100%"></i><b style="left:0%"></b></div>
+        </div>
+        <!-- term -->
+        <div>
+          <span class="nfy-label" style="display:block; margin-bottom:8px">Loan term</span>
+          <div class="nfy-seg"><button>3 yr</button><button>4 yr</button><button class="is-on">5 yr</button><button>7 yr</button></div>
+        </div>
+        <!-- rate -->
+        <div>
+          <div class="nfy-row" style="justify-content:space-between; margin-bottom:6px"><span class="nfy-label">Interest rate (p.a.)</span><b style="font-family:var(--font-display); font-size:16px">7.45%</b></div>
+          <div class="nfy-range"><i style="left:0; right:58%"></i><b style="left:42%"></b></div>
+        </div>
+        <div style="grid-column:1 / -1">
+          <span class="nfy-label" style="display:block; margin-bottom:8px">Balloon / residual</span>
+          <div class="nfy-seg"><button class="is-on">None</button><button>10%</button><button>20%</button><button>30%</button></div>
+        </div>
+      </div>
+
+      <!-- Rebi assist -->
+      <div class="nfy-ai-summary" style="margin-top:24px; display:flex; gap:12px; align-items:center; padding:14px 16px">
+        <span class="nfy-orb nfy-orb--halo" style="width:30px;height:30px"></span>
+        <p style="font-size:13.5px; color:var(--ink-soft); flex:1">A 20% balloon drops this to <b style="color:var(--ink)">~$118/week</b> but you’ll owe $10,598 at the end. Want me to weigh that up for your situation?</p>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div style="display:flex; flex-direction:column; gap:16px; position:sticky; top:92px">
+      <div class="nfy-hero nfy-grid-lines" style="background:var(--ink); color:#fff; border-radius:var(--r-lg); padding:28px; overflow:hidden">
+        <div class="nfy-hero-mesh" style="opacity:.6"></div>
+        <div style="position:relative; z-index:1">
+          <div style="font-size:13px; color:#9FB0C6; letter-spacing:.02em">Estimated repayment</div>
+          <div class="nfy-row" style="align-items:baseline; gap:8px; margin-top:6px">
+            <span style="font-family:var(--font-display); font-size:52px; font-weight:700; line-height:1">$142</span>
+            <span style="color:#9FB0C6">/ week</span>
+          </div>
+          <div style="font-size:13px; color:#9FB0C6; margin-top:4px">≈ $615 / month over 60 months</div>
+          <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); margin:20px 0"/>
+          {[['Amount financed','$47,990'],['Total interest (est.)','$9,660'],['Total repayable','$57,650'],['Comparison rate*','8.12% p.a.']].map(([k,val]) => (
+            <div class="nfy-row" style="justify-content:space-between; padding:7px 0; font-size:14px"><span style="color:#9FB0C6">{k}</span><b>{val}</b></div>
+          ))}
+          <a href={`${base}/contact`} class="nfy-btn nfy-btn-primary nfy-btn-lg" style="width:100%; justify-content:center; margin-top:20px">Apply with our team</a>
+          <a href={`${base}/rebi`} class="nfy-btn nfy-btn-ghost nfy-btn-sm" style="width:100%; justify-content:center; margin-top:10px; background:rgba(255,255,255,.08); color:#fff; border-color:rgba(255,255,255,.2)"><span set:html={icon('spark',15)}></span> Ask Rebi to optimise this</a>
+        </div>
+      </div>
+      <p class="nfy-faint" style="font-size:11.5px; line-height:1.5">*Demo figures only. Not a quote, offer, or credit assistance. Comparison rate is illustrative. A licensed finance consultant provides real figures based on your circumstances.</p>
+    </div>
+  </section>
+
+  <!-- OPTIONS -->
+  <section class="nfy-wrap nfy-section--tight">
+    <span class="nfy-eyebrow">Ways to finance</span>
+    <h2 class="nfy-h2" style="margin-top:12px; font-size:30px">Pick the structure that fits</h2>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:24px">
+      {[
+        ['car','Consumer loan','Own it outright from day one. Fixed rate, fixed weekly repayment, no surprises. Best for private buyers.'],
+        ['truck','Chattel mortgage','For ABN holders — potential GST and depreciation benefits on a business vehicle. Rebi can flag if you may qualify.'],
+        ['tag','Novated lease','Salary-package your next car and pay from pre-tax income. We’ll connect you with a novated partner.'],
+      ].map(([ic,h,p]) => (
+        <div class="nfy-card nfy-card--lift" style="padding:26px">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,19)} style="color:#fff; margin-bottom:14px"></span>
+          <h3 class="nfy-h3">{h}</h3>
+          <p class="nfy-muted" style="font-size:14.5px; margin-top:10px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- FAQ + AI -->
+  <section class="nfy-wrap" style="padding-block:20px 70px; display:grid; grid-template-columns:1fr .8fr; gap:32px; align-items:start">
+    <div>
+      <h2 class="nfy-h3" style="margin-bottom:16px">Common questions</h2>
+      {[
+        ['Will checking a repayment affect my credit?','No — this calculator is an estimate only and runs nothing against your file.'],
+        ['Can I include my trade-in?','Yes. Value your car on the Sell page and Rebi folds the figure straight into the calculator.'],
+        ['What deposit do I need?','Often none, but a deposit lowers your repayment. The slider shows the effect instantly.'],
+      ].map(([q,a]) => (
+        <div class="nfy-card" style="padding:18px 20px; margin-bottom:12px">
+          <div class="nfy-row" style="justify-content:space-between"><b style="font-size:15px">{q}</b><span set:html={icon('arrow',16)} style="color:var(--teal-deep)"></span></div>
+          <p class="nfy-muted" style="font-size:14px; margin-top:8px">{a}</p>
+        </div>
+      ))}
+    </div>
+    <div class="nfy-glass nfy-scan" style="padding:26px">
+      <span class="nfy-orb nfy-orb--halo" style="width:44px;height:44px"></span>
+      <h3 class="nfy-h3" style="margin-top:16px">Not sure which is cheapest overall?</h3>
+      <p class="nfy-muted" style="margin-top:10px; font-size:14.5px">Tell Rebi your budget and whether you’ve got an ABN — it’ll compare structures side by side in plain language, then book you with a real consultant.</p>
+      <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary" style="margin-top:18px"><span set:html={icon('spark',16)}></span> Ask Rebi about finance</a>
+    </div>
+  </section>
+</Layout>

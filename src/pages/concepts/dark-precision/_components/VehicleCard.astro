@@ -1,0 +1,39 @@
+---
+const base = "/concepts/dark-precision";
+const {
+  title, sub, price, drive="", km="", fuel="", trans="",
+  flag="", flagAmber=false, glyph="🚗", ai="", href = `${base}/vehicle`,
+} = Astro.props;
+---
+<a class="dp-vcard" href={href}>
+  <div class="dp-vcard__media">
+    <span class="dp-vcard__scan"></span>
+    <span class="dp-vcard__silhouette">{glyph}</span>
+    <div class="dp-vcard__flags">
+      {flag && <span class={`dp-chip ${flagAmber ? "dp-chip--amber" : "dp-chip--signal"}`} style="background:rgba(8,9,12,0.75)">{flag}</span>}
+    </div>
+    <span class="dp-vcard__fav">♥</span>
+  </div>
+  <div class="dp-vcard__body">
+    <div>
+      <div class="dp-vcard__title">{title}</div>
+      <div class="dp-vcard__sub">{sub}</div>
+    </div>
+    <div class="dp-vcard__specs">
+      <div class="dp-vcard__spec"><span>Odometer</span><b>{km}</b></div>
+      <div class="dp-vcard__spec"><span>Trans</span><b>{trans}</b></div>
+      <div class="dp-vcard__spec"><span>Fuel</span><b>{fuel}</b></div>
+      <div class="dp-vcard__spec"><span>Drive</span><b>{drive}</b></div>
+    </div>
+    {ai && (
+      <div class="dp-vcard__ai">
+        <span class="dp-rebi-avatar" style="width:16px;height:16px"></span>
+        <span>{ai}</span>
+      </div>
+    )}
+    <div class="dp-vcard__foot">
+      <div class="dp-vcard__price"><b>{price}</b><span>drive-away est.</span></div>
+      <span class="dp-btn dp-btn--sm dp-btn--ghost">View →</span>
+    </div>
+  </div>
+</a>
