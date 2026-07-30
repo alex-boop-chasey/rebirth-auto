@@ -34,16 +34,20 @@ like the final builds").
 
 **Phase 3 — CONTEST (deferred to end · OWNER JUDGES · §6).**
 Structure per owner's explicit instruction (a deliberate override of the default 3-sequential
-contest format in AGENTS.md — recorded here per §6): **3 teams, 2 agents each. All agents run
-SIMULTANEOUSLY (6 in parallel).** Each team has a unique orchestrator-assigned theme. Within a
-team the two agents work at the same time — one **traditional** design focus, one **modern/
-experimental** — and **each independently produces their own complete themed page-set + a
-design/structure plan** (they do NOT layer on each other; there is no synthesis/critic step —
-exactly two agents per team). Each agent proposes the new pages/features THEY come up with
-(Bundaberg parity list = input/inspiration, not a fixed spec). The team's entry = its two takes
-(traditional + experimental) under the shared theme. Isolated, desktop-only, non-functional
-mockups under `src/pages/concepts/team-<n>-<theme>/<traditional|experimental>/`. Owner picks the
-winner at the very end — not self-selected.
+contest format in AGENTS.md — recorded per §6): **3 teams of 2 designers = 6 agents, all run
+SIMULTANEOUSLY.** Each team = ONE **traditional** web designer + ONE **futuristic/experimental**
+web designer who **collaborate to produce their team's single unique themed entry** (NOT two
+separate entries, NOT one layering on the other). Each team has a unique orchestrator-assigned
+theme + a shared team brief (`docs/briefs/contest/team-<n>-<theme>.md`) fixing exact tokens,
+nav and footer so the two halves read as ONE cohesive site. Page-ownership is split so the pair
+build in parallel without conflict: the **traditional** designer owns inventory + vehicle +
+finance(+calculator) + PLAN.md; the **experimental** designer owns the showpiece home + one
+signature new page. Each entry lives in `src/pages/concepts/team-<n>-<theme>/`. Desktop-only,
+non-functional, light-theme, dummy content, fully isolated. Owner judges the 3 team entries at
+the very end — not self-selected.
+
+Teams/themes: **T1 Concierge** (editorial luxury) · **T2 Velocity** (kinetic sport) ·
+**T3 Clarity** (calm, AI-forward).
 
 **Three themes (orchestrator's call — all light-first per the binding light-theme standard):**
 - **Team 1 — "Concierge" (Refined Editorial):** boutique quiet-luxury; ivory/paper + charcoal,
