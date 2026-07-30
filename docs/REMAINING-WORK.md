@@ -9,6 +9,52 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 5 — visual tidy-up + Bundaberg parity + whole-site design contest (2026-07-30)
+
+Owner scope: (1) screenshot the whole site, fix visual overlaps/misalignment ("balance");
+(2) review bundabergmotorgroup.com.au, list its pages/features, build parity pages into our
+site with dummy content; (3) run a **UX/UI design contest — 3 teams × 2 agents** (one
+traditional, one modern/experimental per team), each team a unique orchestrator-assigned
+theme, all teams simultaneous; each team produces a final design + structure plan and builds
+visual-only, non-responsive mockup pages (dummy content, no functionality). Owner judges.
+
+**Phase 1 — Visual tidy-up (autonomous).** Whole-site screenshot audit done (13 surfaces,
+`design-concepts/audit/`). Only genuine overlap: **`/labs/experience`** — the Rebi orb is
+absolute-centered and overlaps the H1; `experience-alt` shows the correct (orb-above-headline)
+pattern. Everything else aligns cleanly. (Recurring dark pill = Astro **dev toolbar**,
+dev-only, not a bug; black orb bottom-right = correctly-placed chat launcher.) Note: `/capture`
+is dark-themed vs the light standard — logged, out of scope for overlap tidy-up.
+
+**Phase 2 — Bundaberg parity (folded into the contest).** Page/feature inventory +
+gap list in `docs/briefs/bundaberg-parity.md`. The new pages (finance + calculator, new/demo/used
+facets, per-brand landings, offers hub, EV hub, sell-your-car, parts, fleet, about, contact,
+careers, test-drive) are **built by the contest teams as themed mockups** rather than once
+separately (owner: "build them into our site … and run a contest … build out pages to look
+like the final builds").
+
+**Phase 3 — CONTEST (deferred to end · OWNER JUDGES · §6).**
+Structure per owner's explicit instruction (a deliberate override of the default 3-sequential
+contest format in AGENTS.md — recorded here per §6): **3 teams, 2 agents each, run in
+parallel**; within a team a *traditional* agent owns IA/layout/usability and an *experimental*
+agent owns the distinctive visual/interaction language; the team fuses them into ONE cohesive
+entry + a structure plan, then builds desktop-only, non-functional mockups under
+`src/pages/concepts/<team>/`. Owner picks the winner at the very end — not self-selected.
+
+**Three themes (orchestrator's call — all light-first per the binding light-theme standard):**
+- **Team 1 — "Concierge" (Refined Editorial):** boutique quiet-luxury; ivory/paper + charcoal,
+  serif display + humanist sans, generous whitespace, brochure-grade restraint.
+- **Team 2 — "Velocity" (Kinetic Sport):** high-energy modern-sport; bright white + electric
+  cobalt/signal accents, heavy grotesk type, diagonal/asymmetric sections, confident motion.
+- **Team 3 — "Clarity" (Calm Minimal / AI-forward):** Scandinavian-clean; soft slate/white,
+  lots of air, precise modular grid, one muted accent, Rebi/conversation front-and-centre.
+
+Deliverable set per team (comparable across teams): themed mockups of **home, inventory/search,
+vehicle detail, finance (with calculator UI), one signature new page (EV hub or offers), and one
+reimagined existing surface**, plus a short `PLAN.md` (design language + full sitemap/structure).
+Screenshots of each entry presented to the owner for judgment.
+
+---
+
 ## /auto run 4 — audit verdicts, decisions & contest (2026-07-29)
 
 Autonomous run, scope = finish the backlog. Audited the code against this doc + `TODO_KEYS.md` first.
