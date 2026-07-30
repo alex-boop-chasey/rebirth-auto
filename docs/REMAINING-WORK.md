@@ -11,6 +11,15 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ## /auto run 5 — visual tidy-up + Bundaberg parity + whole-site design contest (2026-07-30)
 
+**STATUS (2026-07-31): COMPLETE — awaiting owner judgment.** Phase 1 tidy-up shipped (`71f92b6`,
+experience orb; rest of site verified clean). Phase 2 Bundaberg audit → shared brief
+(`docs/briefs/contest/SHARED-BRIEF.md`). Phase 3 contest run per the owner's FINAL brief — **3 solo
+themed agents** (Dark Precision · Regional Trust · Near-Future Yard), run simultaneously, no agent
+saw another's work; all 3 entries built (`cbee64c`), `astro check` 0 errors, 45/45 pages render 200.
+Screenshots `design-concepts/entries/<theme>/`; direction/structure docs
+`docs/briefs/contest/entries/<theme>/`. Winner is the owner's call — not self-selected. (The
+"3 teams × 2 agents" text below was an earlier draft, superseded by the owner's final brief.)
+
 Owner scope: (1) screenshot the whole site, fix visual overlaps/misalignment ("balance");
 (2) review bundabergmotorgroup.com.au, list its pages/features, build parity pages into our
 site with dummy content; (3) run a **UX/UI design contest — 3 teams × 2 agents** (one
