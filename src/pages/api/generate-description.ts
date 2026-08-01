@@ -45,6 +45,7 @@ import {
 } from '~/lib/generate-description/prompt';
 import { plainTextToPortableText, portableTextToPlainText } from '~/lib/portable-text';
 import { looksLikeReasoning } from '~/lib/generate-description/looks-like-reasoning';
+import { buildEnrichmentInput, deriveAttributes } from '~/lib/generate-description/enrich-attributes';
 import { DESCRIPTION_TONES, type DescriptionTone } from '~/config/dealer';
 import { checkRateLimit } from '~/lib/rate-limit';
 import { urlFor } from '~/sanity/lib/image';
@@ -305,6 +306,36 @@ export const POST: APIRoute = async ({ request }) => {
     if (!description.length) {
       return json({ error: 'The generated description was empty — please try again.' }, 200);
     }
+
+    // Only 'describe' enriches. Build the enrichment input from the draft's PUBLIC
+    // fields ONLY — NEVER the `facts` object (it carries dealerNotes). Decision 6:
+    // `buildEnrichmentInput` is the choke point; it reads a public whitelist and a
+    // private field can't survive into it. Enrichment must never block the
+    // description: any failure returns the description with `enrichError: true`,
+    // and an all-unset result simply omits `aiAttributes` (the Studio warns).
+    if (action === 'describe') {
+      try {
+        const enrichmentInput = buildEnrichmentInput({
+          title: draft.title,
+          make: draft.make,
+          model: draft.model,
+          doors: draft.doors,
+          price: draft.price,
+          vehicleSpecs: draft.vehicleSpecs,
+          details, // already reduced to public label/value pairs
+        });
+        const { aiAttributes } = await deriveAttributes(enrichmentInput, { id: draft._id });
+        if (Object.keys(aiAttributes).length) {
+          return json({ description, aiAttributes }, 200);
+        }
+        // Description is fine; nothing confident to enrich — surface as partial.
+        return json({ description, enrichError: true }, 200);
+      } catch (err) {
+        console.error('[generate-description] enrichment failed (returning description only)', err);
+        return json({ description, enrichError: true }, 200);
+      }
+    }
+
     return json({ description }, 200);
   } catch (err) {
     // Both tier models exhausted / malformed output → graceful 200 with an error.

@@ -21,7 +21,7 @@
  * hardcoded here; the default selection is the dealer's configured voice.
  */
 import { useCallback, useState } from 'react';
-import { set, useFormValue, type PortableTextInputProps } from 'sanity';
+import { set, useDocumentOperation, useFormValue, type PortableTextInputProps } from 'sanity';
 import { Button, Card, Flex, Select, Stack, Text, useToast } from '@sanity/ui';
 import type { PortableTextBlock } from '@portabletext/types';
 import { DESCRIPTION_TONES, dealerConfig, type DescriptionTone } from '../../config/dealer';
@@ -49,10 +49,27 @@ function sellingPointsToBlocks(points: string[]): PortableTextBlock[] {
   }));
 }
 
+/** The AI-derived attributes the 'describe' action may return alongside the copy. */
+interface AiAttributes {
+  runningCost?: string;
+  usageFit?: string[];
+  sizeClass?: string;
+}
+
 export function GenerateDescriptionInput(props: PortableTextInputProps) {
   const { onChange, value } = props;
   const id = useFormValue(['_id']) as string | undefined;
+  const type = (useFormValue(['_type']) as string | undefined) ?? 'listing';
   const toast = useToast();
+
+  // Document-level patch channel for `aiAttributes` — a DIFFERENT field than this
+  // PT input's own `description`, so `onChange(set(...))` can't reach it. The
+  // operation targets the DRAFT by design (operations always act on the editable
+  // draft). Keyed by the PUBLISHED id per the Studio API. `id` is present before
+  // any action runs (run() early-returns without one), so '' is a never-used
+  // placeholder that only satisfies the hooks-must-be-unconditional rule.
+  const publishedId = (id ?? '').replace(/^drafts\./, '');
+  const { patch } = useDocumentOperation(publishedId, type);
   // Which action is currently running (drives per-action loading/disabled state).
   const [busy, setBusy] = useState<AssistAction | null>(null);
   const [tone, setTone] = useState<DescriptionTone>(dealerConfig.ai.descriptionVoice.tone);
@@ -80,7 +97,13 @@ export function GenerateDescriptionInput(props: PortableTextInputProps) {
           body: JSON.stringify({ listingId: id, action, ...extra }),
         });
         const data = (await res.json().catch(() => null)) as
-          | { description?: unknown; sellingPoints?: unknown; error?: string }
+          | {
+              description?: unknown;
+              sellingPoints?: unknown;
+              aiAttributes?: AiAttributes;
+              enrichError?: boolean;
+              error?: string;
+            }
           | null;
 
         if (!res.ok || !data || data.error) {
@@ -120,6 +143,42 @@ export function GenerateDescriptionInput(props: PortableTextInputProps) {
           return;
         }
         onChange(set(data.description as PortableTextBlock[]));
+
+        // 'describe' also enriches `aiAttributes`. This is a DOCUMENT-level patch
+        // (a different field than `description`), so it goes through the document
+        // operation's patch channel, not `onChange`. Partial success MUST be
+        // visible: if attributes are absent or `enrichError` is set, we still set
+        // the description but warn the dealer they can fill the attributes in.
+        if (action === 'describe') {
+          const attrs = data.aiAttributes;
+          const hasAttrs = !!attrs && Object.keys(attrs).length > 0;
+          if (hasAttrs && !data.enrichError) {
+            try {
+              patch.execute([{ set: { aiAttributes: attrs } }]);
+              const fits = attrs.usageFit?.length ? ` · fits: ${attrs.usageFit.join(', ')}` : '';
+              toast.push({
+                status: 'success',
+                title: 'Description + AI attributes updated',
+                description: `AI attributes were set${fits}. Review and publish when you’re happy.`,
+              });
+            } catch (patchErr) {
+              console.error('[GenerateDescriptionInput] aiAttributes patch failed', patchErr);
+              toast.push({
+                status: 'warning',
+                title: 'Description updated — attributes not saved',
+                description: 'The AI attributes could not be applied automatically; set them manually below.',
+              });
+            }
+          } else {
+            toast.push({
+              status: 'warning',
+              title: 'Description updated — AI attributes left unset',
+              description: 'The AI could not confidently derive the attributes; fill them in manually below.',
+            });
+          }
+          return;
+        }
+
         toast.push({
           status: 'success',
           title: 'Description updated',
@@ -135,7 +194,7 @@ export function GenerateDescriptionInput(props: PortableTextInputProps) {
         setBusy(null);
       }
     },
-    [id, onChange, toast],
+    [id, onChange, toast, patch],
   );
 
   const appendSellingPoints = useCallback(() => {
