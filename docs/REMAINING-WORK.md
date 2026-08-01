@@ -11,6 +11,11 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ## /auto run 8 — Rebi chat: side-drawer redesign + in-thread tiles/actions (2026-08-02)
 
+**STATUS: SHIPPED locally on `feat/rebi-drawer` (off `redesign/inline-contextual`), commit `b69c2c1`.**
+`astro check` 0 errors (308 files); routes 200; `/api/chat` returns a real in-thread tile + action;
+old carousel/dreaming-backdrop markup removed. Awaiting owner visual sign-off before merge into
+`redesign/inline-contextual`. (Owner to eyeball the open drawer in the running dev server.)
+
 Scope = the one piece the remodel left out: **the Rebi chat window's design/presentation.** Port the
 `/concepts2/inline-contextual/` demo's chat — a **bottom-right side drawer** with a normal scrolling
 thread, **clickable listing tiles (real image → `/listings/<slug>`)**, and **auto-generated action
