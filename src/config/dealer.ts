@@ -912,6 +912,175 @@ export interface DealerConfig {
       actionLabel: string;
     };
   };
+  /**
+   * About page (`/about`) — company story, values, team and headline stats.
+   * DETERMINISM: this block holds only GENERIC, non-specific copy — never a
+   * fabricated statistic, award, or person. Every dealer-SPECIFIC fact on the page
+   * (established year, years in business, brands, stock count) is read at render
+   * time from the `businessInfo` Sanity document + live inventory and is
+   * placeholder-gated when absent. `team` DEFAULT [] → the team section is omitted
+   * rather than invented. Its OWN block (not under `chat`). Every dealer-facing
+   * string lives here so a tenant swap restyles it without a code edit.
+   */
+  about: {
+    /** Master on/off — a dealer can hide the about page without a deploy. */
+    enabled: boolean;
+    /**
+     * Team members shown on the page, in display order. DEFAULT [] → the team
+     * section is omitted. NEVER invent a person — only real, dealer-entered team
+     * members belong here (determinism).
+     */
+    team: readonly { name: string; role: string; blurb?: string }[];
+    /**
+     * "Why us" value cards. GENERIC positioning copy ONLY — no fabricated
+     * statistic, award, or specific claim (determinism). Icons are keys resolved
+     * by the page's inline SVG set.
+     */
+    values: readonly { icon: string; title: string; body: string }[];
+    /** Front-of-house copy for the about page and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "About us"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. Generic — no fabricated specifics. */
+      lead: string;
+      /** Heading above the story prose. */
+      storyHeading: string;
+      /**
+       * Story paragraphs. GENERIC, non-specific copy — never a fabricated fact,
+       * date, or place. The established year (when set in businessInfo) is woven in
+       * at render time; nothing here asserts an unverified specific.
+       */
+      story: readonly string[];
+      /** Heading above the value cards. */
+      valuesHeading: string;
+      /** Heading above the team grid (rendered only when `team` is non-empty). */
+      teamHeading: string;
+    };
+  };
+  /**
+   * Contact & hours page (`/contact`) — department navigation cards, the dealer's
+   * real contact facts, and a general enquiry FORM. DETERMINISM: the contact FACTS
+   * (phone / email / address / opening hours) are NOT stored here — they are read
+   * at render time from the `businessInfo` Sanity document (the existing source of
+   * truth, REUSED not duplicated) and placeholder-gated when unset, so a made-up
+   * phone or address is never printed. This block holds only copy, the department
+   * nav cards (navigation, not facts), the placeholder strings, and the
+   * enquiry-form plumbing (→ /api/contact-enquiry, stub in
+   * src/stubs/contact-enquiry.ts). Its OWN block (not under `chat`).
+   */
+  contact: {
+    /** Master on/off — a dealer can hide the contact page without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/contact-enquiry (its OWN `contact:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Where the dealer receives the stubbed general enquiry. Dealer-specific. */
+    notifyEmail: string;
+    /**
+     * Department NAVIGATION cards, in display order. Each routes to that
+     * department's real surface — navigation only. NEVER put a fabricated
+     * per-department phone or hours here (determinism); the real contact facts come
+     * from businessInfo and are shown once in the info card.
+     */
+    departments: readonly { icon: string; name: string; blurb: string; ctaLabel: string; href: string }[];
+    /**
+     * Placeholder strings shown for each contact fact the businessInfo document
+     * does NOT provide — an honest "not set" state, never a made-up value.
+     */
+    placeholders: { phone: string; email: string; address: string; hours: string };
+    /** Front-of-house copy for the contact page, its nav link, and the form. */
+    copy: {
+      /** Short nav/link label (e.g. "Contact & hours"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Heading above the contact-facts info card. */
+      infoHeading: string;
+      /** Heading above the enquiry form. */
+      formHeading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the enquiry is sent. */
+      loadingLabel: string;
+      /** Inline success message (a general enquiry the team will follow up). */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+      /** Honest note under the map placeholder — never asserts a real location. */
+      mapNote: string;
+    };
+  };
+  /**
+   * Careers page (`/careers`) — culture cards, open roles, and a register-interest
+   * FORM. DETERMINISM: `roles` DEFAULT [] → a graceful "no open roles" state; NEVER
+   * invent a role. Culture cards are GENERIC positioning copy — no fabricated
+   * statistic or claim. The form goes to a STUBBED lead pipeline (→
+   * /api/careers-enquiry, stub in src/stubs/careers-enquiry.ts). Its OWN block (not
+   * under `chat`). Every dealer-facing string lives here.
+   */
+  careers: {
+    /** Master on/off — a dealer can hide the careers page without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/careers-enquiry (its OWN `careers:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Where the dealer receives the stubbed register-interest enquiry. Dealer-specific. */
+    notifyEmail: string;
+    /**
+     * The dealer's CURRENT open roles, in display order. DEFAULT [] → the page
+     * shows a "no open roles" state. NEVER invent a role; only real, dealer-entered
+     * vacancies belong here (determinism).
+     */
+    roles: readonly { id: string; title: string; department: string; type: string; location: string }[];
+    /**
+     * Culture cards. GENERIC positioning copy ONLY — no fabricated statistic or
+     * claim (determinism). Icons are keys resolved by the page's inline SVG set.
+     */
+    culture: readonly { icon: string; title: string; body: string }[];
+    /** Front-of-house copy for the careers page, its nav link, and the form. */
+    copy: {
+      /** Short nav/link label (e.g. "Careers"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Heading above the culture cards. */
+      cultureHeading: string;
+      /** Heading above the open-roles list. */
+      rolesHeading: string;
+      /** Heading shown when `roles` is empty. */
+      emptyRolesHeading: string;
+      /** Body shown when `roles` is empty. */
+      emptyRolesBody: string;
+      /** Heading above the register-interest form. */
+      formHeading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the enquiry is sent. */
+      loadingLabel: string;
+      /** Inline success message. */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+    };
+  };
 }
 
 /**
@@ -1541,6 +1710,111 @@ export const dealerConfig: DealerConfig = {
       // Low-volume Studio action, still capped per-IP to bound abuse.
       rateLimit: { windowSeconds: 3600, maxRequests: 20 },
       actionLabel: 'Upload to carsales',
+    },
+  },
+  about: {
+    enabled: true,
+    // DEFAULT [] — a real team roster is dealer-entered; the page omits the team
+    // section rather than inventing a person (determinism). Never seed a fake name.
+    team: [],
+    // GENERIC positioning copy — no fabricated statistic, award, or specific claim.
+    values: [
+      { icon: 'users', title: 'Local team', body: 'Sales, service and parts people from the community we serve.' },
+      { icon: 'shield', title: 'Honest & no-pressure', body: 'Transparent pricing and straight answers — Rebi works for the buyer.' },
+      { icon: 'heart', title: 'Here for the long run', body: 'We back the cars we sell and the people who buy them.' },
+    ],
+    copy: {
+      navLabel: 'About us',
+      eyebrow: 'Our story',
+      heading: 'A car yard, rebuilt around you',
+      lead:
+        'Local people, honest tools, and an AI that works for the buyer — not the upsell.',
+      storyHeading: 'Our story',
+      // GENERIC prose only — never a fabricated date/place/figure. The established
+      // year (when businessInfo supplies it) is woven in at render time.
+      story: [
+        'We set out to make buying a car feel straightforward again: no pressure, no games, and a price you can actually understand.',
+        'Rebi, our AI assistant, is grounded only on our real, public listing data — so the help you get is honest and specific to the cars we actually have.',
+        'From browsing to finance to booking a look, every part of the yard is built to get you to the right answer faster.',
+      ],
+      valuesHeading: 'Why us',
+      teamHeading: 'Meet the team',
+    },
+  },
+  contact: {
+    enabled: true,
+    // Shopper-facing enquiry; capped per-IP to bound abuse + stub noise.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // Stubbed lead target — the dealer's front desk. Dealer-specific.
+    notifyEmail: 'hello@rebirthauto.example',
+    // NAVIGATION cards only — no fabricated per-department phone/hours. The real
+    // contact facts come from the businessInfo document (shown once, below).
+    departments: [
+      { icon: 'car', name: 'Sales', blurb: 'New, demo and used stock — and Rebi to help you choose.', ctaLabel: 'Browse stock', href: '/listings' },
+      { icon: 'wrench', name: 'Service', blurb: 'Log-book and fixed-price servicing, booked online.', ctaLabel: 'Book a service', href: '/service' },
+      { icon: 'gear', name: 'Parts', blurb: 'Genuine parts and accessories, fitted right.', ctaLabel: 'Parts enquiry', href: '/parts' },
+    ],
+    // Honest "not set" states — never a made-up value. Shown when the businessInfo
+    // document leaves a field empty.
+    placeholders: {
+      phone: 'Phone not published yet',
+      email: 'Email not published yet',
+      address: 'Address not published yet',
+      hours: 'Opening hours not published yet',
+    },
+    copy: {
+      navLabel: 'Contact & hours',
+      eyebrow: 'Contact',
+      heading: 'Talk to the right person, faster',
+      subheading:
+        'Pick a department — or ask Rebi "who do I talk to about X" and it points you the right way.',
+      infoHeading: 'Visit or call us',
+      formHeading: 'General enquiry',
+      submitLabel: 'Send enquiry',
+      loadingLabel: 'Sending your enquiry…',
+      successMessage:
+        "Thanks — we've received your enquiry and our team will be in touch. This is an enquiry, not a confirmed appointment.",
+      errorMessage: "Sorry, we couldn't send that enquiry. Please try again.",
+      invalidMessage: 'Please fill in your name, a valid email, and a short message.',
+      rateLimitMessage: 'You have sent a few enquiries already — please try again later.',
+      mapNote:
+        'Map is illustrative. Confirm the address above before travelling.',
+    },
+  },
+  careers: {
+    enabled: true,
+    // Register-interest enquiry; capped per-IP to bound abuse + stub noise.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // Stubbed lead target — the dealer's people/HR desk. Dealer-specific.
+    notifyEmail: 'careers@rebirthauto.example',
+    // DEFAULT [] — real vacancies are dealer-entered; the page shows an honest
+    // "no open roles" state rather than inventing a role (determinism).
+    roles: [],
+    // GENERIC positioning copy — no fabricated statistic or claim.
+    culture: [
+      { icon: 'heart', title: 'People-first', body: 'Supportive, local, and no ego.' },
+      { icon: 'star', title: 'Grow with us', body: 'Real training and genuine progression.' },
+      { icon: 'shield', title: 'Do it right', body: 'Honest selling, backed by good tools.' },
+    ],
+    copy: {
+      navLabel: 'Careers',
+      eyebrow: 'Careers',
+      heading: 'Build the future of the yard with us',
+      subheading:
+        'Local team, modern tools, genuine progression. We hire for attitude and train the rest.',
+      cultureHeading: 'What it is like here',
+      rolesHeading: 'Open roles',
+      emptyRolesHeading: 'No open roles right now',
+      emptyRolesBody:
+        "There are no advertised vacancies at the moment — but we are always keen to meet good people. Register your interest below and we will get in touch when something suits.",
+      formHeading: 'Register your interest',
+      submitLabel: 'Register interest',
+      loadingLabel: 'Sending your details…',
+      successMessage:
+        "Thanks — we've received your details and our team will be in touch if a suitable role comes up. This is an expression of interest, not a job application.",
+      errorMessage: "Sorry, we couldn't send that. Please try again.",
+      invalidMessage: 'Please fill in your name, a valid email, and a short message.',
+      rateLimitMessage: 'You have registered a few times already — please try again later.',
     },
   },
 };
