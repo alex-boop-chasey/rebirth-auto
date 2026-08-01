@@ -9,6 +9,26 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 7 — Smart Hubs site remodel (Phase 1 plan) (2026-08-01)
+
+Scope = **completely remodel the shipped site to the Smart Hubs IA** (`/concepts2/smart-hubs`),
+including its top menu, preserving every AI tool's mechanics and the docs' hard constraints. Large,
+two-phase, architectural — **Phase 1 (plan) only this run; /auto cannot self-approve a whole-site
+remodel.** Full plan: `docs/briefs/smart-hubs-remodel-plan.md`.
+
+**Key findings:** the remodel converges three streams — the NFY visual reskin (✅ done Wave 0–2 on
+`redesign/near-future-yard`), the Smart Hubs IA (new; the mockup is 100% dummy — no Sanity/AI/forms,
+demo-only nav), and the AI mechanics (preserve; **`main`'s query planner + free-model tiers are NOT on
+the reskin branch** and must be merged in). ~15 new real pages to build/wire.
+
+**Contest designation (§6): NONE** — design already chosen (Smart Hubs won the IA contest; owner
+selected it). Execution is large but directed by the preserve-contract + the mockup.
+
+**Awaiting owner sign-off** on the plan + 7 decisions (branch strategy, home/browse split,
+config-as-data extent, offers source, which forms, business facts, scope) before Phase 2 waves A–F.
+
+---
+
 ## /auto run 6 — LLM search query planner (design contest, Phase 1) (2026-08-01)
 
 Scope = one two-phase ticket: **replace the regex search extractor with an LLM query planner** on the
