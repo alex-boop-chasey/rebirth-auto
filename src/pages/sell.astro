@@ -1,0 +1,309 @@
+---
+// SSR (not prerendered): the page posts to /api/sell-enquiry and honours the
+// dealer feature flag at request time. Mirrors trade-in.astro / service.astro.
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.sell;
+
+// Feature flag — a dealer can hide the sell tool without a deploy.
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+const year = new Date().getFullYear();
+
+// Optional bot protection — only rendered when a site key is configured. The
+// endpoint verifies fail-open (skipped on localhost / when unconfigured), so the
+// demo is never blocked.
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_USER_TURNSTILE_KEY;
+
+const conditions = [
+  { value: 'excellent', label: 'Excellent — like new, no faults' },
+  { value: 'good', label: 'Good — minor wear, well maintained' },
+  { value: 'fair', label: 'Fair — visible wear or small issues' },
+  { value: 'poor', label: 'Poor — needs work' },
+] as const;
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    tag: '<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.3"/>',
+    car: '<path d="M5 11l1.5-4A2 2 0 018.4 6h7.2a2 2 0 011.9 1.3L19 11"/><path d="M4 11h16v5H4z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active="buy-own" />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from trade-in (sell vs trade fold) · vehicle page · footer</div>
+        <span class="eyebrow"><span set:html={icon('tag', 13)} /> {copy.eyebrow}</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">{copy.heading}</h1>
+        <p class="lead mt-3 max-w-2xl">{copy.subheading}</p>
+      </section>
+
+      <section class="site-container sell-layout">
+        <div
+          id="sell-root"
+          data-loading-label={copy.loadingLabel}
+          class="card"
+          style="padding:26px"
+        >
+          <h2 class="text-lg font-semibold text-ink" style="margin-bottom:16px">Get an indicative offer</h2>
+          <form id="sell-form" novalidate class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-name">Your name</label>
+              <input class="field-input" id="se-name" name="name" type="text" required
+                autocomplete="name" placeholder="e.g. Jordan Smith" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-email">Email</label>
+              <input class="field-input" id="se-email" name="email" type="email" required
+                autocomplete="email" placeholder="you@example.com" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-phone">Phone <span class="faint">(optional)</span></label>
+              <input class="field-input" id="se-phone" name="phone" type="tel"
+                autocomplete="tel" placeholder="e.g. 0400 000 000" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-make">Make</label>
+              <input class="field-input" id="se-make" name="make" type="text" required
+                autocomplete="off" placeholder="e.g. Toyota" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-model">Model</label>
+              <input class="field-input" id="se-model" name="model" type="text" required
+                autocomplete="off" placeholder="e.g. HiLux" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-year">Year</label>
+              <input class="field-input" id="se-year" name="year" type="number" required
+                inputmode="numeric" min="1950" max={year + 1} placeholder={String(year - 5)} />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-odo">Odometer (km)</label>
+              <input class="field-input" id="se-odo" name="odometerKm" type="number" required
+                inputmode="numeric" min="0" max="1000000" step="1000" placeholder="e.g. 98000" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="se-condition">Condition</label>
+              <select class="field-select" id="se-condition" name="condition" required>
+                <option value="" disabled selected>Choose a condition…</option>
+                {conditions.map((c) => <option value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div class="field sm:col-span-2">
+              <label class="field-label" for="se-notes">Anything else? <span class="faint">(optional)</span></label>
+              <textarea class="field-textarea" id="se-notes" name="notes" rows="3"
+                placeholder="Service history, extras, or anything we should know."></textarea>
+            </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <div class="sm:col-span-2">
+                <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="light"></div>
+              </div>
+            )}
+
+            <div class="sm:col-span-2">
+              <button
+                type="submit"
+                id="se-submit"
+                class="btn btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                <span id="se-submit-label">{copy.submitLabel}</span>
+              </button>
+              <p class="faint mt-3 text-xs leading-relaxed">{copy.disclaimer}</p>
+            </div>
+          </form>
+
+          <p id="se-error" role="alert" hidden
+            class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></p>
+
+          <div id="se-success" hidden aria-live="polite" class="ai-summary mt-8">
+            <p id="se-success-text" class="text-sm font-medium text-ink"></p>
+          </div>
+        </div>
+
+        <aside class="stack" style="gap:14px; position:sticky; top:92px">
+          <div class="card" style="padding:20px">
+            <h3 class="text-base font-semibold text-ink" style="margin-bottom:10px">Sell vs trade — quick guide</h3>
+            {[
+              ['Sell outright', 'Best price in your pocket, but you handle your next car separately.'],
+              ['Trade-in', 'Less admin, and it may reduce stamp duty on your next car.'],
+            ].map(([t, d]) => (
+              <div style="padding:10px 0; border-bottom:1px solid var(--line)">
+                <b style="font-size:13.5px">{t}</b>
+                <p class="muted" style="font-size:12.5px; margin-top:3px">{d}</p>
+              </div>
+            ))}
+            <!-- sell ↔ trade-in fold -->
+            <a href="/trade-in" class="entry entry--amber" style="width:100%; box-shadow:none; margin-top:14px">
+              <span class="entry-ic" set:html={icon('tag', 16)} />
+              <span class="entry-tx"><b>Compare with a trade-in</b><span>value it the other way</span></span>
+              <span class="entry-go" set:html={icon('arrow', 15)} />
+            </a>
+          </div>
+          <a href="/listings" class="entry">
+            <span class="entry-ic" set:html={icon('car', 18)} />
+            <span class="entry-tx"><b>Buying next, too?</b><span>browse stock</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+        </aside>
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+
+    {TURNSTILE_SITE_KEY && (
+      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    )}
+
+    <script>
+      const root = document.getElementById('sell-root');
+      const form = document.getElementById('sell-form') as HTMLFormElement | null;
+      if (root && form) {
+        const loadingLabel = root.dataset.loadingLabel || 'Sending your details…';
+        const submit = document.getElementById('se-submit') as HTMLButtonElement;
+        const submitLabel = document.getElementById('se-submit-label') as HTMLElement;
+        const defaultLabel = submitLabel.textContent || 'Request an offer';
+        const errorEl = document.getElementById('se-error') as HTMLElement;
+        const successEl = document.getElementById('se-success') as HTMLElement;
+        const successText = document.getElementById('se-success-text') as HTMLElement;
+
+        const showError = (msg: string) => {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+          successEl.hidden = true;
+        };
+        const setLoading = (on: boolean) => {
+          submit.disabled = on;
+          submitLabel.textContent = on ? loadingLabel : defaultLabel;
+        };
+        const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorEl.hidden = true;
+
+          const data = new FormData(form);
+          const payload = {
+            name: String(data.get('name') || '').trim(),
+            email: String(data.get('email') || '').trim(),
+            phone: String(data.get('phone') || '').trim(),
+            make: String(data.get('make') || '').trim(),
+            model: String(data.get('model') || '').trim(),
+            year: Number(data.get('year')),
+            odometerKm: Number(data.get('odometerKm')),
+            condition: String(data.get('condition') || ''),
+            notes: String(data.get('notes') || '').trim(),
+            // Included when the Turnstile widget is present; the endpoint verifies fail-open.
+            turnstileToken: String(data.get('cf-turnstile-response') || ''),
+          };
+
+          if (!payload.name) return showError('Please enter your name.');
+          if (!isEmail(payload.email)) return showError('Please enter a valid email address.');
+          if (!payload.make || !payload.model) return showError('Please enter your car’s make and model.');
+          if (!Number.isFinite(payload.year)) return showError('Please enter the vehicle year.');
+          if (!Number.isFinite(payload.odometerKm)) return showError('Please enter the odometer reading.');
+          if (!payload.condition) return showError('Please choose a condition.');
+
+          setLoading(true);
+          try {
+            const res = await fetch('/api/sell-enquiry', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const body = (await res.json()) as { ok?: boolean; message?: string; error?: string };
+            if (!res.ok || !body.ok) {
+              showError(body.error || 'We could not send that enquiry right now — please try again.');
+              return;
+            }
+            successText.textContent =
+              body.message || "Thanks — we've received your details and will be in touch.";
+            successEl.hidden = false;
+            form.reset();
+            if (typeof (window as any).turnstile !== 'undefined') (window as any).turnstile.reset();
+            successEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch {
+            showError('Something went wrong — please check your connection and try again.');
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+    </script>
+
+    <style>
+      .sell-layout {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 26px;
+        align-items: start;
+        padding-bottom: 44px;
+      }
+      @media (max-width: 820px) {
+        .sell-layout { grid-template-columns: 1fr; }
+        .sell-layout aside { position: static !important; }
+      }
+      /* NFY form-control primitives (ported from service.astro / trade-in.astro). */
+      .field { display: flex; flex-direction: column; gap: 7px; }
+      .field-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+      .field-input,
+      .field-select,
+      .field-textarea {
+        width: 100%;
+        font-family: var(--font-ui);
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-sm);
+        padding: 12px 14px;
+        transition: border-color 0.16s, box-shadow 0.16s;
+      }
+      .field-input::placeholder,
+      .field-textarea::placeholder { color: var(--ink-faint); }
+      .field-input:focus,
+      .field-select:focus,
+      .field-textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 181, 166, 0.15);
+        outline: none;
+      }
+      .field-textarea { resize: vertical; min-height: 96px; }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,318 @@
+---
+// SSR (not prerendered): the page posts to /api/book-test-drive, honours the
+// dealer feature flag, and reads `?vehicle=<slug>` to prefill the chosen car from
+// REAL inventory. Mirrors trade-in.astro / service.astro.
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { client } from '../sanity/lib/client';
+import { LISTING_FIELDS, formatPrice, type Listing } from '../lib/listing';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.testDrive;
+
+// Feature flag — a dealer can hide the test-drive tool without a deploy.
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+
+// Prefill from `?vehicle=<slug>` — resolve the REAL listing (never invented). A
+// missing/unknown slug simply renders the "choose a vehicle" state.
+const vehicleSlug = Astro.url.searchParams.get('vehicle');
+let vehicle: Listing | null = null;
+if (vehicleSlug) {
+  vehicle = await client.fetch<Listing | null>(
+    `*[_type == "listing" && slug.current == $slug][0]{ ${LISTING_FIELDS} }`,
+    { slug: vehicleSlug },
+  );
+}
+const vehicleLabel = vehicle?.title ?? '';
+const financeHref = vehicle?.price ? `/finance?price=${vehicle.price}` : '/finance';
+
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_USER_TURNSTILE_KEY;
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    play: '<circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/>',
+    car: '<path d="M5 11l1.5-4A2 2 0 018.4 6h7.2a2 2 0 011.9 1.3L19 11"/><path d="M4 11h16v5H4z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/>',
+    calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h6"/>',
+    doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+    tag: '<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.3"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active="buy-own" />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from a vehicle page (prefilled) · listing card · Rebi</div>
+        <span class="eyebrow"><span set:html={icon('play', 13)} /> {copy.eyebrow}</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">{copy.heading}</h1>
+        <p class="lead mt-3 max-w-2xl">
+          {vehicle ? 'Your chosen car is already selected — just pick a time.' : copy.subheading}
+        </p>
+      </section>
+
+      <section class="site-container td-layout">
+        <div
+          id="td-root"
+          data-loading-label={copy.loadingLabel}
+          data-vehicle-slug={vehicle?.slug?.current ?? ''}
+          data-vehicle-label={vehicleLabel}
+          class="card"
+          style="padding:26px"
+        >
+          <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Vehicle</div>
+          {vehicle ? (
+            <a
+              href={`/listings/${vehicle.slug?.current}`}
+              class="card"
+              style="display:flex; gap:12px; padding:10px 12px; align-items:center; text-decoration:none; color:inherit; margin-bottom:20px"
+            >
+              <span class="entry-ic" style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:var(--mint-glow)" set:html={icon('car', 18)} />
+              <span style="flex:1">
+                <b style="font-size:14px">{vehicle.title}</b>
+              </span>
+              {vehicle.price && (
+                <b style="font-size:13.5px">{formatPrice(vehicle.price, vehicle.currency)}</b>
+              )}
+            </a>
+          ) : (
+            <a href="/listings" class="entry" style="width:100%; margin-bottom:20px">
+              <span class="entry-ic" set:html={icon('car', 16)} />
+              <span class="entry-tx"><b>Choose a vehicle</b><span>from stock</span></span>
+              <span class="entry-go" set:html={icon('arrow', 15)} />
+            </a>
+          )}
+
+          <form id="td-form" novalidate class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="td-name">Your name</label>
+              <input class="field-input" id="td-name" name="name" type="text" required
+                autocomplete="name" placeholder="e.g. Jordan Smith" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="td-contact">Email or phone</label>
+              <input class="field-input" id="td-contact" name="contact" type="text" required
+                autocomplete="email" placeholder="you@example.com or 0400 000 000" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="td-date">Preferred date</label>
+              <input class="field-input" id="td-date" name="preferredDate" type="text" required
+                autocomplete="off" placeholder="e.g. Saturday 3 Aug, or next week" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="td-time">Preferred time <span class="faint">(optional)</span></label>
+              <input class="field-input" id="td-time" name="preferredTime" type="text"
+                autocomplete="off" placeholder="e.g. 10:00am" />
+            </div>
+            <div class="field sm:col-span-2">
+              <label class="field-label" for="td-notes">Anything else? <span class="faint">(optional)</span></label>
+              <textarea class="field-textarea" id="td-notes" name="notes" rows="3"
+                placeholder="Bringing a trade-in, a co-driver, or a specific request?"></textarea>
+            </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <div class="sm:col-span-2">
+                <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="light"></div>
+              </div>
+            )}
+
+            <div class="sm:col-span-2">
+              <button
+                type="submit"
+                id="td-submit"
+                class="btn btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                <span id="td-submit-label">{copy.submitLabel}</span>
+              </button>
+              <p class="faint mt-3 text-xs">We'll confirm by phone. Bring your licence — no drive is locked in until we confirm.</p>
+            </div>
+          </form>
+
+          <p id="td-error" role="alert" hidden
+            class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></p>
+
+          <div id="td-success" hidden aria-live="polite" class="ai-summary mt-8">
+            <p id="td-success-text" class="text-sm font-medium text-ink"></p>
+          </div>
+        </div>
+
+        <aside class="stack" style="gap:14px; position:sticky; top:92px">
+          <div class="card" style="padding:20px">
+            <h3 class="text-base font-semibold text-ink" style="margin-bottom:10px">What to bring</h3>
+            {[
+              ['doc', 'Your licence', 'Full and current'],
+              ['tag', 'Trade-in (optional)', 'We can value it while you drive'],
+              ['calc', 'A budget in mind', 'Rebi can pre-figure repayments'],
+            ].map(([ic, t, d]) => (
+              <div style="display:flex; gap:11px; padding:9px 0; border-bottom:1px solid var(--line)">
+                <span style="color:var(--teal-deep)" set:html={icon(ic as string, 17)} />
+                <div>
+                  <b style="font-size:13.5px">{t}</b>
+                  <div class="muted" style="font-size:12px">{d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <!-- onward: finance (prefilled with this car's price when chosen) -->
+          <a href={financeHref} class="entry entry--ai">
+            <span class="entry-ic" set:html={icon('calc', 18)} />
+            <span class="entry-tx"><b>Work out repayments first</b><span>so you drive with a budget</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+          <button class="entry entry--ai" data-rebi-open data-rebi-kind="nav" style="cursor:pointer; text-align:left">
+            <span class="entry-ic" set:html={icon('play', 18)} />
+            <span class="entry-tx"><b>Book it via Rebi</b><span>ask in plain English</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </button>
+        </aside>
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+
+    {TURNSTILE_SITE_KEY && (
+      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    )}
+
+    <script>
+      const root = document.getElementById('td-root');
+      const form = document.getElementById('td-form') as HTMLFormElement | null;
+      if (root && form) {
+        const loadingLabel = root.dataset.loadingLabel || 'Sending your request…';
+        const vehicleSlug = root.dataset.vehicleSlug || '';
+        const vehicleLabel = root.dataset.vehicleLabel || '';
+
+        const submit = document.getElementById('td-submit') as HTMLButtonElement;
+        const submitLabel = document.getElementById('td-submit-label') as HTMLElement;
+        const defaultLabel = submitLabel.textContent || 'Request this time';
+        const errorEl = document.getElementById('td-error') as HTMLElement;
+        const successEl = document.getElementById('td-success') as HTMLElement;
+        const successText = document.getElementById('td-success-text') as HTMLElement;
+
+        const showError = (msg: string) => {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+          successEl.hidden = true;
+        };
+        const setLoading = (on: boolean) => {
+          submit.disabled = on;
+          submitLabel.textContent = on ? loadingLabel : defaultLabel;
+        };
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorEl.hidden = true;
+
+          const data = new FormData(form);
+          const payload = {
+            name: String(data.get('name') || '').trim(),
+            contact: String(data.get('contact') || '').trim(),
+            vehicleSlug: vehicleSlug || null,
+            vehicleLabel: vehicleLabel || null,
+            preferredDate: String(data.get('preferredDate') || '').trim(),
+            preferredTime: String(data.get('preferredTime') || '').trim(),
+            notes: String(data.get('notes') || '').trim(),
+            turnstileToken: String(data.get('cf-turnstile-response') || ''),
+          };
+
+          if (!payload.name) return showError('Please enter your name.');
+          if (!payload.contact) return showError('Please enter an email or phone number.');
+          if (!payload.preferredDate) return showError('Please enter a preferred date.');
+
+          setLoading(true);
+          try {
+            const res = await fetch('/api/book-test-drive', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const body = (await res.json()) as { ok?: boolean; message?: string; error?: string };
+            if (!res.ok || !body.ok) {
+              showError(body.error || 'We could not send that request right now — please try again.');
+              return;
+            }
+            successText.textContent =
+              body.message || "Thanks — we've received your request and will confirm a time.";
+            successEl.hidden = false;
+            form.reset();
+            if (typeof (window as any).turnstile !== 'undefined') (window as any).turnstile.reset();
+            successEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch {
+            showError('Something went wrong — please check your connection and try again.');
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+    </script>
+
+    <style>
+      .td-layout {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 26px;
+        align-items: start;
+        padding-bottom: 44px;
+      }
+      @media (max-width: 820px) {
+        .td-layout { grid-template-columns: 1fr; }
+        .td-layout aside { position: static !important; }
+      }
+      .field { display: flex; flex-direction: column; gap: 7px; }
+      .field-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+      .field-input,
+      .field-textarea {
+        width: 100%;
+        font-family: var(--font-ui);
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-sm);
+        padding: 12px 14px;
+        transition: border-color 0.16s, box-shadow 0.16s;
+      }
+      .field-input::placeholder,
+      .field-textarea::placeholder { color: var(--ink-faint); }
+      .field-input:focus,
+      .field-textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 181, 166, 0.15);
+        outline: none;
+      }
+      .field-textarea { resize: vertical; min-height: 96px; }
+    </style>
+  </body>
+</html>

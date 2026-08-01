@@ -515,6 +515,162 @@ export interface DealerConfig {
     };
   };
   /**
+   * Finance & repayments — a CLIENT-SIDE indicative repayment calculator (the
+   * `/finance` page). NO lender/product names and NO approval claims: the copy is
+   * generic and config-driven and the figure is explicitly indicative, not a quote
+   * or an offer of finance (DECISIONS.md determinism). Deliberately its OWN block
+   * (not under `chat`) — it does not touch Rebi. Every dealer-facing default and
+   * string lives here so a tenant swap restyles it without a code edit.
+   */
+  finance: {
+    /** Master on/off — a dealer can hide the finance tool without a deploy. */
+    enabled: boolean;
+    /** Default comparison rate (% p.a.) seeding the calculator. Indicative ONLY — never an offer of finance. */
+    defaultAprPct: number;
+    /** Default loan term in months. */
+    defaultTermMonths: number;
+    /** Default deposit as a percentage of the vehicle price. */
+    depositPct: number;
+    /** Fallback vehicle price when the page is opened without a `?price=`. */
+    fallbackPrice: number;
+    /** Slider bounds — dealer-tunable, never hardcoded in the page. */
+    bounds: {
+      price: { min: number; max: number };
+      deposit: { min: number; max: number };
+      termMonths: { min: number; max: number };
+      aprPct: { min: number; max: number };
+    };
+    /** Front-of-house copy for the finance page and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "Finance"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** MUST make clear the figure is indicative — not a quote or an offer of finance. */
+      disclaimer: string;
+    };
+  };
+  /**
+   * Offers & specials — CONFIG-AS-DATA current deals (the `/offers` page). The
+   * `items` array is the single source of truth; DEFAULT [] renders a graceful
+   * empty state. NEVER fabricate a deal, price, or discount (DECISIONS.md
+   * determinism) — an offer only appears when the dealer has entered it here. Its
+   * OWN block (not under `chat`). Every dealer-facing string lives here.
+   */
+  offers: {
+    /** Master on/off — a dealer can hide the offers page without a deploy. */
+    enabled: boolean;
+    /**
+     * The dealer's CURRENT deals, in display order. DEFAULT [] → the page shows a
+     * "no current offers" state. NEVER invent an entry; only real, dealer-entered
+     * deals belong here.
+     */
+    items: readonly DealerOffer[];
+    /** Front-of-house copy for the offers page and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "Offers"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Heading shown when `items` is empty. */
+      emptyHeading: string;
+      /** Body shown when `items` is empty. */
+      emptyBody: string;
+      /** Small print under the offers grid. */
+      disclaimer: string;
+    };
+  };
+  /**
+   * Sell your car — an OUTRIGHT-SALE valuation-intake form (the `/sell` page +
+   * `/api/sell-enquiry` endpoint). Distinct from a trade-in: the shopper walks
+   * away with cash, no purchase required. The submission is captured to a STUBBED
+   * lead/CRM integration (src/stubs/sell-enquiry.ts) — no real spend, PII, or
+   * write; see docs/briefs/_stub-convention.md. A REQUEST for an indicative offer,
+   * never a firm figure: the copy must never assert a locked price. Its OWN block
+   * (not under `chat`). Every dealer-facing string/toggle lives here.
+   */
+  sell: {
+    /** Master on/off — a dealer can hide the sell tool without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/sell-enquiry (its OWN `sell:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Where the dealer receives the stubbed sell-enquiry lead. Dealer-specific. */
+    notifyEmail: string;
+    /** Front-of-house copy for the sell page and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "Sell your car"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the enquiry is sent. */
+      loadingLabel: string;
+      /** MUST frame this as an enquiry the team will follow up — never a locked offer. */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+      /** Small print under the form — indicative only, final after inspection. */
+      disclaimer: string;
+    };
+  };
+  /**
+   * Book a test drive — a booking-REQUEST form (the `/test-drive` page +
+   * `/api/book-test-drive` endpoint). Reads `?vehicle=<slug>` to prefill the
+   * chosen car from REAL inventory. The submission goes to a STUBBED booking
+   * integration (src/stubs/test-drive.ts) — no real calendar write; see
+   * docs/briefs/_stub-convention.md. A REQUEST, never a confirmed slot: the copy
+   * must never assert a locked time or invent availability. Its OWN block (not
+   * under `chat`). Every dealer-facing string/toggle lives here.
+   */
+  testDrive: {
+    /** Master on/off — a dealer can hide the test-drive tool without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/book-test-drive (its OWN `testdrive:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Where the dealer receives the stubbed test-drive request. Dealer-specific. */
+    notifyEmail: string;
+    /** Front-of-house copy for the test-drive page and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "Book a test drive"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the request is sent. */
+      loadingLabel: string;
+      /** MUST frame this as a request the team will confirm — never "your drive is booked". */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+    };
+  };
+  /**
    * Customer accounts — REAL Supabase auth ("my account"): the /login, /signup,
    * /account, /check-email and /reset-password routes plus src/middleware.ts and
    * the Supabase-backed Astro actions (src/actions/index.ts). Sign-in is real
@@ -628,6 +784,27 @@ export interface DealerConfig {
       actionLabel: string;
     };
   };
+}
+
+/**
+ * A single current deal shown on `/offers`. CONFIG AS DATA — the `offers.items`
+ * array is the only source; the page never invents one. `brand`/`tag` are the
+ * dealer's own words (no fabricated discounts). `href` is where "View stock" goes
+ * (a listings filter URL or a landing page); it defaults to the inventory grid.
+ */
+export interface DealerOffer {
+  /** Stable id (used as the render key). */
+  id: string;
+  /** Short badge, the dealer's own wording (e.g. "Drive-away", "Low rate"). */
+  tag: string;
+  /** Deal headline. */
+  title: string;
+  /** One-line description of the deal. */
+  description: string;
+  /** Optional brand label shown on the card. */
+  brand?: string;
+  /** Optional "View stock" destination (defaults to /listings). */
+  href?: string;
 }
 
 // Sort options are a fixed whitelist (see src/lib/listings-query.ts for how each
@@ -986,6 +1163,107 @@ export const dealerConfig: DealerConfig = {
         "Thanks for your service request — we've received it and our team will contact you to " +
         'confirm a time. Nothing is booked yet; this just starts the conversation.',
       dealerEmailSubject: 'New service booking request',
+    },
+  },
+  finance: {
+    enabled: true,
+    // Indicative comparison rate seeding the calculator. NOT an offer of finance —
+    // a real rate depends on the applicant + product. Dealer-tunable.
+    defaultAprPct: 6.9,
+    defaultTermMonths: 60,
+    depositPct: 10,
+    // Used when /finance is opened with no ?price= (direct nav / footer link).
+    fallbackPrice: 45000,
+    bounds: {
+      // Align the top of the price slider with the dealer's inventory price cap.
+      price: { min: 5000, max: 150000 },
+      deposit: { min: 0, max: 60000 },
+      // 1–7 years.
+      termMonths: { min: 12, max: 84 },
+      aprPct: { min: 3, max: 15 },
+    },
+    copy: {
+      navLabel: 'Finance',
+      eyebrow: 'Finance & repayments',
+      heading: 'Work out the repayment, then the car',
+      subheading:
+        'Move the sliders for an indicative weekly or monthly figure. Open this from a car ' +
+        "and the price is filled in for you.",
+      disclaimer:
+        'Indicative estimate only — not a quote, an approval, or an offer of finance. Figures ' +
+        'are calculated from the values you enter and exclude fees and charges. Any finance is ' +
+        'subject to application and approval.',
+    },
+  },
+  offers: {
+    enabled: true,
+    // CONFIG AS DATA — the dealer's real current deals go here. DEFAULT [] so the
+    // page shows an honest "no current offers" state rather than a fabricated deal
+    // (determinism). Never invent an entry.
+    items: [],
+    copy: {
+      navLabel: 'Offers',
+      eyebrow: 'Offers & specials',
+      heading: 'Current offers',
+      subheading:
+        'Live specials across the yard. When there is a deal on, you will find it here — ' +
+        'folded together with the finance calculator so you can check the repayment.',
+      emptyHeading: 'No current offers right now',
+      emptyBody:
+        "There are no live specials at the moment. New stock and deals land often — browse the " +
+        'range, work out a repayment, or ask Rebi to keep an eye out for you.',
+      disclaimer:
+        'Offers are the dealership’s own current specials. Availability and terms may change — ' +
+        'talk to us to confirm the details for your situation.',
+    },
+  },
+  sell: {
+    enabled: true,
+    // Shopper-facing lead form; capped per-IP to bound abuse + stub noise.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // Stubbed lead target — the dealer's buying desk. Dealer-specific.
+    notifyEmail: 'buying@rebirthauto.example',
+    copy: {
+      navLabel: 'Sell your car',
+      eyebrow: 'Sell outright',
+      heading: 'Sell us your car — no purchase required',
+      subheading:
+        'Different to a trade-in: walk away with the cash. Tell us about your car and we will ' +
+        'come back with an indicative offer, confirmed after a quick inspection.',
+      submitLabel: 'Request an offer',
+      loadingLabel: 'Sending your details…',
+      successMessage:
+        "Thanks — we've received your details and our buying team will be in touch with an " +
+        'indicative offer. This is an enquiry, not a confirmed price.',
+      errorMessage: "Sorry, we couldn't send that enquiry. Please try again.",
+      invalidMessage: 'Please fill in your name, a valid email, and your car’s make, model, year and odometer.',
+      rateLimitMessage: 'You have sent a few enquiries already — please try again later.',
+      disclaimer:
+        'Indicative only — any final offer is subject to a physical inspection of your vehicle. ' +
+        'No obligation, and no purchase from us required.',
+    },
+  },
+  testDrive: {
+    enabled: true,
+    // Shopper-facing booking request; capped per-IP to bound abuse + stub noise.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // Stubbed request target — the dealer's sales desk. Dealer-specific.
+    notifyEmail: 'sales@rebirthauto.example',
+    copy: {
+      navLabel: 'Book a test drive',
+      eyebrow: 'Test drive',
+      heading: 'Book a test drive',
+      subheading:
+        'Pick a car and a time that suits and we will have it ready. This sends a request — ' +
+        'we confirm the time with you by phone.',
+      submitLabel: 'Request this time',
+      loadingLabel: 'Sending your request…',
+      successMessage:
+        "Thanks — we've received your request and our team will call to confirm a time. " +
+        'Nothing is locked in until we confirm.',
+      errorMessage: "Sorry, we couldn't send that request. Please try again.",
+      invalidMessage: 'Please fill in your name, a way to contact you, and a preferred date.',
+      rateLimitMessage: 'You have sent a few requests already — please try again later.',
     },
   },
   accounts: {
