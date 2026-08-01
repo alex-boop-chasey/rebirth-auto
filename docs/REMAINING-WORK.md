@@ -9,6 +9,32 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 8 — Rebi chat: side-drawer redesign + in-thread tiles/actions (2026-08-02)
+
+Scope = the one piece the remodel left out: **the Rebi chat window's design/presentation.** Port the
+`/concepts2/inline-contextual/` demo's chat — a **bottom-right side drawer** with a normal scrolling
+thread, **clickable listing tiles (real image → `/listings/<slug>`)**, and **auto-generated action
+buttons (best-guess nav links)** — replacing the centred Focus-Stage carousel. Every "Ask Rebi"
+button opens this one drawer with a **preloaded per-button context** (`data-rebi-kind`); chat refines
+from there. Remove the old carousel + dreaming-backdrop leftovers. All mechanics + `#reb-*` /
+`data-rebi-*` seams + `/api/chat` request shape preserved; response gains additive `cards`/`actions`.
+
+**Definitive spec:** `docs/briefs/rebi-drawer-redesign.md` (build to it; check the product against §7).
+
+**Contest designation (§6): NONE** — the design is fixed by an owner-approved demo (a faithful port,
+not open-ended UI). Built directly, no owner-judging step; the owner asked for an autonomous run.
+
+Directional decisions taken (owner-authorised by the explicit instruction; see spec §7a): reverse the
+deliberate centred Focus-Stage + greyed "dreaming" backdrop in favour of the demo's corner-docked
+panel; keep the shared `createFocusStage` engine's default cinematic mode intact for search by adding
+an opt-in `thread` layout mode; derive tiles/actions deterministically server-side (no new LLM call).
+
+Tasks: (1) backend `cards`/`actions` data seam; (2) widget drawer rewrite + remove carousel/backdrop;
+(3) unify every "Ask Rebi" trigger with a purposeful `kind`. Verify: `astro check` green + drawer
+rendered in a running dev server (screenshot) + checked against spec §7.
+
+---
+
 ## /auto run 7 — Site remodel to inline-contextual (build) (2026-08-01)
 
 Scope = **remodel the ENTIRE site onto the `inline-contextual` design**, with the **top nav from
