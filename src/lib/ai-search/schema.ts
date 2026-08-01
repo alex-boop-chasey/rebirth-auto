@@ -21,6 +21,9 @@ import {
   FUEL_TYPE_CODES,
   DRIVE_TYPE_CODES,
   CONDITION_CODES,
+  RUNNING_COST_CODES,
+  USAGE_FIT_CODES,
+  SIZE_CLASS_CODES,
   SORT_KEYS,
   parseFilters,
   serializeFilters,
@@ -41,6 +44,9 @@ export const AiFiltersSchema = z.object({
   fuelType: z.array(z.enum(FUEL_TYPE_CODES)).default([]),
   driveType: z.array(z.enum(DRIVE_TYPE_CODES)).default([]),
   condition: z.array(z.enum(CONDITION_CODES)).default([]),
+  runningCost: z.array(z.enum(RUNNING_COST_CODES)).default([]),
+  usageFit: z.array(z.enum(USAGE_FIT_CODES)).default([]),
+  sizeClass: z.array(z.enum(SIZE_CLASS_CODES)).default([]),
   seats: z.array(z.number().int().positive()).default([]),
   priceMin: z.number().int().nonnegative().nullable().default(null),
   priceMax: z.number().int().nonnegative().nullable().default(null),
@@ -111,6 +117,9 @@ export function toFilterState(f: AiFilters): FilterState {
   setMulti('fuelType', f.fuelType);
   setMulti('driveType', f.driveType);
   setMulti('condition', f.condition);
+  setMulti('runningCost', f.runningCost);
+  setMulti('usageFit', f.usageFit);
+  setMulti('sizeClass', f.sizeClass);
   setMulti('seats', f.seats);
   if (f.priceMin != null) sp.set('priceMin', String(f.priceMin));
   if (f.priceMax != null) sp.set('priceMax', String(f.priceMax));
@@ -159,7 +168,7 @@ export function normalizeCurrentFilters(raw: unknown): FilterState {
   if (!raw || typeof raw !== 'object') return emptyFilterState();
   const r = raw as Record<string, unknown>;
   const sp = new URLSearchParams();
-  for (const k of ['bodyType', 'colour', 'transmission', 'fuelType', 'driveType', 'condition', 'seats']) {
+  for (const k of ['bodyType', 'colour', 'transmission', 'fuelType', 'driveType', 'condition', 'runningCost', 'usageFit', 'sizeClass', 'seats']) {
     const v = r[k];
     if (Array.isArray(v)) {
       if (v.length) sp.set(k, v.map(String).join(','));

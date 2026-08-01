@@ -13,6 +13,9 @@ import {
   FUEL_TYPE_CODES,
   DRIVE_TYPE_CODES,
   CONDITION_CODES,
+  RUNNING_COST_CODES,
+  USAGE_FIT_CODES,
+  SIZE_CLASS_CODES,
   SEAT_OPTIONS,
   SORT_KEYS,
 } from '../listings-query';
@@ -46,6 +49,9 @@ VOCABULARY (you may ONLY use these exact codes — anything else is invalid and 
 - fuelType: ${list(FUEL_TYPE_CODES)}
 - driveType: ${list(DRIVE_TYPE_CODES)} (2wd, all-wheel-drive = awd, four-wheel-drive / 4x4 = 4wd)
 - condition: ${list(CONDITION_CODES)}
+- runningCost: ${list(RUNNING_COST_CODES)} (AI-derived cost-to-run band. "economical"/"cheap to run"/"good on fuel"/"fuel efficient" → ["low"]. This is the RIGHT home for "economical" — do NOT force a fuelType for it.)
+- usageFit: ${list(USAGE_FIT_CODES)} (AI-derived best-fit use cases; include ALL that apply. "city"/"runabout"/"commute" → city; "first car"/"learner"/"P-plate" → first-car; towing/caravan/boat → towing; "tradie"/"work truck" → tradie; highway/touring/long trips → highway; a family car → family.)
+- sizeClass: ${list(SIZE_CLASS_CODES)} (AI-derived overall size. "small"/"compact"/"city car" → compact; "large"/"big" → large.)
 - seats: one or more of these seat counts only: ${list(SEAT_OPTIONS)}. Map a number of people to the
   SMALLEST seat count that fits (e.g. 6 people → 7).
 - Numeric ranges (whole numbers): priceMin, priceMax (money), yearMin, yearMax (model year),

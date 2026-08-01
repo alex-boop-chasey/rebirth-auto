@@ -40,6 +40,17 @@ export interface VehicleSpecs {
   condition?: 'new' | 'used' | 'demo';
 }
 
+// AI-derived, shopper-facing attributes (see the Sanity `aiAttributes` object).
+// Computed by enrichment from the PUBLIC projection only — never private dealer
+// data — and used as soft search/filter dimensions. Fixed enum codes that double
+// as URL filter values, mirroring the `vehicleSpecs` idiom. All optional (a
+// listing may not be enriched yet).
+export interface AiAttributes {
+  runningCost?: 'low' | 'medium' | 'high';
+  usageFit?: ('city' | 'family' | 'highway' | 'towing' | 'tradie' | 'first-car')[];
+  sizeClass?: 'compact' | 'medium' | 'large';
+}
+
 // One real price-change record. Populated by dealers / a future POS feed and
 // projected via LISTING_FIELDS. When present, the "Just Reduced" badge + the
 // detail-page history render from THIS honest data (see getPriceDrop). The demo
@@ -77,6 +88,7 @@ export interface Listing {
   category: string;
   details?: ListingDetail[];
   vehicleSpecs?: VehicleSpecs;
+  aiAttributes?: AiAttributes;
   listingDate?: string;
   // First-class, shopper-facing identity/spec fields (promoted out of details[]).
   // All optional — a listing may not carry every value. Staff-only fields
@@ -110,7 +122,8 @@ export const LISTING_FIELDS = `_id, title, slug, description, price, currency, s
   make, model, badge, series, colour, engine, doors, trim,
   vin, registrationExpiry, buildDate, complianceDate,
   details[]{ _key, label, value, valueType, valueNumber, unit, valueBoolean, valueDate },
-  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, fuelEconomy, condition }, listingDate,
+  vehicleSpecs{ bodyType, colour, transmission, fuelType, driveType, seatCount, year, odometer, fuelEconomy, condition },
+  aiAttributes{ runningCost, usageFit, sizeClass }, listingDate,
   priceHistory[]{ price, date, note }`;
 
 // Broad colour families for the Studio `colourBase` dropdown. A universal vehicle

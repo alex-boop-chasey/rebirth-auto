@@ -105,6 +105,46 @@ const CONDITION_SYNONYMS: Record<string, string> = {
   demo: 'demo',
   demonstrator: 'demo',
 };
+// --- AI-derived soft dimensions (aiAttributes) --------------------------------
+// Deterministic synonym maps mirroring the fixed enum codes on the Sanity
+// `aiAttributes` object. Multi-select downstream (FilterState), like fuelType.
+const RUNNING_COST_SYNONYMS: Record<string, string> = {
+  'cheap to run': 'low',
+  economical: 'low',
+  'cheap on fuel': 'low',
+  'fuel efficient': 'low',
+};
+const USAGE_FIT_SYNONYMS: Record<string, string> = {
+  // city / runabout
+  'city car': 'city',
+  city: 'city',
+  runabout: 'city',
+  commuter: 'city',
+  commute: 'city',
+  // first car
+  'first car': 'first-car',
+  'p-plate': 'first-car',
+  'l-plate': 'first-car',
+  learner: 'first-car',
+  // towing
+  tow: 'towing',
+  towing: 'towing',
+  caravan: 'towing',
+  trailer: 'towing',
+  // tradie
+  tradie: 'tradie',
+  'work truck': 'tradie',
+  // highway
+  highway: 'highway',
+  touring: 'highway',
+  'long trips': 'highway',
+};
+const SIZE_CLASS_SYNONYMS: Record<string, string> = {
+  compact: 'compact',
+  small: 'compact',
+  large: 'large',
+  big: 'large',
+};
 
 // Words we recognise as filter/qualifier vocabulary — excluded from the residual
 // keyword so "diesel ute under 40k" yields no spurious title keyword.
@@ -160,6 +200,9 @@ export function hasConcreteFilters(state: FilterState): boolean {
     state.fuelType.length > 0 ||
     state.driveType.length > 0 ||
     state.condition.length > 0 ||
+    state.runningCost.length > 0 ||
+    state.usageFit.length > 0 ||
+    state.sizeClass.length > 0 ||
     state.seats.length > 0 ||
     state.priceMin != null ||
     state.priceMax != null ||
@@ -183,6 +226,9 @@ export function extractFilters(message: string): Extraction | null {
   const fuelType = matchCodes(msg, FUEL_SYNONYMS);
   const driveType = matchCodes(msg, DRIVE_SYNONYMS);
   const condition = matchCodes(msg, CONDITION_SYNONYMS);
+  const runningCost = matchCodes(msg, RUNNING_COST_SYNONYMS);
+  const usageFit = matchCodes(msg, USAGE_FIT_SYNONYMS);
+  const sizeClass = matchCodes(msg, SIZE_CLASS_SYNONYMS);
 
   const sp = new URLSearchParams();
   if (body.length) sp.set('bodyType', body.join(','));
@@ -191,6 +237,8 @@ export function extractFilters(message: string): Extraction | null {
   if (fuelType.length) sp.set('fuelType', fuelType.join(','));
   if (driveType.length) sp.set('driveType', driveType.join(','));
   if (condition.length) sp.set('condition', condition.join(','));
+  if (runningCost.length) sp.set('runningCost', runningCost.join(','));
+  if (sizeClass.length) sp.set('sizeClass', sizeClass.join(','));
 
   // --- Odometer ---------------------------------------------------------------
   // "low kms" / "low mileage" with no figure → configured ceiling.
@@ -249,6 +297,14 @@ export function extractFilters(message: string): Extraction | null {
     sp.set('seats', cfg.familySeats.join(','));
   }
 
+  // --- Usage fit --------------------------------------------------------------
+  // Synonym hits PLUS the "family" special-case: "family" already drives a seats
+  // path above; we add usageFit=family alongside (overlapping signals coexist,
+  // matching how seats/family is treated), deduped and order-preserving.
+  const usage = [...usageFit];
+  if (/\bfamily\b/i.test(msg) && !usage.includes('family')) usage.push('family');
+  if (usage.length) sp.set('usageFit', usage.join(','));
+
   // parseFilters validates + drops unknown codes, giving the canonical state.
   const state = parseFilters(sp);
 
@@ -272,6 +328,9 @@ export function extractFilters(message: string): Extraction | null {
       ...Object.keys(FUEL_SYNONYMS),
       ...Object.keys(DRIVE_SYNONYMS),
       ...Object.keys(CONDITION_SYNONYMS),
+      ...Object.keys(RUNNING_COST_SYNONYMS),
+      ...Object.keys(USAGE_FIT_SYNONYMS),
+      ...Object.keys(SIZE_CLASS_SYNONYMS),
     ].flatMap((w) => w.split(/[^a-z0-9]+/)));
     const candidates = residuals.filter((t) => !known.has(t) && !known.has(t.replace(/s$/, '')));
     if (candidates.length) keyword = candidates.slice(0, 2).join(' ');

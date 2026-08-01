@@ -66,6 +66,14 @@ export const TRANSMISSION_CODES = ['auto', 'manual'] as const;
 export const FUEL_TYPE_CODES = ['petrol', 'diesel', 'hybrid', 'electric', 'lpg'] as const;
 export const DRIVE_TYPE_CODES = ['2wd', 'awd', '4wd'] as const;
 export const CONDITION_CODES = ['new', 'used', 'demo'] as const;
+// AI-derived soft dimensions (mirror the Sanity `aiAttributes` object). These are
+// AI-only: reachable via the search planner + regex fallback and shown as
+// removable chips, but NOT rendered as drawer facets (values exist only on
+// enriched listings). runningCost + sizeClass are single-valued per listing but
+// multi-select as a filter (OR of values); usageFit is a document array.
+export const RUNNING_COST_CODES = ['low', 'medium', 'high'] as const;
+export const USAGE_FIT_CODES = ['city', 'family', 'highway', 'towing', 'tradie', 'first-car'] as const;
+export const SIZE_CLASS_CODES = ['compact', 'medium', 'large'] as const;
 // The sort whitelist as a runtime array (keys of SORT_CLAUSES). Mirrors the
 // SortKey union in config/dealer.ts; the `satisfies` check fails the build if the
 // two ever drift.
@@ -95,6 +103,12 @@ export interface FilterState {
   fuelType: string[];
   driveType: string[];
   condition: string[];
+  /** AI-derived running-cost band (runningCost codes). Multi-select like fuelType. */
+  runningCost: string[];
+  /** AI-derived best-fit use cases (usageFit codes). Multi-select like fuelType. */
+  usageFit: string[];
+  /** AI-derived overall size class (sizeClass codes). Multi-select like fuelType. */
+  sizeClass: string[];
   seats: number[];
   priceMin?: number;
   priceMax?: number;
@@ -158,6 +172,9 @@ export function parseFilters(sp: URLSearchParams): FilterState {
     condition: dealerConfig.inventory.showCondition
       ? parseMulti(sp, 'condition', CONDITION_CODES)
       : [],
+    runningCost: parseMulti(sp, 'runningCost', RUNNING_COST_CODES),
+    usageFit: parseMulti(sp, 'usageFit', USAGE_FIT_CODES),
+    sizeClass: parseMulti(sp, 'sizeClass', SIZE_CLASS_CODES),
     seats,
     priceMin: parseInt0(sp, 'priceMin'),
     priceMax: parseInt0(sp, 'priceMax'),
@@ -203,6 +220,9 @@ export function buildListingsFilter(state: FilterState): {
     fuelType: state.fuelType.length ? state.fuelType : null,
     driveType: state.driveType.length ? state.driveType : null,
     condition: state.condition.length ? state.condition : null,
+    runningCost: state.runningCost.length ? state.runningCost : null,
+    usageFit: state.usageFit.length ? state.usageFit : null,
+    sizeClass: state.sizeClass.length ? state.sizeClass : null,
     seats: state.seats.length ? state.seats : null,
     priceMin: state.priceMin ?? null,
     priceMax: state.priceMax ?? null,
@@ -223,6 +243,9 @@ export function buildListingsFilter(state: FilterState): {
     && (!defined($fuelType) || vehicleSpecs.fuelType in $fuelType)
     && (!defined($driveType) || vehicleSpecs.driveType in $driveType)
     && (!defined($condition) || vehicleSpecs.condition in $condition)
+    && (!defined($runningCost) || aiAttributes.runningCost in $runningCost)
+    && (!defined($sizeClass) || aiAttributes.sizeClass in $sizeClass)
+    && (!defined($usageFit) || count((aiAttributes.usageFit[])[@ in $usageFit]) > 0)
     && (!defined($seats) || vehicleSpecs.seatCount in $seats)
     && (!defined($priceMin) || price >= $priceMin)
     && (!defined($priceMax) || price <= $priceMax)
@@ -274,6 +297,9 @@ export function serializeFilters(state: FilterState): string {
   if (state.driveType.length) sp.set('driveType', state.driveType.join(','));
   if (state.seats.length) sp.set('seats', state.seats.join(','));
   if (state.condition.length) sp.set('condition', state.condition.join(','));
+  if (state.runningCost.length) sp.set('runningCost', state.runningCost.join(','));
+  if (state.usageFit.length) sp.set('usageFit', state.usageFit.join(','));
+  if (state.sizeClass.length) sp.set('sizeClass', state.sizeClass.join(','));
   if (state.page > 1) sp.set('page', String(state.page));
   return sp.toString();
 }
@@ -304,6 +330,9 @@ const DIMENSION_LABELS: Record<string, string> = {
   fuelType: 'Fuel',
   driveType: 'Drive',
   condition: 'Condition',
+  runningCost: 'Running cost',
+  usageFit: 'Usage',
+  sizeClass: 'Size',
   seatCount: 'Seats',
   price: 'Price',
   year: 'Year',
@@ -314,6 +343,7 @@ const DIMENSION_LABELS: Record<string, string> = {
 const VALUE_LABELS: Record<string, Record<string, string>> = {
   transmission: { auto: 'Automatic', manual: 'Manual' },
   driveType: { '2wd': '2WD', awd: 'AWD', '4wd': '4WD' },
+  usageFit: { 'first-car': 'First car' },
 };
 
 function titleCase(code: string): string {
@@ -358,6 +388,9 @@ export function activeChips(state: FilterState): FilterChip[] {
     { dim: 'fuelType', labelKey: 'fuelType' },
     { dim: 'driveType', labelKey: 'driveType' },
     { dim: 'condition', labelKey: 'condition' },
+    { dim: 'runningCost', labelKey: 'runningCost' },
+    { dim: 'usageFit', labelKey: 'usageFit' },
+    { dim: 'sizeClass', labelKey: 'sizeClass' },
   ];
 
   for (const { dim, labelKey } of multiDims) {

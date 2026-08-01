@@ -671,7 +671,14 @@ export type FilterDimension =
   | 'fuelType'
   | 'driveType'
   | 'seatCount'
-  | 'condition';
+  | 'condition'
+  // AI-derived soft dimensions (aiAttributes). Valid FilterState/planner dimensions
+  // and removable chips, but deliberately NOT added to `inventory.dimensions` — the
+  // decision is AI-only, no visible drawer facets (values exist only on enriched
+  // listings, so empty facets would be poor UX).
+  | 'runningCost'
+  | 'usageFit'
+  | 'sizeClass';
 
 export const dealerConfig: DealerConfig = {
   identity: {
@@ -848,15 +855,15 @@ export const dealerConfig: DealerConfig = {
       concepts: [
         {
           phrase: 'first car / P-plate / P-plater / L-plate / learner / new driver / young driver',
-          maps: 'a small, easy-to-drive automatic: bodyType hatchback, transmission auto. Where budget is implied but unstated, do NOT invent a priceMax — leave it null and flag budget instead. P-plate/licence status is NOT a filter — do not invent one; just map the practical intent and you may note the assumption in interpretation.',
+          maps: 'a small, easy-to-drive automatic: bodyType hatchback, transmission auto, sizeClass compact, usageFit first-car. Where budget is implied but unstated, do NOT invent a priceMax — leave it null and flag budget instead. P-plate/licence status is NOT a filter — do not invent one; just map the practical intent and you may note the assumption in interpretation.',
         },
         {
           phrase: 'economical / cheap to run / good on fuel / low fuel / low fuel economy / fuel efficient / save on petrol',
-          maps: 'running COST, not a fuel type: bodyType hatchback (small). Do NOT emit a fuelType — a small petrol car is cheap to run, so forcing hybrid/electric wrongly excludes economical stock. Only add a fuelType when the visitor explicitly names a fuel (petrol/diesel/hybrid/electric). Where budget is implied but unstated, do NOT invent a priceMax — flag budget instead. Never invent a fuel-economy (L/100km) figure — a fuel-economy figure may exist per vehicle; never invent one when a vehicle lacks it.',
+          maps: 'running COST, not a fuel type: runningCost low. Do NOT emit a fuelType — a small petrol car is cheap to run, so forcing hybrid/electric wrongly excludes economical stock. Only add a fuelType when the visitor explicitly names a fuel (petrol/diesel/hybrid/electric). Where budget is implied but unstated, do NOT invent a priceMax — flag budget instead. Never invent a fuel-economy (L/100km) figure — a fuel-economy figure may exist per vehicle; never invent one when a vehicle lacks it.',
         },
         {
           phrase: 'easy to park / city car / runabout / small / compact / around town',
-          maps: 'a small car: bodyType hatchback (add transmission auto if "easy" clearly implies it).',
+          maps: 'a small city car: sizeClass compact and usageFit city (add transmission auto if "easy" clearly implies it).',
         },
         {
           phrase: 'camping / touring / off-road / adventure / outback / 4x4 / beach',
@@ -868,11 +875,11 @@ export const dealerConfig: DealerConfig = {
           // are 5). Written literally (not a token) because this string renders RAW
           // into BOTH the LLM planner prompt and the legacy Stage-2 SYSTEM_PROMPT —
           // a placeholder would leak unexpanded into the latter.
-          maps: 'seats 5 — room for the family; do NOT force a body type (a family car can be a hatch, wagon, sedan or SUV); use 7–8 seats ONLY on explicit large-family cues (several kids / third row / people-mover / a stated 7+).',
+          maps: 'seats 5 and usageFit family — room for the family; do NOT force a body type (a family car can be a hatch, wagon, sedan or SUV); use 7–8 seats ONLY on explicit large-family cues (several kids / third row / people-mover / a stated 7+).',
         },
         {
           phrase: 'towing / tow / caravan / trailer / boat',
-          maps: 'bodyType ute or suv, and fuelType diesel (torque for towing).',
+          maps: 'usageFit towing, bodyType ute or suv, and fuelType diesel (torque for towing).',
         },
       ],
       placeholders: [

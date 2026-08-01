@@ -40,11 +40,17 @@ const Transmission = z.enum(['auto', 'manual']);
 const FuelType = z.enum(['petrol', 'diesel', 'hybrid', 'electric', 'lpg']);
 const DriveType = z.enum(['2wd', 'awd', '4wd']);
 const Condition = z.enum(['new', 'used', 'demo']);
+// AI-derived soft dimensions (mirror the Sanity `aiAttributes` object). The executor
+// re-validates and drops any code not in the live set, so emitting the full set is safe.
+const RunningCost = z.enum(['low', 'medium', 'high']);
+const UsageFit = z.enum(['city', 'family', 'highway', 'towing', 'tradie', 'first-car']);
+const SizeClass = z.enum(['compact', 'medium', 'large']);
 
 // Machine-safe key set for disclosure (imported from C1). Matches FilterState keys 1:1.
 const FilterField = z.enum([
   'bodyType', 'colour', 'transmission', 'fuelType', 'driveType',
-  'condition', 'seats', 'priceMin', 'priceMax', 'yearMin', 'yearMax', 'odoMax',
+  'condition', 'runningCost', 'usageFit', 'sizeClass',
+  'seats', 'priceMin', 'priceMax', 'yearMin', 'yearMax', 'odoMax',
 ]);
 
 const Filters = z
@@ -55,6 +61,9 @@ const Filters = z
     fuelType: z.array(FuelType).describe('Fuel codes. Empty [] unless the shopper NAMES a fuel. Never emit a fuel for "economical"/"cheap to run" — a small petrol is economical, so forcing hybrid/electric wrongly excludes stock.'),
     driveType: z.array(DriveType).describe('"2wd" | "awd" | "4wd". Empty [] unless off-road/towing/adventure intent or an explicit drivetrain (towing → 4wd, optionally awd).'),
     condition: z.array(Condition).describe('"new" | "used" | "demo". "secondhand"/"pre-owned"/"used" → ["used"]; "brand new" → ["new"]; "demo"/"ex-demo" → ["demo"]. If the shopper contradicts themselves ("new secondhand"), leave [] and raise a clarification.'),
+    runningCost: z.array(RunningCost).describe('AI-derived cost-to-run band. Empty [] unless the shopper implies running cost. "economical"/"cheap to run"/"good on fuel"/"fuel efficient" → ["low"]. This is the RIGHT home for "economical" — do NOT force a fuelType for it.'),
+    usageFit: z.array(UsageFit).describe('AI-derived best-fit use cases (OR of the values). Empty [] unless a use case is implied. "city"/"runabout"/"commute" → include "city"; "first car"/"learner"/"P-plate" → include "first-car"; towing/caravan/boat → include "towing"; "tradie"/"work truck" → include "tradie"; highway/touring/long trips → include "highway"; a family car → include "family".'),
+    sizeClass: z.array(SizeClass).describe('AI-derived overall size class. Empty [] unless size is implied. "small"/"compact"/"city car" → ["compact"]; "large"/"big" → ["large"].'),
     seats: z.array(z.number().int()).describe('Seat counts to include. Allowed values: 2, 4, 5, 7, 8 — if the shopper asks an unavailable count, pick the nearest available or leave []. Empty [] = no seat constraint. A plain "family" car is a 5-seater; use [7,8] ONLY on explicit large-family cues (several kids / third row / people-mover / a stated 7+).'),
     priceMin: z.number().int().nullable().describe('Minimum price in AUD, or null. Only from an explicit figure ("over $20k"). Never invented from lifestyle wording.'),
     priceMax: z.number().int().nullable().describe('Maximum price in AUD, or null. Only from an explicit figure ("under $30k", "around 25000"). If a soft signal implies "cheap"/budget but names NO figure, keep null and raise a budget clarification — never fabricate a ceiling.'),
@@ -126,7 +135,8 @@ THREE KINDS OF SIGNAL
    - Large-family cues (several kids / third row / people-mover / stated 7+) → seats [7,8]. A plain
      "family" is already covered above (a 5-seater; do NOT force a body type).
    - "low kms"/"low mileage" with no figure → odoMax {{lowKmThreshold}}.
-   - "economical"/"cheap to run" is NOT a fuel — never force hybrid/electric.
+   - "economical"/"cheap to run"/"good on fuel" → runningCost ["low"]; it is NOT a fuel — never
+     force hybrid/electric (a small petrol is cheap to run).
 3. NEVER INVENT A NUMBER. Set priceMin/priceMax/yearMin/yearMax/odoMax ONLY from an explicit figure or a
    configured mapping (low-kms). If a soft signal implies a budget ("cheap", "second car") but names no
    figure, leave price null and raise ONE budget clarification instead.
@@ -190,6 +200,9 @@ function planFiltersToState(f: SearchPlan['filters']): FilterState {
   setMulti('fuelType', f.fuelType);
   setMulti('driveType', f.driveType);
   setMulti('condition', f.condition);
+  setMulti('runningCost', f.runningCost);
+  setMulti('usageFit', f.usageFit);
+  setMulti('sizeClass', f.sizeClass);
   setMulti('seats', f.seats);
   if (f.priceMin != null) sp.set('priceMin', String(f.priceMin));
   if (f.priceMax != null) sp.set('priceMax', String(f.priceMax));
