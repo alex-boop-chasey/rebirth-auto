@@ -33,7 +33,27 @@ forms; `astro check` + drive-the-flow + commit; preserve all seams):
 - **Wave 4 — Dealership + Rebi:** about, contact, careers (config facts only — no fabricated data),
   account (exists), `/rebi` full navigator.
 
-**Status:** IN PROGRESS — foundation branch merged (`astro check` 0 errors); Wave 0 building.
+**Status: SHIPPED ✅** — all waves complete on `redesign/inline-contextual` (`astro check` 0 errors,
+315 files; whole-site route sweep all 200; filter contract verified intact after the grid move). Commits
+`b93cdd5` (W0) → `790db85` (W1) → `7c1f8c6` (W2) → `2c6c09c` (W3) → `593934b` (W4).
+- ✅ **Wave 0** — Smart Hubs mega-menu nav (productionised: mobile menu + a11y) + full-directory footer +
+  inline-contextual `.entry` design layer. Config-as-data (`src/config/nav.ts`). Live site-wide.
+- ✅ **Wave 1** — home = front-door (AI search → `/listings`); grid moved to `/listings` (single
+  `LISTINGS_PATH` lever; full grid/filter/SearchDock contract preserved); vehicle detail inline `.entry` jumps.
+- ✅ **Wave 2** — Buy & Own: `/finance` (real calculator), `/offers` (config-driven, empty by default),
+  `/sell` + `/test-drive` (stub endpoints).
+- ✅ **Wave 3** — Service & Parts + Shop: `/parts`, `/fleet` (stubs), `/electric` (real EV stock),
+  `/brand` + `/brand/[slug]` (real makes only).
+- ✅ **Wave 4** — Dealership + Rebi: `/about`, `/contact`, `/careers` (config/businessInfo facts,
+  placeholder-gated), `/rebi` (hosts the REAL ChatWidget, no mock).
+- **Preserved throughout:** every AI mechanic (Rebi chat, hero search + query planner, compare,
+  generate-description, tiers), the filter/grid/compare DOM seams, config-as-data, determinism (no
+  fabricated data), light-theme.
+- **New stub integrations** (add credential + flip flag to go live): sell, test-drive, parts, fleet,
+  contact, careers — all rows in `TODO_KEYS.md`.
+- **Owner follow-ups:** real business facts (opening hours, team, brands) via `dealerConfig`/businessInfo;
+  populate `dealerConfig.offers`/`careers.roles` when there's content; SEO canonical/redirect for the
+  `/` → `/listings` inventory move; decide if `/brand` should feed a `make` facet on `/listings`.
 
 ---
 
