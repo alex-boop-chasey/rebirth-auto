@@ -364,16 +364,13 @@ const closeSvg =
       if (openHubEl && !openHubEl.contains(target)) closeHub(openHubEl);
     });
 
-    // "Ask Rebi" seam → open the real ChatWidget. The widget's own delegated
-    // handler ignores a ref-less nav trigger, so we open it via its launcher.
-    // Also close the mobile drawer so the chat isn't hidden behind it.
+    // "Ask Rebi" seam: the global ChatWidget listener now owns opening the
+    // drawer for any trigger. We keep only the nav-local side-effect — closing
+    // the mobile drawer so the chat isn't hidden behind it.
     document.addEventListener('click', (e) => {
-      const t = (e.target as HTMLElement | null)?.closest?.('[data-rebi-open][data-rebi-kind="nav"]');
+      const t = (e.target as HTMLElement | null)?.closest?.('[data-rebi-open]');
       if (!t) return;
       if (drawer && !drawer.hidden) setDrawer(false);
-      const panel = document.getElementById('reb-panel') as HTMLElement | null;
-      const launcher = document.getElementById('reb-launcher') as HTMLElement | null;
-      if (panel && launcher && panel.hidden) launcher.click();
     });
   })();
 </script>

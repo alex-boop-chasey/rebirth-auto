@@ -31,6 +31,11 @@ interface MatchRow {
   price?: number;
   currency?: string;
   slug?: { current?: string };
+  // Card-only fields (public projection): never rendered into the prompt text —
+  // used solely to build clickable tiles server-side in core.ts.
+  images?: unknown[];
+  make?: string;
+  model?: string;
   bodyType?: string;
   colour?: string;
   fuelType?: string;
@@ -38,6 +43,13 @@ interface MatchRow {
   year?: number;
   odometer?: number;
   fuelEconomy?: number;
+}
+
+/** What a resolved lookup contributes: the prompt text + the raw public rows
+ *  (for tiles). */
+export interface MatchResult {
+  text: string;
+  rows: MatchRow[];
 }
 
 function renderMatchLine(r: MatchRow, i: number): string {
@@ -83,7 +95,10 @@ function renderMatches(rows: MatchRow[], total: number, max: number): string {
  * extracted (the overview carries the turn) or on any error (fail-open).
  * KV short-TTL-cached keyed by the normalized extraction.
  */
-export async function getLiveMatches(kv: KVNamespaceLike | undefined, message: string): Promise<string | null> {
+export async function getLiveMatches(
+  kv: KVNamespaceLike | undefined,
+  message: string,
+): Promise<MatchResult | null> {
   const cfg = getDealerConfig().chat.grounding;
   if (!cfg.lookup.enabled) return null;
 
@@ -100,7 +115,11 @@ export async function getLiveMatches(kv: KVNamespaceLike | undefined, message: s
   const max = cfg.lookup.maxListings;
 
   try {
-    return await cachedText(
+    // The raw rows are captured from the (cached) producer for tile building; on
+    // a rare KV cache HIT the producer is skipped and rows stay empty, so tiles
+    // are simply omitted that turn (additive/optional — never faked).
+    let rows: MatchRow[] = [];
+    const text = await cachedText(
       kv,
       `grounding:lookup:v1:${JSON.stringify({ state, keyword, max })}`,
       cfg.cacheTtlSeconds.lookup,
@@ -110,10 +129,11 @@ export async function getLiveMatches(kv: KVNamespaceLike | undefined, message: s
         const p: Record<string, unknown> = { ...params };
         if (keyword) p.kw = keyword.split(/\s+/).map((t) => `*${t}*`).join(' ');
 
-        // Public projection only. Slice/count use the same active-scoped filter.
+        // Public projection only. `slug/images/make/model` are for tiles (never
+        // rendered into the prompt). Slice/count use the same active-scoped filter.
         const scoped = `${filter} && status == "active"${kwClause}`;
         const projection = `{
-          title, price, currency, slug,
+          title, price, currency, slug, images, make, model,
           "bodyType": vehicleSpecs.bodyType,
           "colour": vehicleSpecs.colour,
           "fuelType": vehicleSpecs.fuelType,
@@ -128,9 +148,11 @@ export async function getLiveMatches(kv: KVNamespaceLike | undefined, message: s
         }`;
 
         const res = await client.fetch<{ items: MatchRow[]; total: number }>(query, p);
+        rows = res?.items ?? [];
         return renderMatches(res?.items ?? [], res?.total ?? 0, max);
       },
     );
+    return { text, rows };
   } catch (err) {
     console.error('[grounding] Live lookup query failed', err);
     return null;

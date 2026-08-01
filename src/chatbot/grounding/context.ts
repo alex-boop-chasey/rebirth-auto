@@ -15,7 +15,7 @@
 import { client } from '../../sanity/lib/client';
 import { getDealerConfig } from '../../config/dealer';
 import { formatPrice } from '../../lib/listing';
-import { parseFilters, buildListingsFilter, activeChips } from '../../lib/listings-query';
+import { parseFilters, buildListingsFilter, activeChips, type FilterState } from '../../lib/listings-query';
 import { cachedText } from './cache';
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
@@ -26,6 +26,12 @@ interface FocusRow {
   price?: number;
   currency?: string;
   status?: string;
+  // Card-only fields (public projection): never rendered into the prompt text —
+  // used solely to build clickable tiles server-side in core.ts.
+  slug?: { current?: string };
+  images?: unknown[];
+  make?: string;
+  model?: string;
   bodyType?: string;
   colour?: string;
   fuelType?: string;
@@ -38,10 +44,20 @@ interface FocusRow {
   seatCount?: number;
 }
 
-// Public projection only — no dealerNotes, no images, no prose. Mirrors the
-// shape lookup.ts renders, plus `status` so a sold vehicle reads honestly.
+/** What a resolved focus contributes: the prompt text, the raw public rows (for
+ *  tiles), and — for a `search` context — the filter state on screen (for a
+ *  "See all …" action). `filterState` is `null` for `listing`/`compare`. */
+export interface FocusResult {
+  text: string;
+  rows: FocusRow[];
+  filterState: FilterState | null;
+}
+
+// Public projection only — no dealerNotes, no prose. `slug/images/make/model` are
+// selected for tile rendering (never rendered into the prompt text); `status` so a
+// sold vehicle reads honestly.
 const FOCUS_PROJECTION = `{
-  _id, title, price, currency, status,
+  _id, title, price, currency, status, slug, images, make, model,
   "bodyType": vehicleSpecs.bodyType,
   "colour": vehicleSpecs.colour,
   "fuelType": vehicleSpecs.fuelType,
@@ -135,7 +151,7 @@ function renderSearchFocus(rows: FocusRow[], total: number, summary: string, max
 export async function resolveFocus(
   kv: KVNamespaceLike | undefined,
   context: ConversationContext,
-): Promise<string | null> {
+): Promise<FocusResult | null> {
   const cfg = getDealerConfig().chat.context;
   if (!cfg.enabled) return null;
   if (!cfg.allowedKinds.includes(context.kind)) return null;
@@ -150,12 +166,18 @@ export async function resolveFocus(
     const ref = refs[0];
     const max = getDealerConfig().chat.grounding.lookup.maxListings;
     try {
+      // Parsed OUTSIDE the text cache so the filter state (for the "See all …"
+      // action) is always available regardless of KV cache state.
+      const state = parseFilters(new URLSearchParams(ref));
+      // The raw rows are captured from the (cached) producer for tile building;
+      // on a rare KV cache HIT the producer is skipped and rows stay empty, so
+      // tiles are simply omitted that turn (additive/optional — never faked).
+      let rows: FocusRow[] = [];
       const text = await cachedText(
         kv,
         `grounding:focus:v1:search:${ref}`,
         cfg.cacheTtlSeconds,
         async () => {
-          const state = parseFilters(new URLSearchParams(ref));
           const summary = activeChips(state)
             .map((c) => `${c.label.toLowerCase()} ${c.value}`)
             .join(', ');
@@ -167,10 +189,12 @@ export async function resolveFocus(
             "total": count(*[${filter}])
           }`;
           const res = await client.fetch<{ items: FocusRow[]; total: number }>(query, params);
+          rows = res?.items ?? [];
           return renderSearchFocus(res?.items ?? [], res?.total ?? 0, summary, max);
         },
       );
-      return text || null;
+      if (!text) return null;
+      return { text, rows, filterState: state };
     } catch (err) {
       console.error('[grounding] Search focus resolution failed (omitting focus)', err);
       return null;
@@ -183,17 +207,20 @@ export async function resolveFocus(
   if (context.kind !== 'listing' && context.kind !== 'compare') return null;
 
   try {
+    let rows: FocusRow[] = [];
     const text = await cachedText(
       kv,
       `grounding:focus:v1:${context.kind}:${refs.join(',')}`,
       cfg.cacheTtlSeconds,
       async () => {
         const query = `*[_type == "listing" && _id in $ids]${FOCUS_PROJECTION}`;
-        const rows = await client.fetch<FocusRow[]>(query, { ids: refs });
-        return renderFocus(rows ?? [], context.kind);
+        const fetched = await client.fetch<FocusRow[]>(query, { ids: refs });
+        rows = fetched ?? [];
+        return renderFocus(fetched ?? [], context.kind);
       },
     );
-    return text || null;
+    if (!text) return null;
+    return { text, rows, filterState: null };
   } catch (err) {
     console.error('[grounding] Focus resolution failed (omitting focus)', err);
     return null;

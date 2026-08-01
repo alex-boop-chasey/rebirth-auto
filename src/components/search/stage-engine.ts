@@ -56,6 +56,14 @@ export interface FocusStageOptions {
    * the whole conversation stays stacked (scroll-back UX is a later phase).
    */
   retire?: boolean;
+  /**
+   * Layout mode. OPT-IN — defaults to `'stage'` (the cinematic receding-card
+   * carousel SearchDock/SmartSearch depend on — byte-for-byte unchanged). The
+   * chat widget passes `'thread'`: turns stack in NORMAL vertical document flow,
+   * newest at the BOTTOM, the container scrolls, and nothing recedes / blurs /
+   * translateZ's. Every card builder keeps working in both modes.
+   */
+  layout?: 'stage' | 'thread';
 }
 
 export interface FocusStage {
@@ -91,6 +99,13 @@ export interface FocusStage {
   addPinnedCard: (content: HTMLElement) => HTMLElement;
   /** Remove the pinned card (its content element is detached, not destroyed). */
   unpinCard: () => void;
+  /**
+   * Seat arbitrary ready content (listing tiles, an action-pill row) as a normal
+   * turn in the stack. Intended for THREAD mode — the host builds the DOM (it owns
+   * the price/image/link rules) and this just seats + scrolls it. In stage mode it
+   * still seats correctly; it simply also recedes like any other card.
+   */
+  addBlock: (content: HTMLElement) => HTMLElement;
 }
 
 export function createFocusStage(opts: FocusStageOptions): FocusStage {
@@ -103,6 +118,17 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     onReply,
   } = opts;
   const RETIRE = opts.retire !== false; // default true (SearchDock); chat passes false
+  // Layout mode. Default 'stage' → the cinematic path is byte-for-byte unchanged
+  // (SearchDock / SmartSearch). 'thread' → normal vertical flow, newest at bottom.
+  const THREAD = opts.layout === 'thread';
+  // In thread mode the column flows its cards and scrolls; the `.thread` marker
+  // switches stage.css from the absolute/receding model to document flow.
+  if (THREAD) column.classList.add('thread');
+  // Scroll the thread's scroll-parent to the newest card (thread mode only).
+  const scrollToBottom = () => {
+    const sc = column.parentElement;
+    if (sc) sc.scrollTop = sc.scrollHeight;
+  };
 
   // ================= The Focus Stage depth engine =================
   // Newest card = depth 0 (front, sharp, at the bottom). Older cards recede
@@ -145,6 +171,10 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
   };
 
   const layout = () => {
+    // Thread mode: no depth model — cards live in normal flow. Just keep the
+    // newest turn in view. (Every inline transform/filter is neutralised by the
+    // `.focus-stage.thread` CSS, so a stray value can never re-introduce recede.)
+    if (THREAD) { scrollToBottom(); return; }
     const n = turns.length;
     for (let i = 0; i < n; i++) {
       const el = turns[i];
@@ -176,6 +206,9 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
   // set a card's "just-born" state inline (inline styles beat CSS classes)
   const seatEnter = (turn: HTMLElement) => {
     turn.style.opacity = '0';
+    // Thread mode: a plain opacity fade-in — no translate/scale/blur (those are
+    // the carousel's language). CSS neutralises transform/filter here anyway.
+    if (THREAD) return;
     if (REDUCED_MOTION) {
       turn.style.transform = 'none';
       turn.style.filter = 'none';
@@ -187,6 +220,11 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
   // force reflow, then settle everyone into their depth on the next frame
   const birth = (turn: HTMLElement) => {
     void turn.offsetWidth;
+    // Thread mode: fade the new card in and keep it in view — no depth relayout.
+    if (THREAD) {
+      requestAnimationFrame(() => { turn.style.opacity = '1'; scrollToBottom(); });
+      return;
+    }
     requestAnimationFrame(() => requestAnimationFrame(layout));
   };
 
@@ -326,6 +364,15 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     // release the dots card from the depth model so real cards hold position
     const idx = turns.indexOf(typing);
     if (idx !== -1) turns.splice(idx, 1);
+    if (THREAD) {
+      // Thread mode: fade the dots out and append the reply below — no recede.
+      typing.style.transition = 'opacity 200ms linear';
+      typing.style.opacity = '0';
+      setTimeout(() => retire(typing), 220);
+      onReply?.();
+      appendRebi(d);
+      return;
+    }
     if (REDUCED_MOTION) {
       typing.style.transition = 'opacity 200ms linear';
       typing.style.opacity = '0';
@@ -503,6 +550,18 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     pinned = null;
   };
 
+  // Seat arbitrary host-built content (listing tiles, an action-pill row) as a
+  // normal turn. The host owns the markup (price/image/link rules live there); the
+  // engine just tracks + seats + scrolls it. `.turn.block` renders full-width with
+  // no avatar/bubble chrome (see stage.css thread rules).
+  const addBlock = (content: HTMLElement): HTMLElement => {
+    const turn = document.createElement('div');
+    turn.className = 'turn block';
+    turn.appendChild(content);
+    seatTurn(turn);
+    return turn;
+  };
+
   // Clear every card from the stack (turns[] + DOM) and reset the live region.
   const clearStack = () => {
     turns.splice(0, turns.length);
@@ -527,5 +586,6 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
     addActionCard,
     addPinnedCard,
     unpinCard,
+    addBlock,
   };
 }

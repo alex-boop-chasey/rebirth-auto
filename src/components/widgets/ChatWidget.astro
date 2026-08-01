@@ -26,12 +26,8 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   data-turnstile-key={turnstileSiteKey}
   data-stream="true"
 >
-  <!-- Soft feathered spotlight glow: sits BEHIND the floating bubbles/input and
-       ABOVE the greyed+blurred page, gently masking the busy background so the
-       cards read clearly. Fades in/out with the .reb-open state. -->
-  <div id="reb-glow" aria-hidden="true"></div>
-
-  <!-- Launcher bubble -->
+  <!-- Launcher — the demo's bottom-right pill: the living aurora orb bead + an
+       "Ask Rebi" label. Hides while the drawer is open (the drawer has its own ✕). -->
   <button
     id="reb-launcher"
     class="reb-launcher"
@@ -40,23 +36,16 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     aria-expanded="false"
     aria-controls="reb-panel"
   >
-    <!-- Rebi orb — faithful copy of the Experience Mode <Orb>
-         (src/components/experience-alt/ShowroomTour.tsx <Orb>): a filled circle
-         with a smaller centred circle at 0.34× its diameter. Copied, not imported,
-         so this widget stays self-contained. Recoloured for the WHITE launcher: a
-         BLACK main circle carrying the source's gentle breathe pulse, a white
-         centre dot inside it, and a slowly-spinning thin grey outer ring. Keeps the
-         `reb-ico-chat` class so rebi.css still swaps it for the ✕ when chat opens. -->
-    <span class="reb-ico-chat reb-orb" aria-hidden="true">
+    <!-- Rebi orb — the NFY "living aurora bead" mark: an aurora-gradient core with
+         a white centre dot, wrapped in a soft pulsing halo. Self-contained (copied,
+         not imported) so the widget carries its own mark. -->
+    <span class="reb-orb" aria-hidden="true">
       <span class="reb-orb-ring"></span>
       <span class="reb-orb-core">
         <span class="reb-orb-dot"></span>
       </span>
     </span>
-    <svg class="reb-ico-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <line x1="18" y1="6" x2="6" y2="18"></line>
-      <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
+    <span class="reb-launcher-txt">Ask Rebi</span>
     <span id="reb-badge" class="reb-badge" hidden aria-hidden="true"></span>
   </button>
 
@@ -69,8 +58,18 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     aria-label="Chat with Rebirth Auto"
     hidden
   >
-    <!-- Minimal floating controls (top-right of the stage) — no header bar/box. -->
+    <!-- Drawer header — orb + "Rebi" + live status, a "Full view" link to the
+         full-page Rebi surface, then minimise (chevron) and close (✕). -->
     <header class="reb-head">
+      <span class="reb-orb reb-head-orb" aria-hidden="true">
+        <span class="reb-orb-ring"></span>
+        <span class="reb-orb-core"><span class="reb-orb-dot"></span></span>
+      </span>
+      <div class="reb-head-titles">
+        <b>Rebi</b>
+        <div class="reb-status"><span class="reb-status-dot"></span> Online · your AI navigator</div>
+      </div>
+      <a href="/rebi" class="chip reb-fullview">Full view</a>
       <div class="reb-head-actions">
         <button id="reb-minimise" class="reb-close" type="button" aria-label="Minimise chat" title="Minimise">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -86,13 +85,12 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       </div>
     </header>
 
-    <!-- The shared Focus Stage: the conversation renders as receding focus cards
-         (identical to the homepage search bar), built entirely at runtime. The
-         card column carries NO aria-live (that would spam every reveal frame) — a
-         single visually-hidden polite region below announces each landed message
-         once. -->
-    <div class="reb-stage-viewport">
-      <div class="reb-card-column focus-stage" id="reb-column"></div>
+    <!-- Scrolling thread: the shared stage engine in THREAD mode stacks the
+         conversation top→bottom (newest at the bottom, no carousel/recede). The
+         thread carries NO aria-live (that would spam every reveal) — a single
+         visually-hidden polite region below announces each landed message once. -->
+    <div class="reb-thread">
+      <div class="focus-stage thread" id="reb-column"></div>
     </div>
     <p id="reb-live" class="reb-sr-only" aria-live="polite"></p>
 
@@ -216,9 +214,8 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
      The NFY "living aurora bead": a filled MAIN circle painted with the aurora
      gradient and a smaller white centre dot at 0.34× its diameter, wrapped in a
      soft blurred aurora halo. Structure kept from the Experience Mode <Orb>; only
-     recoloured to the NFY aurora skin. The `reb-ico-chat` class on the wrapper
-     lets rebi.css hide the orb on `.reb-open` and reveal the ✕ — open/close is
-     untouched. */
+     recoloured to the NFY aurora skin. The same mark is reused in the drawer
+     header (`.reb-head-orb`) beside "Rebi". */
   .reb-orb {
     position: relative;
     display: inline-flex;
@@ -320,6 +317,23 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
   import { createFocusStage } from '../search/stage-engine';
   // Rebi's message tones (Web Audio) — see ./rebi-sounds.ts.
   import { createRebiSounds } from './rebi-sounds';
+  // Shared AU price formatter (config-as-data locale/currency) — the same helper
+  // ListingCard uses, so in-thread tiles read prices identically to the grid.
+  import { formatPrice } from '../../lib/listing';
+
+  // Additive response fields (spec §6.1) — optional structured tiles + action
+  // pills on the JSON reply and the SSE `done` event. Rendered in-thread when
+  // present; absent/empty → nothing renders. PUBLIC PROJECTION ONLY (server-built).
+  type RebiCard = {
+    slug: string;
+    title: string;
+    imageUrl: string | null;
+    price: number;
+    currency: string;
+    specLine: string;
+    badge?: string;
+  };
+  type RebiAction = { label: string; href: string; icon?: string };
 
   const GREETING =
     "Hi! I'm Rebi, the Rebirth Auto assistant. Ask me about our vehicles, financing, servicing, or trade-ins — I'm happy to help.";
@@ -404,6 +418,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       live,
       reducedMotion: REDUCED_MOTION,
       retire: false,
+      // OPT-IN thread mode: the conversation renders as a normal top→bottom
+      // scrolling thread (newest at the bottom, no carousel/recede). Only the
+      // widget passes this — SearchDock/SmartSearch use the default 'stage' mode,
+      // so their cinematic path is byte-for-byte unchanged.
+      layout: 'thread',
       newSearchLabel: 'New chat',
       onNewSearch: () => newChat(),
       onReply: () => soundRebi(),
@@ -458,23 +477,55 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     // price — avoids contradicting live figures); `compare` frames the decision
     // without naming figures the server will supply on the first real reply.
     const buildOpening = (kind: string, title: string) => {
-      if (kind === 'compare') {
-        return 'Happy to help you compare these — what matters most: price, running costs, space, or features?';
+      switch (kind) {
+        case 'compare':
+          return 'Happy to help you compare these — what matters most: price, running costs, space, or features?';
+        // `search`: the SearchDock composes the whole opening (interpretation +
+        // optional clarifying question) and passes it in as `title`. Fall back to a
+        // generic line if it's empty.
+        case 'search':
+          return title ||
+            "Here are the matches — ask me anything about them, or tell me how to narrow things down.";
+        case 'listing':
+          return title
+            ? `Happy to help with the ${title} — want to know about its price, kilometres, features, or booking a look?`
+            : 'Happy to help with this vehicle — want to know about its price, kilometres, features, or booking a look?';
+        // ── Page-intent kinds (ref-less): prime Rebi from the intent alone. Each
+        //    opening is client-only (never sent to the server). Grounding still
+        //    resolves tiles/actions from context.{kind, refs:[]} on the reply. ──
+        case 'nav':
+          return 'Where would you like to go? Tell me what you\'re after and I\'ll take you straight there.';
+        case 'finance':
+          return 'Happy to help with finance — I can work out indicative repayments or point you to the right options. What are you looking at?';
+        case 'electric':
+          return 'Curious about going electric or hybrid? I can help you weigh range, running costs and charging, and show what\'s in stock.';
+        case 'test-drive':
+          return 'Let\'s get you behind the wheel — which vehicle would you like to test drive, and when suits you?';
+        case 'parts':
+          return 'After parts or service? Tell me what you need and I\'ll help you sort it or connect you with the right team.';
+        case 'offers':
+          return 'Here to help you find the current deals — what sort of vehicle or budget are you thinking?';
+        case 'careers':
+          return 'Interested in joining the team? I can point you to current roles and how to apply.';
+        case 'contact':
+          return 'Happy to help you get in touch — what do you need, and I\'ll get you to the right person?';
+        case 'sell':
+          return 'Looking to sell your car? Tell me a bit about it and I\'ll explain how it works.';
+        case 'fleet':
+          return 'Here to help with fleet or business enquiries — what are you after?';
+        case 'trade-in':
+          return 'Thinking about a trade-in? Tell me about your current car and what you\'re after next.';
+        default:
+          // Unknown kind → a sensible generic opening (never throw).
+          return 'Hi! I\'m Rebi — tell me what you\'re after and I\'ll help you find it or take you there.';
       }
-      // `search`: the SearchDock composes the whole opening (interpretation +
-      // optional clarifying question) and passes it in as `title`. Fall back to a
-      // generic line if it's empty.
-      if (kind === 'search') {
-        return title ||
-          "Here are the matches — ask me anything about them, or tell me how to narrow things down.";
-      }
-      return title
-        ? `Happy to help with the ${title} — want to know about its price, kilometres, features, or booking a look?`
-        : 'Happy to help with this vehicle — want to know about its price, kilometres, features, or booking a look?';
     };
 
+    // Prime the active context from a trigger. `refs` MAY be empty: page-intent
+    // kinds (finance, electric, …) carry a kind but no car ref, and the server
+    // simply drops empty refs and Rebi chats — the same path as the `reb:search`
+    // ref:'' case. Listing/compare naturally still carry their refs.
     const setActiveContext = (kind: string, refs: string[], title: string) => {
-      if (!refs.length) return;
       const k = kind || 'listing';
       activeContext = { kind: k, refs, opening: buildOpening(k, title) };
       try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
@@ -506,7 +557,11 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     };
 
 
-    const scroll = () => { log.scrollTop = log.scrollHeight; };
+    // Keep the newest turn in view. The scrolling container is the thread wrapper
+    // (the stage engine's column parent); streaming deltas mutate an existing card
+    // rather than seating a new turn, so the widget nudges the scroll each delta.
+    const threadEl = column.parentElement;
+    const scroll = () => { if (threadEl) threadEl.scrollTop = threadEl.scrollHeight; };
 
     // System notices → a centered, avatarless system card on the stage.
     const addSystem = (text: string) => {
@@ -535,6 +590,126 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     };
     const hideTyping = () => {
       if (typingCard) { stage.retire(typingCard); typingCard = null; }
+    };
+
+    // Inline stroke-icon set (mirrors the shared set the demo/actions reference).
+    // `action.icon` is a KEY into this fixed map — an unknown key yields no icon
+    // (never a fabricated glyph). Markup is trusted-static, so innerHTML is safe.
+    const REB_ICONS: Record<string, string> = {
+      calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h6"/>',
+      play: '<circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/>',
+      filter: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
+      bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+      phone: '<path d="M4 5a2 2 0 012-2h2l2 5-2 1a11 11 0 005 5l1-2 5 2v2a2 2 0 01-2 2A15 15 0 014 5z"/>',
+      car: '<path d="M5 11l1.5-4A2 2 0 018.4 6h7.2a2 2 0 011.9 1.3L19 11"/><path d="M4 11h16v5H4z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/>',
+      wrench: '<path d="M14 7a4 4 0 01-5 5l-6 6 2 2 6-6a4 4 0 005-5l-2 2-2-2 2-2z"/>',
+      tag: '<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.3"/>',
+      users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 5.5a3 3 0 010 5.5M21 20a6 6 0 00-4-5.6"/>',
+      doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+      leaf: '<path d="M11 20A7 7 0 014 13c0-5 5-9 15-10 1 10-3 16-8 17z"/><path d="M9 14c2-3 5-4 8-5"/>',
+      plug: '<path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 01-10 0z"/><path d="M12 16v6"/>',
+      briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 13h18"/>',
+      mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+      map: '<path d="M9 3l6 2 5-2v16l-5 2-6-2-5 2V5z"/><path d="M9 3v16M15 5v16"/>',
+      truck: '<path d="M3 6h11v9H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/>',
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
+      arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+      chat: '<path d="M4 5h16v11H9l-4 3v-3H4z"/>',
+    };
+    const rebIcon = (name: string, size = 14): string => {
+      const body = REB_ICONS[name];
+      if (!body) return '';
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+    };
+
+    // Render the response's optional listing tiles + action pills IN-THREAD, after
+    // the Rebi turn. Server-derived text goes in via textContent (no injection);
+    // a null image shows a neutral placeholder swatch (never a fabricated photo);
+    // a card without a slug is dropped (determinism). Nothing renders when absent.
+    const renderCardsAndActions = (cards?: RebiCard[], actions?: RebiAction[]) => {
+      const validCards = (Array.isArray(cards) ? cards : [])
+        .filter((c) => c && typeof c.slug === 'string' && c.slug.trim())
+        .slice(0, 4);
+      if (validCards.length) {
+        const wrap = document.createElement('div');
+        wrap.className = 'reb-tiles';
+        validCards.forEach((c) => {
+          const a = document.createElement('a');
+          a.className = 'reb-tile';
+          a.href = `/listings/${encodeURIComponent(c.slug)}`;
+          // Real image → <img>; null → a neutral swatch (never a fabricated photo).
+          let thumb: HTMLElement;
+          if (c.imageUrl) {
+            const img = document.createElement('img');
+            img.className = 'reb-tile-thumb';
+            img.src = c.imageUrl;
+            img.alt = '';
+            img.loading = 'lazy';
+            img.width = 78; img.height = 54;
+            thumb = img;
+          } else {
+            thumb = document.createElement('span');
+            thumb.className = 'reb-tile-thumb';
+          }
+          const body = document.createElement('span');
+          body.className = 'reb-tile-body';
+          if (c.badge) {
+            const top = document.createElement('span');
+            top.className = 'reb-tile-top';
+            const chip = document.createElement('span');
+            chip.className = 'chip chip-ai';
+            chip.textContent = c.badge;
+            top.appendChild(chip);
+            body.appendChild(top);
+          }
+          const title = document.createElement('b');
+          title.className = 'reb-tile-title';
+          title.textContent = c.title || '';
+          const spec = document.createElement('span');
+          spec.className = 'reb-tile-spec';
+          spec.textContent = c.specLine || '';
+          body.appendChild(title);
+          body.appendChild(spec);
+          const price = document.createElement('span');
+          price.className = 'reb-tile-price';
+          const pb = document.createElement('b');
+          pb.textContent = formatPrice(c.price, c.currency);
+          const pl = document.createElement('span');
+          pl.textContent = 'drive away';
+          price.appendChild(pb);
+          price.appendChild(pl);
+          a.appendChild(thumb);
+          a.appendChild(body);
+          a.appendChild(price);
+          wrap.appendChild(a);
+        });
+        stage.addBlock(wrap);
+      }
+
+      const validActions = (Array.isArray(actions) ? actions : [])
+        .filter((x) => x && typeof x.href === 'string' && x.href.trim() && typeof x.label === 'string' && x.label.trim())
+        .slice(0, 5);
+      if (validActions.length) {
+        const row = document.createElement('div');
+        row.className = 'reb-acts';
+        validActions.forEach((x) => {
+          const a = document.createElement('a');
+          a.className = 'reb-act';
+          a.href = x.href;
+          const ic = x.icon ? rebIcon(x.icon) : '';
+          if (ic) {
+            const s = document.createElement('span');
+            s.innerHTML = ic; // fixed static key-map markup only
+            a.appendChild(s);
+          }
+          a.appendChild(document.createTextNode(x.label));
+          row.appendChild(a);
+        });
+        stage.addBlock(row);
+      }
+
+      if (validCards.length || validActions.length) scroll();
     };
 
     const serverRole = (r: ServerMsg['role']): WidgetRole =>
@@ -845,6 +1020,7 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         addBubble('assistant', format(data.reply), ts);
         soundRebi(); // assistant reply arrival tone
         save();
+        renderCardsAndActions(data.cards, data.actions); // in-thread tiles/actions (if any)
         if (data.resolved) showResolvedPrompt();
       } else if (data.error) {
         addBubble('error', escapeHtml(data.error));
@@ -883,6 +1059,9 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
           if (typeof evt.lastId === 'number') { lastId = Math.max(lastId, evt.lastId); seen.add(evt.lastId); }
           if (evt.status) status = evt.status;
           if (acc) { history.push({ role: 'assistant', content: acc, ts: Date.now() }); save(); soundRebi(); } // reply-complete tone (once, not per-delta)
+          // Tiles/actions arrive on the done event (after the inventory buffer, so
+          // they don't flash before the text settles) — render them in-thread.
+          renderCardsAndActions(evt.cards, evt.actions);
           if (evt.resolved) showResolvedPrompt();
         } else if (evt.type === 'escalate') {
           finished = true;
@@ -1206,7 +1385,6 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
     };
 
     const openPanel = () => {
-      document.body.classList.add('reb-dreaming');
       clearGreetingTimer(); // clear any stale timer if openPanel is re-entered before it fired
       panel.hidden = false;
       root.classList.add('reb-open');
@@ -1223,7 +1401,6 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       setTimeout(() => input.focus(), 50);
     };
     const closePanel = () => {
-      document.body.classList.remove('reb-dreaming');
       // Cancel a pending typing→greeting reveal and clear any lingering dots so we
       // never leave a dangling indicator or pop a greeting into the closed panel.
       clearGreetingTimer();
@@ -1271,7 +1448,10 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
         .map((r) => r.trim())
         .filter(Boolean);
       const title = trigger.getAttribute('data-rebi-title') || '';
-      if (!refs.length) return;
+      // ANY data-rebi-open trigger opens the drawer — refs are OPTIONAL. A
+      // page-intent trigger (e.g. data-rebi-kind="finance") carries a kind but no
+      // car ref; we prime the greeting from the kind alone and send
+      // context:{kind, refs:[]} (the server drops empty refs and Rebi just chats).
       setActiveContext(kind, refs, title);
       if (panel.hidden) {
         openPanel(); // renders the primed greeting via currentGreeting()

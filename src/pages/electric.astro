@@ -109,7 +109,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin)
             </div>
             <p style="font-size:14.5px; line-height:1.55">Tell Rebi how far you drive and where you park, and it will weigh up whether an EV or hybrid suits you — then point you at the matching stock.</p>
           </div>
-          <button class="btn btn-primary btn-sm" data-rebi-open data-rebi-kind="nav" style="cursor:pointer; white-space:nowrap">
+          <button class="btn btn-primary btn-sm" data-rebi-open data-rebi-kind="electric" style="cursor:pointer; white-space:nowrap">
             <span class="mr-1.5 inline-flex" set:html={icon('spark', 14)} /> Is an EV right for my drive?
           </button>
         </div>

@@ -234,3 +234,32 @@ older brief. Decisions:
 - The concept/demo pages under `src/pages/concepts*` — reference only; do not ship changes there.
 </content>
 </invoke>
+
+## Impl notes — A (backend)
+
+Shipped, additive & optional (omitted when empty), deterministic, no new LLM call, public-projection
+only. Attached to the assistant turn on BOTH the JSON reply and the streaming `done` event (after the
+buffered reply text, so tiles never flash early):
+
+```ts
+cards?: RebiCard[];      // ≤ 4, de-duped by slug   — interface exported from src/chatbot/core.ts
+actions?: RebiAction[];  // ≤ 5, de-duped by href   — interface exported from src/lib/rebi-actions.ts
+
+interface RebiCard { slug: string; title: string; imageUrl: string | null; price: number;
+                     currency: string; specLine: string; badge?: string; }
+interface RebiAction { label: string; href: string; icon?: string; }
+```
+
+- `imageUrl` = `urlFor(images[0]).width(160).height(112).fit('crop').auto('format').url()` (or `null`).
+- `title` prefers `year make model`, falls back to the listing title. `specLine` = `seats · Fuel · DRIVE`
+  (fallback: body type). `badge` = condition only.
+- Tiles come from the resolved grounding rows (`GroundedPrompt.cardRows`, public projection incl.
+  `slug, images, make, model`): the primed focus rows when a listing/compare/search context is present,
+  else the live-lookup matches. Determinism: a row with no `slug` or no finite `price` is dropped with a
+  `console.warn('[rebi-cards] WARN …')`; an unresolvable image → `imageUrl: null`. Never fabricated.
+- Actions (`src/lib/rebi-actions.ts` → `deriveRebiActions({ message, filterState, dealerConfig })`):
+  one "See all …" filter link via `hrefFor(state)` (from the primed search grid `GroundedPrompt.filterState`
+  or a message-level `extractFilters`), plus keyword→fixed destinations resolved in `navHubs`/`footerColumns`
+  and gated by `dealerConfig.<feature>.enabled`. Ambiguous/disabled → omitted (WARN on nav-config drift).
+- Only on the normal reply path — never on escalation/human-active/contact-only/both-failed turns. Request
+  shape, SSE `delta` events, `/api/chat-poll`, prompt text, and the privacy firewall are unchanged.

@@ -190,3 +190,62 @@
   .focus-stage .dots i { animation: none; opacity: 0.6; }
   .focus-stage .newsearch { transition: none; }
 }
+
+/* ================= Thread layout — OPT-IN via layout:'thread' =================
+   The chat widget passes `layout:'thread'`, which adds `.thread` to the column.
+   SearchDock / SmartSearch never do, so their cinematic receding-carousel path
+   above is entirely untouched. Here every card lives in NORMAL vertical document
+   flow — newest at the BOTTOM, the container scrolls, nothing recedes / blurs /
+   translateZ's. Inline transform/filter values the engine may still set are hard
+   -neutralised so a stray value can never re-introduce the 3D depth model. */
+.focus-stage.thread {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  perspective: none;
+}
+.focus-stage.thread .turn {
+  position: relative;
+  left: auto; right: auto; bottom: auto;
+  transform: none !important;
+  filter: none !important;
+  transition: opacity 240ms ease;
+  will-change: auto;
+}
+/* Rebi/Team turns read as the demo: a name row (orb bead + label) then the reply
+   card. The big receding-stage robot/person avatar is dropped in the narrow drawer;
+   a small aurora/teal bead before the name stands in for the orb. */
+.focus-stage.thread .turn.rebi .avatar,
+.focus-stage.thread .turn.human .avatar { display: none; }
+.focus-stage.thread .turn.rebi .card,
+.focus-stage.thread .turn.human .card,
+.focus-stage.thread .turn.system .card { max-width: 100%; width: 100%; gap: 0; }
+.focus-stage.thread .turn.rebi .name::before,
+.focus-stage.thread .turn.human .name::before {
+  content: ""; display: inline-block; width: 0.8rem; height: 0.8rem;
+  border-radius: 9999px; background: var(--rebi-grad, var(--aurora));
+  vertical-align: -1px; margin-right: 0.4rem;
+}
+.focus-stage.thread .turn.human .name::before {
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+}
+/* Rebi/Team bubbles: flat demo-style summary card (no drop shadow / float). */
+.focus-stage.thread .turn.rebi .bubble,
+.focus-stage.thread .turn.human .bubble {
+  box-shadow: none;
+  border-radius: 0.9rem;
+  font-size: 0.9rem;
+}
+.focus-stage.thread .turn.rebi .name,
+.focus-stage.thread .turn.human .name { font-size: 0.7rem; }
+/* User bubble: right-aligned dark, demo geometry. */
+.focus-stage.thread .turn.user .card { max-width: 82%; }
+.focus-stage.thread .turn.user .bubble {
+  border-radius: 15px 15px 4px 15px;
+  box-shadow: none;
+  font-size: 0.88rem;
+}
+.focus-stage.thread .turn.system .bubble { font-size: 0.82rem; }
+/* Host-built blocks (listing tiles, action-pill rows) span the thread width. */
+.focus-stage.thread .turn.block { display: block; }

@@ -169,7 +169,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin)
               <b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b>
             </div>
             <p style="font-size:13.5px">Not sure a part fits? Ask Rebi to check it against your vehicle before you enquire.</p>
-            <button class="btn btn-ghost btn-sm" data-rebi-open data-rebi-kind="nav" style="margin-top:10px; cursor:pointer">
+            <button class="btn btn-ghost btn-sm" data-rebi-open data-rebi-kind="parts" style="margin-top:10px; cursor:pointer">
               <span class="mr-1.5 inline-flex" set:html={icon('spark', 14)} /> Check a part for my vehicle
             </button>
           </div>

@@ -15,10 +15,12 @@
  */
 
 import { buildSystemPrompt } from './system-prompt';
-import { buildGroundedSystemPrompt } from './grounding';
+import { buildGroundedSystemPrompt, type CardRow } from './grounding';
 import { scrubReply, type GroundingFacts } from './grounding/verify';
 import { parseContext, type ConversationContext } from './context';
 import { getDealerConfig } from '../config/dealer';
+import { urlFor } from '../sanity/lib/image';
+import { deriveRebiActions, type RebiAction } from '../lib/rebi-actions';
 import {
   TEMPERATURE,
   MAX_TOKENS,
@@ -103,7 +105,113 @@ export interface ChatMessage {
   content: string;
 }
 
+/**
+ * A clickable listing tile attached to an assistant turn. PUBLIC PROJECTION ONLY —
+ * built from `LISTING_FIELDS`-level fields (never `dealerNotes`, cost, or floor).
+ * Additive/optional: omitted entirely when nothing confidently resolves.
+ */
+export interface RebiCard {
+  /** Slug → href `/listings/${slug}`. */
+  slug: string;
+  /** "2022 Honda CR-V" (year+make+model), falling back to the listing title. */
+  title: string;
+  /** A real listing image, or `null` when none resolves. */
+  imageUrl: string | null;
+  price: number;
+  currency: string;
+  /** Public specs only, e.g. "7 seats · Petrol · AWD". */
+  specLine: string;
+  /** Public tag (condition) — never a private flag. */
+  badge?: string;
+}
+
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
+
+function titleCaseWord(code: string): string {
+  return code.charAt(0).toUpperCase() + code.slice(1);
+}
+
+/** Public spec line for a tile — seats · fuel · drive (fallback: body type). */
+function buildSpecLine(r: CardRow): string {
+  const parts: string[] = [];
+  if (typeof r.seatCount === 'number') parts.push(`${r.seatCount} seats`);
+  if (r.fuelType) parts.push(titleCaseWord(r.fuelType));
+  if (r.driveType) parts.push(r.driveType.toUpperCase());
+  if (!parts.length && r.bodyType) parts.push(titleCaseWord(r.bodyType));
+  return parts.join(' · ');
+}
+
+/**
+ * Map resolved grounding rows → clickable tiles, PUBLIC-PROJECTION only. Cap 4,
+ * de-dupe by slug. Determinism: a row with no slug — or no finite price — is
+ * DROPPED with a WARN (never fabricated); a row whose image won't resolve keeps
+ * `imageUrl: null`. Never invents a car, price, image, slug, or link.
+ */
+function buildRebiCards(rows: CardRow[] | undefined): RebiCard[] {
+  if (!rows?.length) return [];
+  const currencyFallback = getDealerConfig().locale.currency;
+  const out: RebiCard[] = [];
+  const seen = new Set<string>();
+
+  for (const r of rows) {
+    if (out.length >= 4) break;
+    const slug = r.slug?.current?.trim();
+    if (!slug) {
+      console.warn('[rebi-cards] WARN dropped row — no slug', r.title ?? '(untitled)');
+      continue;
+    }
+    if (seen.has(slug)) continue;
+    if (typeof r.price !== 'number' || !Number.isFinite(r.price)) {
+      console.warn('[rebi-cards] WARN dropped row — no price', slug);
+      continue;
+    }
+    seen.add(slug);
+
+    let imageUrl: string | null = null;
+    const img = r.images?.[0];
+    if (img) {
+      try {
+        imageUrl = urlFor(img as Parameters<typeof urlFor>[0])
+          .width(160)
+          .height(112)
+          .fit('crop')
+          .auto('format')
+          .url();
+      } catch (err) {
+        console.warn('[rebi-cards] WARN unresolved image (imageUrl null)', slug, err);
+        imageUrl = null;
+      }
+    }
+
+    const title =
+      r.make && r.model
+        ? `${r.year ? `${r.year} ` : ''}${r.make} ${r.model}`.trim()
+        : (r.title ?? 'Vehicle');
+
+    out.push({
+      slug,
+      title,
+      imageUrl,
+      price: r.price,
+      currency: r.currency ?? currencyFallback,
+      specLine: buildSpecLine(r),
+      ...(r.condition ? { badge: titleCaseWord(r.condition) } : {}),
+    });
+  }
+
+  return out;
+}
+
+/** Spread-in of the additive tile/action fields — each omitted when empty. */
+function cardActionFields(
+  cards: RebiCard[],
+  actions: RebiAction[],
+): { cards?: RebiCard[]; actions?: RebiAction[] } {
+  const extra: { cards?: RebiCard[]; actions?: RebiAction[] } = {};
+  if (cards.length) extra.cards = cards;
+  if (actions.length) extra.actions = actions;
+  return extra;
+}
 
 function json(body: unknown, status = 200, headers?: Record<string, string>): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...JSON_HEADERS, ...headers } });
@@ -366,6 +474,14 @@ interface StreamOpts {
    * Pure-chat turns leave this false and stream live, scrubbed at `done`.
    */
   bufferInventory?: boolean;
+  /**
+   * Additive, deterministic clickable listing tiles + best-guess action buttons
+   * for this turn (public projection only, no new LLM call). Attached to the
+   * `done` event AFTER the buffered reply, so tiles never flash before the text.
+   * Empty arrays → the fields are simply omitted.
+   */
+  cards?: RebiCard[];
+  actions?: RebiAction[];
 }
 
 /**
@@ -378,7 +494,7 @@ interface StreamOpts {
  * Events: `delta` | `done` | `escalate` | `error`.
  */
 function streamChatResponse(opts: StreamOpts): Response {
-  const { messages, env, db, sessionId, ip, visitorText, scrub, bufferInventory } = opts;
+  const { messages, env, db, sessionId, ip, visitorText, scrub, bufferInventory, cards = [], actions = [] } = opts;
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -419,7 +535,9 @@ function streamChatResponse(opts: StreamOpts): Response {
           send({ type: 'delta', text: clean, replace: true });
         }
         const lastId = db && sessionId ? await persistExchange(db, sessionId, visitorText, clean, modelUsed) : undefined;
-        send({ type: 'done', sessionId, status: 'ai_active', lastId, resolved });
+        // Tiles/actions ride the terminal `done` event only — AFTER the buffered
+        // reply text — so they never flash before the answer. Omitted when empty.
+        send({ type: 'done', sessionId, status: 'ai_active', lastId, resolved, ...cardActionFields(cards, actions) });
       };
 
       try {
@@ -727,6 +845,10 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   // brands present in the grounding). null when grounding produced nothing → no
   // scrub (the static prompt carries no live inventory, so nothing to firewall).
   let groundingFacts: GroundingFacts | null = null;
+  // Raw resolved rows (public projection) + any on-screen filter state, carried
+  // out of grounding to build tiles/actions below (additive, deterministic).
+  let cardRows: CardRow[] = [];
+  let turnFilterState: Parameters<typeof deriveRebiActions>[0]['filterState'] = null;
   try {
     const grounded = await buildGroundedSystemPrompt(env.GROUNDING_KV, latestUserMessage.content, context, {
       db,
@@ -735,10 +857,24 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
     if (grounded) {
       groundedSystemMessage = { role: 'system' as const, content: grounded.prompt };
       groundingFacts = grounded.facts;
+      cardRows = grounded.cardRows;
+      turnFilterState = grounded.filterState;
     }
   } catch (err) {
     console.error('[chatbot] Grounding failed (using static prompt)', err);
   }
+
+  // Additive, deterministic reply enrichment (NO extra LLM call): clickable
+  // listing tiles from the resolved public rows, and best-guess action buttons
+  // from the message + any on-screen filter state. Both public-projection only;
+  // empty when nothing confidently resolves. Attached to the NORMAL reply path
+  // only (JSON reply + streaming `done`) — never to escalation/handoff turns.
+  const cards = buildRebiCards(cardRows);
+  const actions = deriveRebiActions({
+    message: latestUserMessage.content,
+    filterState: turnFilterState,
+    dealerConfig: getDealerConfig(),
+  });
 
   // Record this turn as a `chat` journey event (fail-open, best-effort). Done
   // AFTER the prompt is built so the current turn is never folded into its own
@@ -783,6 +919,8 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
         visitorText: latestUserMessage.content,
         scrub,
         bufferInventory,
+        cards,
+        actions,
       }),
       setCookie
     );
@@ -833,7 +971,10 @@ export async function handleChatRequest(request: Request, env: ChatEnv): Promise
   if (scrub) reply = scrub(reply).text;
 
   const lastId = db && sessionId ? await persistExchange(db, sessionId, latestUserMessage.content, reply, result.model) : undefined;
-  return withCookie(json({ reply, sessionId, status: 'ai_active', lastId, resolved }), setCookie);
+  return withCookie(
+    json({ reply, sessionId, status: 'ai_active', lastId, resolved, ...cardActionFields(cards, actions) }),
+    setCookie
+  );
 }
 
 /* ==================================================================
