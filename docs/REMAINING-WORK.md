@@ -47,8 +47,22 @@ presented for the **owner's sign-off before any production code** (Phase 2).
 - **Owner sign-off needed** on: the winner/synthesis, the budget-flag-vs-guess tradeoff (policy r6), and
   the family-trap two-line config change — before Phase 2 writes any production code.
 
-**Phase 2 (after approval only):** wire the planner into `/api/search` (regex fallback preserved),
-apply the config change, keep the harness as a permanent test, record the decision in `DECISIONS.md`.
+**Phase 2 — SHIPPED locally ✅ (owner-approved; commit `d17378c`):**
+- `src/ai/search/query-planner.ts` — `SearchPlan` schema + config-interpolated prompt + `planSearch()`
+  (structured tier, 7s timeout, null-on-failure) + response mapping.
+- `/api/search` Stage 0: planner **primary**, gated on `planner.enabled && OPENROUTER_API_KEY &&
+  !refine`; regex pre-pass + legacy Stage-2 chain preserved as the fallback (byte-identical when the
+  planner is skipped — verified with no key: three `/api/search` queries return 200 via fallback).
+- Config: `familySeats [7,8]→[5]`; family concept rewritten; first-car/economical concepts no longer
+  invent a `priceMax` (approved flag-never-guess); new `chat.search.planner` kill-switch.
+- `astro check` 0 errors; eval harness 15/15; `SearchResponse` gains additive `inferences?`/`keyword?`.
+- **Owner actions still needed:** (a) apply the drafted **Decision 8** to `DECISIONS.md`
+  (`docs/briefs/search-planner-decision-draft.md` — `/auto` may not edit `DECISIONS.md` itself);
+  (b) push the branch (Phase 2 was local-only per the ticket); (c) add `OPENROUTER_API_KEY` and run the
+  harness live to measure real emit reliability before trusting the planner in the demo.
+- **Follow-up tickets (out of this ticket's scope):** keyword→grid wiring (R1 gap); the SmartSearch
+  inference-**chip** UI (render/remove via `applyFilterUrl`); optional concrete-query short-circuit if
+  per-search LLM cost bites.
 
 ---
 
