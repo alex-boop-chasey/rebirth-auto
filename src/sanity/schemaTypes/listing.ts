@@ -238,6 +238,68 @@ export const listing = defineType({
       ],
     }),
 
+    // AI-derived shopper-facing attributes. Enrichment computes these from the
+    // PUBLIC projection only (never dealerNotes/cost/floor — Decision 6); they
+    // then power soft-query search/ranking. Fixed enums (URL filter codes),
+    // mirroring the `vehicleSpecs` idiom. The dealer can edit any value to
+    // override the AI — these are NOT hard `readOnly`.
+    defineField({
+      name: 'aiAttributes',
+      title: 'AI attributes',
+      type: 'object',
+      group: 'details',
+      description:
+        'AI-derived shopper attributes used by search & recommendations. Generated ' +
+        'from public vehicle data — the dealer can EDIT any value here to override ' +
+        'the AI. Leave blank to let enrichment fill it in.',
+      options: { collapsible: false },
+      fields: [
+        defineField({
+          name: 'runningCost',
+          title: 'Running cost',
+          type: 'string',
+          description: 'AI-derived rough cost to run. Editable to override.',
+          options: {
+            list: [
+              { title: 'Low', value: 'low' },
+              { title: 'Medium', value: 'medium' },
+              { title: 'High', value: 'high' },
+            ],
+          },
+        }),
+        defineField({
+          name: 'usageFit',
+          title: 'Usage fit',
+          type: 'array',
+          of: [defineArrayMember({ type: 'string' })],
+          description: 'AI-derived best-fit use cases (multi-select). Editable to override.',
+          options: {
+            list: [
+              { title: 'City', value: 'city' },
+              { title: 'Family', value: 'family' },
+              { title: 'Highway', value: 'highway' },
+              { title: 'Towing', value: 'towing' },
+              { title: 'Tradie', value: 'tradie' },
+              { title: 'First car', value: 'first-car' },
+            ],
+          },
+        }),
+        defineField({
+          name: 'sizeClass',
+          title: 'Size class',
+          type: 'string',
+          description: 'AI-derived overall size class. Editable to override.',
+          options: {
+            list: [
+              { title: 'Compact', value: 'compact' },
+              { title: 'Medium', value: 'medium' },
+              { title: 'Large', value: 'large' },
+            ],
+          },
+        }),
+      ],
+    }),
+
     // Escape hatch: rare one-offs only. The standard specs now have their own
     // typed fields above. Field KEY stays `details` (renaming would need a data
     // migration); sub-field shape is unchanged so existing data keeps rendering.
