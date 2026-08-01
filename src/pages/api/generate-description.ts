@@ -44,6 +44,7 @@ import {
   type DetailFact,
 } from '~/lib/generate-description/prompt';
 import { plainTextToPortableText, portableTextToPlainText } from '~/lib/portable-text';
+import { looksLikeReasoning } from '~/lib/generate-description/looks-like-reasoning';
 import { DESCRIPTION_TONES, type DescriptionTone } from '~/config/dealer';
 import { checkRateLimit } from '~/lib/rate-limit';
 import { urlFor } from '~/sanity/lib/image';
@@ -269,9 +270,26 @@ export const POST: APIRoute = async ({ request }) => {
     { role: 'user', content: userContent },
   ];
 
+  // The three description actions produce buyer-facing PROSE that we validate
+  // against reasoning-leak; selling points are a structured list and are parsed,
+  // not validated for scratchpad.
+  const producesProse = action === 'describe' || action === 'tone' || action === 'tighten';
+
   // One-shot generation on the `writing` tier (prose, not structured JSON).
   try {
-    const { content } = await generate({ capability: 'writing', messages });
+    let { content } = await generate({ capability: 'writing', messages });
+
+    // Reasoning-leak guard: the `writing` primary can leak scratchpad
+    // ("Paragraph 1:", word counts, "Let me…") into the copy despite the prompt's
+    // OUTPUT CONTRACT. Deterministic string check — no extra LLM call. On a leak,
+    // retry ONCE with the same args; if it still leaks, degrade gracefully at 200
+    // rather than ever publishing the scratchpad.
+    if (producesProse && looksLikeReasoning(content)) {
+      ({ content } = await generate({ capability: 'writing', messages }));
+      if (looksLikeReasoning(content)) {
+        return json({ error: 'Could not generate a clean description — please try again.' }, 200);
+      }
+    }
 
     // Selling points return a string[]; the three description actions return
     // Portable Text under the SAME `description` key the component already reads.
