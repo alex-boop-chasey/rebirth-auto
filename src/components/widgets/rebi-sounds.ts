@@ -15,15 +15,19 @@ type Note = { f: number; type?: OscillatorType; t?: number; dur?: number; gain?:
 
 export type RebiSounds = { soundSend: () => void; soundRebi: () => void };
 
-export function createRebiSounds(): RebiSounds {
-  const speakerBtn = document.getElementById('reb-speaker');
-  const MUTE_KEY = 'rebi:chat:muted';
+/**
+ * Pure Web-Audio tone engine — NO DOM, NO mute, NO persistence. Owns only the
+ * lazily-created AudioContext and the two synthesised tones. `unlock()` creates/
+ * resumes the AudioContext on a user gesture. Muting is the caller's concern.
+ */
+export interface ToneEngine {
+  soundSend: () => void;
+  soundRebi: () => void;
+  unlock: () => void; // = ac(): create/resume the AudioContext on a user gesture
+}
+
+export function createToneEngine(): ToneEngine {
   let audioCtx: AudioContext | null = null;
-  let muted = false;
-  try {
-    const stored = localStorage.getItem(MUTE_KEY);
-    if (stored !== null) muted = stored === '1';
-  } catch { /* private mode / no storage — default unmuted */ }
 
   const ac = (): AudioContext | null => {
     if (!audioCtx) {
@@ -34,7 +38,6 @@ export function createRebiSounds(): RebiSounds {
     return audioCtx;
   };
   const blip = (notes: Note[]) => {
-    if (muted) return; // user mute
     let ctx: AudioContext | null = null;
     try { ctx = ac(); } catch { ctx = null; }
     if (!ctx) return;
@@ -69,6 +72,23 @@ export function createRebiSounds(): RebiSounds {
     { f: 659.25, type: 'sine', t: 0.0, dur: 0.20, gain: 0.11 }, // E5
     { f: 987.77, type: 'sine', t: 0.12, dur: 0.24, gain: 0.10 }, // B5 (lifts a fifth)
   ]);
+  const unlock = () => { ac(); };
+
+  return { soundSend, soundRebi, unlock };
+}
+
+export function createRebiSounds(): RebiSounds {
+  const speakerBtn = document.getElementById('reb-speaker');
+  const MUTE_KEY = 'rebi:chat:muted';
+  let muted = false;
+  try {
+    const stored = localStorage.getItem(MUTE_KEY);
+    if (stored !== null) muted = stored === '1';
+  } catch { /* private mode / no storage — default unmuted */ }
+
+  const engine = createToneEngine();
+  const soundSend = () => { if (muted) return; engine.soundSend(); };
+  const soundRebi = () => { if (muted) return; engine.soundRebi(); };
 
   const reflectMute = () => {
     if (!speakerBtn) return;
@@ -83,7 +103,7 @@ export function createRebiSounds(): RebiSounds {
     muted = !muted;
     try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch { /* ignore */ }
     reflectMute();
-    if (!muted) { ac(); soundRebi(); } // this click is a gesture: unlock + preview
+    if (!muted) { engine.unlock(); engine.soundRebi(); } // this click is a gesture: unlock + preview
   });
 
   return { soundSend, soundRebi };
