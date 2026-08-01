@@ -60,13 +60,14 @@ const [savedSearches, bookings] = await Promise.all([
 /**
  * Build the inventory re-run href for a saved filter query. The stored `query`
  * is the canonical serialized filter string (serializeFilters → URLSearchParams
- * .toString()), which the inventory homepage parses via parseFilters(Astro.url
- * .searchParams) — so `/?<query>` is exactly the URL that reproduces the search.
+ * .toString()), which `/listings` parses via parseFilters(Astro.url.searchParams)
+ * — so `/listings?<query>` is exactly the URL that reproduces the search. Wave 1
+ * moved the grid off the home page to `/listings`; this mirrors LISTINGS_PATH.
  * (applyFilterUrl is client-only; this matches its query-param convention.)
  */
 function rerunHref(query: string): string {
   const qs = (query || '').trim();
-  return qs ? `/?${qs}#inventory` : '/#inventory';
+  return qs ? `/listings?${qs}` : '/listings';
 }
 
 /** Human summary of a saved query for link text when no label was stored. */
@@ -190,7 +191,7 @@ const title = `${copy.heading} — ${dealerConfig.identity.name}`;
                 Save a search from the inventory and get an email when new matches arrive.
               </p>
               <a
-                href="/#inventory"
+                href="/listings"
                 class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-ink underline decoration-indigo/40 underline-offset-4 transition hover:decoration-indigo"
               >
                 {copy.savedSearchesLabel}

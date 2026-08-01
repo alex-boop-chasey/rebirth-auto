@@ -12,7 +12,7 @@ import ListingCard from '../ListingCard.astro';
 import ActiveFilterChips from './ActiveFilterChips.astro';
 import { iconSvg } from '../../lib/listing';
 import type { Listing, PriceDrop } from '../../lib/listing';
-import { activeChips, totalPages, pageHref, type FilterState } from '../../lib/listings-query';
+import { activeChips, totalPages, pageHref, LISTINGS_PATH, type FilterState } from '../../lib/listings-query';
 import { dealerConfig } from '../../config/dealer';
 
 interface Props {
@@ -71,7 +71,7 @@ const pageLinkDisabled =
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
           <ActiveFilterChips chips={chips} />
           <a
-            href="/"
+            href={LISTINGS_PATH}
             data-filter-clear
             class="text-xs font-medium text-ink-soft underline-offset-2 transition hover:text-ink hover:underline"
           >
@@ -159,7 +159,7 @@ const pageLinkDisabled =
             : 'New arrivals land regularly — check back soon or get in touch.'}
         </p>
         {chips.length > 0 && (
-          <a href="/" data-filter-clear class="btn btn-primary mt-6">
+          <a href={LISTINGS_PATH} data-filter-clear class="btn btn-primary mt-6">
             Clear all filters
           </a>
         )}

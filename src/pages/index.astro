@@ -1,50 +1,63 @@
 ---
-// SSR (not prerendered): the homepage reads filter/pagination params from the
-// URL and filters server-side, so it can't be baked at build time. Mirrors
-// compare.astro, which opts into SSR the same way.
+// Home — the inline-contextual FRONT DOOR (Wave 1 remodel). The full inventory
+// grid + filters + SearchDock moved to `/listings`; the home page no longer owns
+// a grid. Instead it is a lightweight wayfinding surface: a plain-English search
+// that NAVIGATES to `/listings` carrying the query, facet chips that deep-link
+// into `/listings?<param>`, a strip of REAL featured stock, an offers teaser and
+// the Rebi band. Real data only (featured + count come from Sanity).
+//
+// SSR (not prerendered) so the featured strip + live count stay fresh and the
+// page is edge-cacheable (no per-user state on this surface).
 export const prerender = false;
 
 import '../styles/global.css';
 import { client } from '../sanity/lib/client';
 import CompareTray from '../components/CompareTray.astro';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
-import SearchDock from '../components/search/SearchDock.astro';
+import ListingCard from '../components/ListingCard.astro';
 import SiteNav from '../components/site/SiteNav.astro';
 import SiteFooter from '../components/site/SiteFooter.astro';
-import FilterDrawer from '../components/filters/FilterDrawer.astro';
-import InventoryResults from '../components/filters/InventoryResults.astro';
-import { dealerConfig } from '../config/dealer';
-import { iconSvg } from '../lib/listing';
-import {
-  parseFilters,
-  buildListingsQuery,
-  activeChips,
-  type InventoryResult,
-} from '../lib/listings-query';
+import { LISTING_FIELDS, type Listing } from '../lib/listing';
 import { priceDropsFor } from '../lib/price-history-data';
 
-// Edge caching (DECISION.md Decision 5): anonymous/unfiltered hits get served
-// from Cloudflare's cache and feel static; each unique filter URL caches
-// separately. Recovers most of the TTFB we'd otherwise lose by dropping
-// prerender.
+// Edge caching (DECISION.md Decision 5): the front door has no per-user state, so
+// serve it from Cloudflare's cache.
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
 
-// URL is the single source of truth. Parse the filter state, then filter +
-// paginate server-side via the shared query builder (reused by the partial).
-const filterState = parseFilters(Astro.url.searchParams);
-const { query, params } = buildListingsQuery(filterState);
-const { items: listings, total } = await client.fetch<InventoryResult>(query, params);
+// Real featured stock + a real total count (determinism: no fabricated numbers).
+const { items: featured, total } = await client.fetch<{ items: Listing[]; total: number }>(
+  `{
+    "items": *[_type == "listing" && category == "automotive" && status == "active"]{ ${LISTING_FIELDS} } | order(listingDate desc, _id asc)[0...4],
+    "total": count(*[_type == "listing" && category == "automotive" && status == "active"])
+  }`,
+);
+const featuredDrops = priceDropsFor(featured, Date.now());
 
-// Resolve each card's honest price drop once (the STUB_PRICE_HISTORY demo flag is
-// read inside priceDropsFor, at this data layer — never in the card). Request-time
-// clock passed in (no module-level new Date()).
-const priceDrops = priceDropsFor(listings, Date.now());
+// Presentation-layer icon set (stroke, 24-grid) for the inline-contextual look —
+// self-contained, no dealer data (mirrors the pattern in SiteNav.astro).
+const icon = (name: string, size = 16): string => {
+  const a = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
+    seat: '<path d="M6 4h4a3 3 0 013 3v6H6z"/><path d="M6 13l-2 7M13 13h3a2 2 0 012 2v5"/>',
+    truck: '<path d="M3 6h11v9H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/>',
+    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    tag: '<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.3"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
+    calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h6"/>',
+    swap: '<path d="M7 4v13M7 4L4 7M7 4l3 3M17 20V7M17 20l3-3M17 20l-3-3"/>',
+    doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+    wrench: '<path d="M14 7a4 4 0 01-5 5l-6 6 2 2 6-6a4 4 0 005-5l-2 2-2-2 2-2z"/>',
+  };
+  return `<svg ${a}>${p[name] ?? ''}</svg>`;
+};
 
-const activeCount = activeChips(filterState).length;
+const countLabel = total > 0 ? `${total.toLocaleString('en-AU')} cars in stock` : 'In stock now';
 
-const title = 'Rebirth Auto — quality vehicles, ready to drive away';
+const title = 'Rebirth Auto — tell Rebi what you need';
 const description =
-  'Browse the current range at Rebirth Auto. Every vehicle in our inventory, kept up to date — find your next car and talk to our team.';
+  'Bundaberg & the Wide Bay. Describe your life and Rebi points you at the right stock, the right tools and the right people — no mega-menu maze.';
 const canonicalURL = new URL(
   Astro.url.pathname,
   Astro.site ?? 'https://rebirth-listings-auto.pages.dev',
@@ -65,8 +78,6 @@ const canonicalURL = new URL(
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
-    <!-- TODO: add <meta property="og:image"> once the demo is deployed and an OG image is hosted.
-         Required for social previews — summary_large_image cards render blank without it. -->
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -81,82 +92,128 @@ const canonicalURL = new URL(
       Skip to content
     </a>
 
-    <!-- Reusable sticky glass nav (NFY). "Ask Rebi" carries the data-rebi-open seam. -->
-    <SiteNav active="inventory" />
+    <SiteNav active="home" />
 
-    <main id="main-content" class="site-container" tabindex="-1">
-      <!-- Hero -->
-      <section class="mx-auto max-w-3xl pt-14 pb-8 text-center md:pt-20 md:pb-10">
-        {/* On ≥sm the heading rides ON TOP of the Focus Stage (the "carousel"
-            space where Rebi's cards recede) as a higher stacking layer, so the
-            AI search bar sits a comfortable distance below the heading rather
-            than being pushed down by a full-height heading band above the
-            stage. On small screens the two stack normally — a tall mobile
-            heading has no room to overlay the stage. */}
-        <div class="hero-stack">
-          <div class="hero-copy">
-            <span class="eyebrow justify-center">
-              <span class="hero-live-dot"></span>
-              In stock now
-            </span>
-            <h1 class="mt-5 text-4xl font-bold tracking-tight text-ink md:text-6xl">
-              Your next car is waiting.
-            </h1>
-            <p id="hero-subhead" class="lead mx-auto mt-5">
-              Browse the current range at Rebirth Auto — quality vehicles, full specs,
-              and a team ready to help you drive away happy.
-            </p>
-            <div class="mt-8 flex flex-col items-center gap-2">
-              <a href="/labs/experience" class="btn btn-primary">
-                Let Rebi find your car →
-              </a>
-              <span class="faint text-xs font-medium">
-                Experience Mode — answer 3 questions, skip the filters
-              </span>
-            </div>
+    <main id="main-content" tabindex="-1">
+      <!-- HERO: the home is the one true hub. Wayfinding radiates from here, inline. -->
+      <section class="site-container hero-wrap">
+        <div style="max-width:60rem">
+          <span class="eyebrow">Bundaberg &amp; the Wide Bay</span>
+          <h1 class="mt-4 text-ink" style="font-family:var(--font-display); font-size:clamp(34px,5vw,54px); line-height:1.05; letter-spacing:-.02em; margin-bottom:16px">
+            Tell Rebi what you need.<br />Skip the menu maze.
+          </h1>
+          <p class="lead">
+            {countLabel}. No mega-menu — describe your life and Rebi points you at the right
+            stock, the right tools, the right people.
+          </p>
+
+          <!-- AI search: a plain <form> GET that routes the query to /listings, where
+               the real SearchDock / query-planner picks it up and runs the search.
+               Works with no JS (SSR full grid + query in the URL). -->
+          <form action="/listings" method="GET" role="search" class="aisearch mt-6" style="max-width:44rem">
+            <span class="orb" style="width:26px;height:26px"></span>
+            <input
+              type="text"
+              name="q"
+              maxlength="200"
+              aria-label="Describe the car you're after"
+              placeholder="e.g. 7-seater under $45k for gravel roads"
+            />
+            <button type="submit" class="btn btn-primary btn-sm">
+              <span set:html={icon('send', 15)}></span> Search
+            </button>
+          </form>
+
+          <!-- inline facet chips: New/Demo/Used are FACETS not pages; each deep-links
+               into /listings with a real filter param. -->
+          <div class="entry-origin" style="margin-top:22px">Jump straight in</div>
+          <div style="display:flex; flex-wrap:wrap; gap:9px">
+            <a class="facet" href="/listings?condition=new">New</a>
+            <a class="facet" href="/listings?condition=demo">Demo</a>
+            <a class="facet" href="/listings?condition=used">Used</a>
+            <a class="facet" href="/listings?seats=7"><span set:html={icon('seat', 14)}></span> 7 seats</a>
+            <a class="facet" href="/listings?bodyType=ute"><span set:html={icon('truck', 14)}></span> Utes</a>
+            <a class="facet" href="/listings?fuelType=electric,hybrid"><span set:html={icon('bolt', 14)}></span> Electric &amp; hybrid</a>
+            <a class="facet" href="/offers"><span set:html={icon('tag', 14)}></span> Offers</a>
           </div>
-
-          {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
-              drawer below stays the no-JS fallback). */}
-          <SearchDock />
         </div>
       </section>
 
-      {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
-      <div id="inventory" class="mt-8 flex items-end justify-between border-b border-line pb-4">
-        <div>
-          <span class="eyebrow">Live inventory</span>
-          <h2 id="inventory-heading" class="mt-2 text-2xl font-bold tracking-tight text-ink">
-            Current inventory
-          </h2>
-        </div>
-        <button type="button" id="filters-trigger" class="btn btn-ghost btn-sm">
-          <Fragment set:html={iconSvg('filter', 'h-4 w-4')} />
-          Filters
-          <span
-            data-filter-count
-            hidden={activeCount === 0}
-            class="inline-flex min-w-5 items-center justify-center rounded-full bg-ink px-1.5 py-0.5 text-xs font-semibold text-white"
-          >
-            {activeCount}
-          </span>
-        </button>
-      </div>
-
-      <!-- Filter drawer (persistent; lives outside the swappable results) -->
-      <FilterDrawer state={filterState} triggerId="filters-trigger" />
-
-      <!-- Swappable inventory results (chips + grid + pagination) -->
-      <InventoryResults listings={listings} total={total} state={filterState} priceDrops={priceDrops} />
-
-      {dealerConfig.capture.enabled && (
-        <p class="mt-16 mb-4 text-center text-xs text-ink-faint">
-          <a href="/capture" class="underline underline-offset-2 hover:text-ink-soft">Dealer: add a vehicle</a>
-        </p>
+      <!-- FEATURED STOCK: real listings (compare + price-drop seams intact via ListingCard) -->
+      {featured.length > 0 && (
+        <section class="site-container section-tight">
+          <div style="display:flex; align-items:end; justify-content:space-between; margin-bottom:18px">
+            <div>
+              <span class="eyebrow">In stock now</span>
+              <h2 class="mt-2 text-ink" style="font-family:var(--font-display); font-size:26px">Featured stock</h2>
+            </div>
+            <a href="/listings" class="btn btn-ghost btn-sm">
+              {total > 0 ? `All ${total.toLocaleString('en-AU')} cars` : 'All stock'} <span set:html={icon('arrow', 15)}></span>
+            </a>
+          </div>
+          <div class="inventory-grid" style="--result-cols:4">
+            {featured.map((v) => (
+              <ListingCard listing={v} priceDrop={featuredDrops[v._id] ?? null} />
+            ))}
+          </div>
+        </section>
       )}
+
+      <!-- OFFERS teaser → offers page (finance ↔ offers fold hinted). No fabricated
+           deals: a single honest teaser that links to the offers surface. -->
+      <section class="site-container section-tight">
+        <div
+          class="card"
+          style="padding:26px; display:grid; grid-template-columns:1.4fr 1fr; gap:26px; align-items:center; background:linear-gradient(120deg, rgba(224,129,59,.07), rgba(85,102,240,.05))"
+        >
+          <div>
+            <span class="eyebrow"><span set:html={icon('tag', 13)}></span> This month</span>
+            <h2 class="text-ink" style="font-family:var(--font-display); font-size:24px; margin:10px 0 8px">Drive-away offers</h2>
+            <p class="muted" style="font-size:14.5px">
+              Current specials across the yard — drive-away pricing, finance rates and trade
+              bonuses, gathered in one place.
+            </p>
+          </div>
+          <div style="justify-self:end">
+            <a href="/offers" class="btn btn-primary">See all offers <span set:html={icon('arrow', 15)}></span></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- SELL/TRADE + service + finance, contextual entries -->
+      <section class="site-container section">
+        <div class="entry-origin">Everything else — reached in context, no menu maze</div>
+        <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))">
+          <a href="/trade-in" class="entry entry--amber"><span class="entry-ic" set:html={icon('swap', 18)}></span><span class="entry-tx"><b>Value my trade-in</b><span>put it toward a car here</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
+          <a href="/sell" class="entry entry--amber"><span class="entry-ic" set:html={icon('doc', 18)}></span><span class="entry-tx"><b>Sell outright</b><span>not trading? sell to us</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
+          <a href="/service" class="entry"><span class="entry-ic" set:html={icon('wrench', 18)}></span><span class="entry-tx"><b>Book a service</b><span>keep it running sweet</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
+          <a href="/finance" class="entry entry--ai"><span class="entry-ic" set:html={icon('calc', 18)}></span><span class="entry-tx"><b>Finance &amp; pre-approval</b><span>know your budget first</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
+        </div>
+      </section>
+
+      <!-- REBI band -->
+      <section class="site-container section-tight">
+        <div
+          class="ai-summary scan"
+          style="display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; padding:26px 28px"
+        >
+          <div style="display:flex; gap:16px; align-items:center">
+            <span class="orb orb-halo" style="width:40px;height:40px;flex:none"></span>
+            <div>
+              <b style="font-family:var(--font-display); font-size:18px; color:var(--indigo-deep)">Not sure where to start?</b>
+              <p class="muted" style="font-size:14.5px; margin-top:4px; max-width:52ch">
+                Rebi reads the whole yard and grounds every answer in real stock. Ask for a
+                budget, a body type, a tow rating — anything.
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" data-rebi-open data-rebi-kind="nav">
+            <span set:html={icon('spark', 16)}></span> Ask Rebi
+          </button>
+        </div>
+      </section>
     </main>
 
-    <!-- Reusable dark footer (NFY) -->
     <SiteFooter />
 
     <!-- Floating comparison tray (self-contained, appears when ≥1 selected) -->
@@ -164,59 +221,5 @@ const canonicalURL = new URL(
 
     <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
     <ChatWidget />
-
-    <style>
-      /* Small "in stock now" live pulse dot inside the hero eyebrow. */
-      .hero-live-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 9999px;
-        background: var(--teal);
-        box-shadow: 0 0 0 3px rgba(15, 181, 166, 0.18);
-        animation: orb-pulse 2s ease-in-out infinite;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .hero-live-dot { animation: none; }
-      }
-
-      /* Hero layering: put the heading on a layer ON TOP of the Focus Stage (the
-         "carousel" space where Rebi's message cards recede). The heading block
-         (.hero-copy) and the SearchDock (#search-dock) share one grid cell; the
-         heading rides the top as the upper layer while the cards animate in the
-         space behind and below it, and the AI search bar — anchored to the bottom
-         of the stage — ends up a comfortable distance below the heading instead
-         of being shoved down by a full-height heading band stacked above.
-
-         #search-dock is given its own stacking context so its internal z-indexed
-         cards (z-index ~100) stay BEHIND the heading. Below the sm breakpoint the
-         two fall back to a normal vertical stack — a full-height mobile heading
-         would collide with the shorter stage if overlaid. */
-      @media (min-width: 640px) {
-        .hero-stack {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr);
-        }
-        .hero-stack > .hero-copy {
-          grid-column: 1;
-          grid-row: 1;
-          position: relative;
-          z-index: 2;
-          align-self: start;      /* heading rides the top of the stage */
-          pointer-events: none;   /* clicks fall through to the stage/cards behind */
-        }
-        .hero-stack > .hero-copy a,
-        .hero-stack > .hero-copy button {
-          pointer-events: auto;   /* future-proof: keep any heading control clickable */
-        }
-        .hero-stack > :global(#search-dock) {
-          grid-column: 1;
-          grid-row: 1;
-          position: relative;
-          z-index: 1;             /* own stacking context: cards stay behind the heading */
-          align-self: stretch;
-          margin: 0 auto;         /* drop the stack-mode top margin; keep it centred */
-        }
-      }
-    </style>
   </body>
 </html>

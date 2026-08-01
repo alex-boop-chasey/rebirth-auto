@@ -22,6 +22,7 @@ import {
   DRIVE_TYPE_CODES,
   CONDITION_CODES,
   SEAT_OPTIONS,
+  LISTINGS_PATH,
   type FilterState,
 } from '../../lib/listings-query';
 import { dealerConfig } from '../../config/dealer';
@@ -87,9 +88,10 @@ const textInput =
 >
   <form
     method="GET"
-    action="/"
+    action={LISTINGS_PATH}
     data-filter-form
     data-default-sort={defaultSort}
+    data-base={LISTINGS_PATH}
     class="flex min-h-full flex-col"
   >
     <!-- Header -->
@@ -230,7 +232,7 @@ const textInput =
     <!-- Footer -->
     <footer class="sticky bottom-0 z-10 flex items-center gap-3 border-t border-line bg-surface/95 px-5 py-4 backdrop-blur">
       <a
-        href="/"
+        href={LISTINGS_PATH}
         data-filter-clear
         class="text-sm font-medium text-ink-soft underline-offset-2 transition hover:text-ink hover:underline"
       >
@@ -258,6 +260,9 @@ const textInput =
   const MULTI = ['bodyType', 'colour', 'transmission', 'fuelType', 'driveType', 'seats', 'condition'];
   const RANGES = ['priceMin', 'priceMax', 'yearMin', 'yearMax', 'odoMax'];
   const defaultSort = form?.dataset.defaultSort ?? 'newest';
+  // Base path that owns the grid/filter contract (Wave 1 remodel: `/listings`).
+  // Read from the form's data-base so it stays in lockstep with LISTINGS_PATH.
+  const basePath = form?.dataset.base ?? '/listings';
 
   // --- Drawer open/close (with slide animation via [data-open]) --------------
   function openDrawer() {
@@ -321,7 +326,7 @@ const textInput =
 
   // --- Build a canonical URL from the form (comma-joined multis) -------------
   function urlFromForm(): string {
-    if (!form) return '/';
+    if (!form) return basePath;
     const fd = new FormData(form);
     const sp = new URLSearchParams();
     for (const name of MULTI) {
@@ -336,7 +341,7 @@ const textInput =
     if (sort && sort !== defaultSort) sp.set('sort', sort);
     // Applying filters resets to page 1 (page omitted).
     const qs = sp.toString();
-    return qs ? `/?${qs}` : '/';
+    return qs ? `${basePath}?${qs}` : basePath;
   }
 
   // --- Wire up submit + delegated link enhancement ---------------------------
@@ -355,7 +360,7 @@ const textInput =
     );
     if (!link) return;
     e.preventDefault();
-    applyFilterUrl(link.getAttribute('href') || '/');
+    applyFilterUrl(link.getAttribute('href') || basePath);
     if (dialog?.open) closeDrawer();
   });
 
