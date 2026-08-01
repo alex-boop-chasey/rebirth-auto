@@ -289,6 +289,14 @@ export interface DealerConfig {
       /** Per-IP rate limit for /api/search (its OWN `search:` KV counter). */
       rateLimit: { windowSeconds: number; maxRequests: number };
       /**
+       * LLM query planner — the PRIMARY interpreter (Stage 0) ahead of the regex
+       * pre-pass (src/ai/search/query-planner.ts). `enabled:false` OR no
+       * OPENROUTER_API_KEY → regex-only, today's behaviour (config-as-data
+       * kill-switch). `timeoutMs` bounds the between-submit-and-results wait; on
+       * timeout/failure the request falls through to the regex + Stage-2 chain.
+       */
+      planner: { enabled: boolean; timeoutMs: number };
+      /**
        * Soft-concept → filter guidance interpolated into the `/api/search`
        * extraction prompt (src/lib/ai-search/prompt.ts). Lets a dealer teach the
        * interpreter its local phrasing ("first car", "camping", "easy to park")
@@ -769,7 +777,10 @@ export const dealerConfig: DealerConfig = {
         maxListings: 6,
         keywordSearch: true,
         lowKmThreshold: 60000,
-        familySeats: [7, 8],
+        // A household's family car — especially a second car — is overwhelmingly a
+        // 5-seat hatch/wagon/SUV, not a people-mover. Shared with the regex
+        // fallback AND the LLM planner so both paths agree (family-trap fix).
+        familySeats: [5],
       },
       // OPTIONAL supplementary reference sources — DEFAULT OFF. With enabled:false
       // the composed system prompt and the anti-hallucination firewall are
@@ -823,6 +834,13 @@ export const dealerConfig: DealerConfig = {
       // Shopper search is higher-volume than Studio authoring but still capped
       // per-IP to bound AI cost. Generous for genuine refining.
       rateLimit: { windowSeconds: 3600, maxRequests: 30 },
+      // LLM query planner (Stage 0) — primary interpreter ahead of the regex
+      // pre-pass. `enabled:false` OR no OPENROUTER_API_KEY → regex-only (today's
+      // behaviour). timeoutMs sits between submit and results: 7s leaves room for
+      // one structured-tier shot plus a repair retry on the Haiku-class model while
+      // keeping perceived latency acceptable; on exceed we fall back to the regex
+      // chain (always the floor), so a slow model degrades rather than blocks.
+      planner: { enabled: true, timeoutMs: 7000 },
       // Soft phrases → enum filters. The model must still emit only valid codes;
       // these teach it how this dealer's buyers describe intent. P-plate / licence
       // status is deliberately NOT a filter dimension — the guidance says to map
@@ -830,11 +848,11 @@ export const dealerConfig: DealerConfig = {
       concepts: [
         {
           phrase: 'first car / P-plate / P-plater / L-plate / learner / new driver / young driver',
-          maps: 'a small, easy-to-drive, affordable automatic: bodyType hatchback, transmission auto, and a modest priceMax (around 25000) if no budget is given. P-plate/licence status is NOT a filter — do not invent one; just map the practical intent and you may note the assumption in interpretation.',
+          maps: 'a small, easy-to-drive automatic: bodyType hatchback, transmission auto. Where budget is implied but unstated, do NOT invent a priceMax — leave it null and flag budget instead. P-plate/licence status is NOT a filter — do not invent one; just map the practical intent and you may note the assumption in interpretation.',
         },
         {
           phrase: 'economical / cheap to run / good on fuel / low fuel / low fuel economy / fuel efficient / save on petrol',
-          maps: 'running COST, not a fuel type: bodyType hatchback (small) and a modest priceMax (around 25000) if no budget is given. Do NOT emit a fuelType — a small petrol car is cheap to run, so forcing hybrid/electric wrongly excludes economical stock. Only add a fuelType when the visitor explicitly names a fuel (petrol/diesel/hybrid/electric). Never invent a fuel-economy (L/100km) figure — a fuel-economy figure may exist per vehicle; never invent one when a vehicle lacks it.',
+          maps: 'running COST, not a fuel type: bodyType hatchback (small). Do NOT emit a fuelType — a small petrol car is cheap to run, so forcing hybrid/electric wrongly excludes economical stock. Only add a fuelType when the visitor explicitly names a fuel (petrol/diesel/hybrid/electric). Where budget is implied but unstated, do NOT invent a priceMax — flag budget instead. Never invent a fuel-economy (L/100km) figure — a fuel-economy figure may exist per vehicle; never invent one when a vehicle lacks it.',
         },
         {
           phrase: 'easy to park / city car / runabout / small / compact / around town',
@@ -846,7 +864,11 @@ export const dealerConfig: DealerConfig = {
         },
         {
           phrase: 'family / kids / school run / space for the family',
-          maps: 'bodyType suv or wagon, and seats 7 or 8 when they mention several children.',
+          // The "5" here MUST track `chat.grounding.lookup.familySeats` above (both
+          // are 5). Written literally (not a token) because this string renders RAW
+          // into BOTH the LLM planner prompt and the legacy Stage-2 SYSTEM_PROMPT —
+          // a placeholder would leak unexpanded into the latter.
+          maps: 'seats 5 — room for the family; do NOT force a body type (a family car can be a hatch, wagon, sedan or SUV); use 7–8 seats ONLY on explicit large-family cues (several kids / third row / people-mover / a stated 7+).',
         },
         {
           phrase: 'towing / tow / caravan / trailer / boat',

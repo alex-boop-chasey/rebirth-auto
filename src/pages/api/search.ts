@@ -31,9 +31,11 @@ import {
   activeFilterSummary,
   toSearchResponse,
   fallbackResponse,
+  emptyFilterState,
   type SearchResponse,
 } from '~/lib/ai-search/schema';
 import { SYSTEM_PROMPT } from '~/lib/ai-search/prompt';
+import { planSearch, planToSearchResponse, type SearchPlan } from '~/ai/search/query-planner';
 
 export const prerender = false; // dynamic route, not pre-rendered
 
@@ -125,6 +127,43 @@ export const POST: APIRoute = async ({ request }) => {
     } catch (err) {
       console.error('[ai-search] rate limit check failed (allowing request)', err);
     }
+  }
+
+  // --- Stage 0: LLM query planner (PRIMARY interpreter) -----------------------
+  // Config-as-data kill-switch + a live-key gate + fresh-search-only guard (a
+  // refine keeps the existing carry-forward path; the planner does no
+  // carry-forward/removal). On ANY planner failure/timeout `plan` is null → FALL
+  // THROUGH to the UNCHANGED regex pre-pass + Stage-2 chain below. When the
+  // planner is disabled or there's no key, this block is skipped ENTIRELY, so the
+  // fallback path is byte-identical to pre-planner behaviour.
+  if (cfg.planner.enabled && env.OPENROUTER_API_KEY && !refine) {
+    let plan: SearchPlan | null = null;
+    try {
+      plan = await planSearch(query, current);
+    } catch (err) {
+      console.error('[ai-search] planner threw (falling through to regex)', err);
+      plan = null;
+    }
+    if (plan && plan.kind === 'search') {
+      const resp = planToSearchResponse(plan);
+      await captureSearch(resp.filters);
+      return withVid(json(resp, 200));
+    }
+    if (plan && plan.kind !== 'search') {
+      // not_vehicle | gibberish → low-confidence redirect. confidence:'low' means
+      // the island does NOT apply filters and routes the shopper to normal chat.
+      const resp: SearchResponse = {
+        interpretation: plan.interpretation,
+        confidence: 'low',
+        clarifyingQuestion: null,
+        filters: emptyFilterState(),
+        matchReasons: [],
+        inferences: [],
+        keyword: null,
+      };
+      return withVid(json(resp, 200));
+    }
+    // plan === null → fall through to the existing fallback chain, unchanged.
   }
 
   // --- Stage 1: deterministic pre-pass (free, no LLM) -------------------------

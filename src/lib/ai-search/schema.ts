@@ -60,6 +60,18 @@ export const ExtractionSchema = z.object({
 });
 export type Extraction = z.infer<typeof ExtractionSchema>;
 
+/**
+ * One disclosed soft inference from the LLM query planner — the words that
+ * triggered an assumption, the plain speakable line, and which FilterState keys
+ * it set. Additive: only the planner (Stage 0) populates it; the regex/Stage-2
+ * fallback paths leave it undefined.
+ */
+export interface SearchInference {
+  signal: string;
+  assumed: string;
+  fields: string[];
+}
+
 export interface SearchResponse {
   interpretation: string;
   confidence: Confidence;
@@ -68,6 +80,17 @@ export interface SearchResponse {
   /** ready to serialize into the URL. */
   filters: FilterState;
   matchReasons: string[];
+  /**
+   * Soft inferences the planner applied and disclosed (Stage 0 only). Additive —
+   * for a future removable-chip UI; the fallback paths omit it.
+   */
+  inferences?: SearchInference[];
+  /**
+   * A make/model the planner could not express as a filter (e.g. "hilux").
+   * Additive and Stage-0 only; NOT yet applied to the grid (see R1) — surfaced so
+   * the island can use it once a keyword grid mechanism exists.
+   */
+  keyword?: string | null;
 }
 
 export function emptyFilterState(): FilterState {
