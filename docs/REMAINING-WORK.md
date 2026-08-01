@@ -34,6 +34,19 @@ presented for the **owner's sign-off before any production code** (Phase 2).
 - The family-trap fix (`familySeats [7,8]` → 5-seat-lean, `src/config/dealer.ts:772`) is proposed in
   Phase 1 and applied in Phase 2.
 
+**Phase 1 — DELIVERED ✅ (awaiting owner sign-off before Phase 2):**
+- Contest ran (3 agents, strict sequence): `search-planner-candidate-1.md`, `-candidate-2.md`,
+  `-critique.md`. Synthesis: `search-planner-synthesis.md` — **winner: candidate 2's schema skeleton +
+  taxonomy discipline; imports from candidate 1** the mechanical clarification gate, the never-invent-a-
+  price rule, and the enum-typed inference field + clarification topic. Plus five fixes neither had
+  (collapsed redundant field pairs, the `concepts`/family-rule contradiction, `interpretation` grounding
+  guard, the chip-key adapter, the keyword-with-filters wiring note).
+- Proof: `scripts/eval/search-planner-eval.ts` — **15/15 offline Zod conformance, `astro check` clean.**
+  Live model pass-rate **blocked on `OPENROUTER_API_KEY`** (absent here); harness runs it the moment a
+  key is present.
+- **Owner sign-off needed** on: the winner/synthesis, the budget-flag-vs-guess tradeoff (policy r6), and
+  the family-trap two-line config change — before Phase 2 writes any production code.
+
 **Phase 2 (after approval only):** wire the planner into `/api/search` (regex fallback preserved),
 apply the config change, keep the harness as a permanent test, record the decision in `DECISIONS.md`.
 
