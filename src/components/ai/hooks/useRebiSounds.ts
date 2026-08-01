@@ -7,8 +7,11 @@
  * context until the first user gesture calls `unlock()`.
  *
  * SSR/remount safety:
- *   - `muted` initialises via a lazy `useState` initializer that only touches
- *     `localStorage` when `window` exists (try/catch for private mode).
+ *   - `muted` initialises to the deterministic default (`defaultMuted ?? false`),
+ *     never touching `localStorage` during render, so the first client render
+ *     matches the server render (no hydration mismatch on the speaker button's
+ *     `aria-pressed`/`className`). A mount effect then reads the persisted value
+ *     (guarded + try/catch for private mode) and reconciles if it differs.
  *   - The engine is held in a ref, created in a mount effect and nulled on
  *     cleanup, so StrictMode double-invoke and a future `<ClientRouter>` remount
  *     are both harmless. `soundSend`/`soundRebi`/`toggleMute` are stable
@@ -34,22 +37,28 @@ export interface UseRebiSounds {
   toggleMute: () => void;
 }
 
-/** Lazy initial mute — SSR-safe, private-mode-safe. */
-function readInitialMuted(muteKey: string, defaultMuted: boolean): boolean {
-  if (typeof window === 'undefined') return defaultMuted;
+/**
+ * Read the persisted mute flag — SSR-safe, private-mode-safe. Returns `null` when
+ * nothing is stored (or storage is unavailable) so callers keep their default.
+ * MUST only be called from an effect/handler, never during render.
+ */
+function readStoredMuted(muteKey: string): boolean | null {
+  if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(muteKey);
     if (stored !== null) return stored === '1';
   } catch {
-    /* private mode / no storage — fall through to the default */
+    /* private mode / no storage — treat as no stored value */
   }
-  return defaultMuted;
+  return null;
 }
 
 export function useRebiSounds(opts: UseRebiSoundsOptions): UseRebiSounds {
   const { muteKey, enabled, defaultMuted = false } = opts;
 
-  const [muted, setMuted] = useState<boolean>(() => readInitialMuted(muteKey, defaultMuted));
+  // Deterministic initial render (no localStorage during render) so the first
+  // client render matches SSR — the persisted value is applied in a mount effect.
+  const [muted, setMuted] = useState<boolean>(defaultMuted ?? false);
 
   // Latest-value refs so the stable callbacks never read a stale closure.
   const mutedRef = useRef(muted);
@@ -73,6 +82,17 @@ export function useRebiSounds(opts: UseRebiSoundsOptions): UseRebiSounds {
     return () => {
       engineRef.current = null;
     };
+  }, []);
+
+  // After hydration, reconcile with the persisted mute flag. Runs only on the
+  // client (post-render), so it can never cause a hydration mismatch. `mutedRef`
+  // is kept in sync so the stable callbacks read the reconciled value immediately.
+  useEffect(() => {
+    const stored = readStoredMuted(muteKeyRef.current);
+    if (stored !== null && stored !== mutedRef.current) {
+      mutedRef.current = stored;
+      setMuted(stored);
+    }
   }, []);
 
   const soundSend = useCallback(() => {

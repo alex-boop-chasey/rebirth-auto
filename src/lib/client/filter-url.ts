@@ -67,8 +67,10 @@ export async function applyFilterUrl(url: string, opts: { push?: boolean } = {})
 
 // Back/forward navigation re-syncs the grid from the URL. Guarded so it binds
 // exactly once regardless of how many components import this module.
-const w = window as unknown as { __filterUrlPopstateBound?: boolean };
-if (!w.__filterUrlPopstateBound) {
-  w.__filterUrlPopstateBound = true;
-  window.addEventListener('popstate', () => applyFilterUrl(window.location.href, { push: false }));
+if (typeof window !== 'undefined') {
+  const w = window as unknown as { __filterUrlPopstateBound?: boolean };
+  if (!w.__filterUrlPopstateBound) {
+    w.__filterUrlPopstateBound = true;
+    window.addEventListener('popstate', () => applyFilterUrl(window.location.href, { push: false }));
+  }
 }
