@@ -631,6 +631,134 @@ export interface DealerConfig {
     };
   };
   /**
+   * Genuine parts & accessories — a parts ENQUIRY form (the `/parts` page +
+   * `/api/parts-enquiry` endpoint). Reads `?vehicle=<slug>` to prefill the car the
+   * shopper is asking a part for, from REAL inventory. The submission goes to a
+   * STUBBED lead/parts-desk integration (src/stubs/parts-enquiry.ts) — no real
+   * spend, PII, or write; see docs/briefs/_stub-convention.md. A REQUEST, never a
+   * quote: the copy must never assert a fitment guarantee or a parts price (those
+   * are confirmed by the parts team; DECISIONS.md determinism — never fabricate a
+   * price). Its OWN block (not under `chat`). Every dealer-facing string/toggle
+   * lives here so a tenant swap restyles it without a code edit.
+   */
+  parts: {
+    /** Master on/off — a dealer can hide the parts tool without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/parts-enquiry (its OWN `parts:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Where the dealer receives the stubbed parts enquiry. Dealer-specific. */
+    notifyEmail: string;
+    /** Front-of-house copy for the parts page, its nav link, and the enquiry flow. */
+    copy: {
+      /** Short nav/link label (e.g. "Genuine parts"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the enquiry is sent. */
+      loadingLabel: string;
+      /** MUST frame this as an enquiry the team will follow up — never a locked price/fitment. */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+      /** Small print under the form — fitment/price confirmed by the parts team. */
+      disclaimer: string;
+    };
+  };
+  /**
+   * Fleet & business — a fleet/business ENQUIRY form (the `/fleet` page +
+   * `/api/fleet-enquiry` endpoint). Captured to a STUBBED CRM/lead integration
+   * (src/stubs/fleet-enquiry.ts) — no real spend, PII, or write; see
+   * docs/briefs/_stub-convention.md. A REQUEST for a conversation, never a quote or
+   * a discount claim: the copy must never assert fleet pricing (DECISIONS.md
+   * determinism — never fabricate a figure). Its OWN block (not under `chat`).
+   * Every dealer-facing string/toggle lives here so a tenant swap restyles it
+   * without a code edit.
+   */
+  fleet: {
+    /** Master on/off — a dealer can hide the fleet tool without a deploy. */
+    enabled: boolean;
+    /** Per-IP rate limit for /api/fleet-enquiry (its OWN `fleet:` KV counter). */
+    rateLimit: { windowSeconds: number; maxRequests: number };
+    /** Where the dealer receives the stubbed fleet enquiry. Dealer-specific. */
+    notifyEmail: string;
+    /** Front-of-house copy for the fleet page, its nav link, and the enquiry flow. */
+    copy: {
+      /** Short nav/link label (e.g. "Fleet & business"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Submit button label. */
+      submitLabel: string;
+      /** Loading-state text shown while the enquiry is sent. */
+      loadingLabel: string;
+      /** MUST frame this as an enquiry the team will follow up — never a locked quote. */
+      successMessage: string;
+      /** Inline generic-failure message. */
+      errorMessage: string;
+      /** Inline message when a required field is missing/invalid. */
+      invalidMessage: string;
+      /** Inline message when the per-IP rate limit is hit. */
+      rateLimitMessage: string;
+      /** Small print under the form — pricing/terms confirmed by the fleet team. */
+      disclaimer: string;
+    };
+    /** Config-as-data list of fleet capability cards (GENERIC copy — no fabricated discounts/figures). */
+    capabilities: readonly { icon: string; title: string; body: string }[];
+  };
+  /**
+   * Electric & hybrid hub — an EV education + REAL-stock landing page (the
+   * `/electric` page). Deliberately NOT a marketing silo: it lives one tap off the
+   * `fuelType=electric,hybrid` inventory facet, and every car shown is REAL stock
+   * queried from Sanity. The educational copy is CONFIG-DRIVEN and generic — it
+   * MUST NOT state any range, running-cost, or incentive FIGURE, because those are
+   * per-vehicle/per-jurisdiction facts we do not fabricate (DECISIONS.md
+   * determinism). Its OWN block (not under `chat`). Every dealer-facing string
+   * lives here so a tenant swap restyles it without a code edit.
+   */
+  electric: {
+    /** Master on/off — a dealer can hide the EV hub without a deploy. */
+    enabled: boolean;
+    /** Front-of-house copy for the EV hub and its nav link. */
+    copy: {
+      /** Short nav/link label (e.g. "Electric & hybrid"). */
+      navLabel: string;
+      /** Page eyebrow kicker. */
+      eyebrow: string;
+      /** Page H1. */
+      heading: string;
+      /** One-line intro under the heading. */
+      subheading: string;
+      /** Heading above the real-stock strip. */
+      stockHeading: string;
+      /** Label for the primary CTA that hands back to the fuel facet. */
+      browseCtaLabel: string;
+      /** Shown in the stock strip when no electric/hybrid stock is in inventory. */
+      emptyMessage: string;
+      /** Small print under the page — figures vary; confirm before purchase. */
+      disclaimer: string;
+    };
+    /**
+     * Educational benefit cards. GENERIC copy ONLY — never a fabricated range,
+     * cost-per-km, or dollar saving (determinism). Icons are keys resolved by the
+     * page's inline SVG set.
+     */
+    benefits: readonly { icon: string; title: string; body: string }[];
+  };
+  /**
    * Book a test drive — a booking-REQUEST form (the `/test-drive` page +
    * `/api/book-test-drive` endpoint). Reads `?vehicle=<slug>` to prefill the
    * chosen car from REAL inventory. The submission goes to a STUBBED booking
@@ -1242,6 +1370,91 @@ export const dealerConfig: DealerConfig = {
         'Indicative only — any final offer is subject to a physical inspection of your vehicle. ' +
         'No obligation, and no purchase from us required.',
     },
+  },
+  parts: {
+    enabled: true,
+    // Shopper-facing enquiry; capped per-IP to bound abuse + stub noise.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // Stubbed lead target — the dealer's parts desk. Dealer-specific.
+    notifyEmail: 'parts@rebirthauto.example',
+    copy: {
+      navLabel: 'Genuine parts',
+      eyebrow: 'Parts & accessories',
+      heading: 'Genuine parts & accessories',
+      subheading:
+        'Tell us the part and the vehicle and our parts team will confirm the right fit and ' +
+        'price before anything is ordered. Genuine components, fitted right.',
+      submitLabel: 'Send enquiry',
+      loadingLabel: 'Sending your enquiry…',
+      successMessage:
+        "Thanks — we've received your parts enquiry and our parts team will be in touch to " +
+        'confirm fitment and pricing. This is an enquiry, not a confirmed order.',
+      errorMessage: "Sorry, we couldn't send that enquiry. Please try again.",
+      invalidMessage: 'Please fill in your name, a way to contact you, your vehicle, and the part you need.',
+      rateLimitMessage: 'You have sent a few enquiries already — please try again later.',
+      disclaimer:
+        'Fitment and pricing are confirmed by our parts team for your specific vehicle before ' +
+        'any order — nothing is charged from this enquiry.',
+    },
+  },
+  fleet: {
+    enabled: true,
+    // Business-facing enquiry; capped per-IP to bound abuse + stub noise.
+    rateLimit: { windowSeconds: 3600, maxRequests: 15 },
+    // Stubbed lead target — the dealer's fleet desk. Dealer-specific.
+    notifyEmail: 'fleet@rebirthauto.example',
+    copy: {
+      navLabel: 'Fleet & business',
+      eyebrow: 'Fleet & business',
+      heading: 'Fleet solutions for local business',
+      subheading:
+        'ABN buyers, one point of contact, and priority servicing — from a single ute to a ' +
+        'whole fleet. Tell us about your business and our fleet team will be in touch.',
+      submitLabel: 'Talk to the fleet team',
+      loadingLabel: 'Sending your enquiry…',
+      successMessage:
+        "Thanks — we've received your fleet enquiry and our fleet team will be in touch to talk " +
+        'through your needs. This is an enquiry, not a quote.',
+      errorMessage: "Sorry, we couldn't send that enquiry. Please try again.",
+      invalidMessage: 'Please fill in your business name, a way to contact you, and your fleet needs.',
+      rateLimitMessage: 'You have sent a few enquiries already — please try again later.',
+      disclaimer:
+        'Pricing and terms are tailored by our fleet team to your business — nothing is quoted or ' +
+        'committed from this enquiry.',
+    },
+    // GENERIC capability cards — no fabricated discounts or figures (determinism).
+    capabilities: [
+      { icon: 'tag', title: 'Fleet pricing', body: 'Tailored pricing across our brands, sized to your fleet.' },
+      { icon: 'clock', title: 'Priority service', body: 'Servicing scheduled to keep your vehicles on the road.' },
+      { icon: 'doc', title: 'Simplified admin', body: 'One point of contact and streamlined invoicing.' },
+      { icon: 'bolt', title: 'EV transition', body: 'Plan an electric or hybrid switch when it suits your business.' },
+    ],
+  },
+  electric: {
+    enabled: true,
+    copy: {
+      navLabel: 'Electric & hybrid',
+      eyebrow: 'Electric & hybrid',
+      heading: 'Electric & hybrid, explained — with the stock to match',
+      subheading:
+        'Not a marketing silo: this hub sits one tap off the electric & hybrid filter, and every ' +
+        'car here is real stock you can open.',
+      stockHeading: 'Electric & hybrid in stock',
+      browseCtaLabel: 'Browse all electric & hybrid',
+      emptyMessage:
+        'No electric or hybrid stock in the yard right now — new arrivals land often. ' +
+        'Browse the full range or ask Rebi to keep an eye out for you.',
+      disclaimer:
+        'Range, running costs, and any incentives vary by vehicle, driving conditions, and your ' +
+        'state — confirm the specifics for a particular car before you buy.',
+    },
+    // GENERIC, figure-free education (determinism — never invent range/cost/incentive numbers).
+    benefits: [
+      { icon: 'plug', title: 'Charge at home', body: 'Plug in overnight and start most days with a full battery.' },
+      { icon: 'range', title: 'Everyday range', body: 'Each listing shows its own range where the maker states it — no guesswork.' },
+      { icon: 'leaf', title: 'Lower running costs', body: 'Fewer moving parts and no oil changes than a petrol equivalent.' },
+      { icon: 'shield', title: 'Incentives may apply', body: 'Some states offer rego or stamp-duty concessions — check your state.' },
+    ],
   },
   testDrive: {
     enabled: true,

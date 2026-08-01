@@ -68,7 +68,7 @@ export const navHubs: NavHub[] = [
       { label: 'New & Demo', href: '/listings?condition=new,demo', icon: 'car', blurb: 'Latest stock and near-new demos.' },
       { label: 'Used', href: '/listings?condition=used', icon: 'gauge', blurb: 'Inspected pre-owned with history.' },
       { label: 'Electric & hybrid', href: '/listings?fuelType=electric,hybrid', icon: 'plug', blurb: 'EVs and hybrids — range and running-cost help.' },
-      { label: 'Shop by brand', href: '/listings', icon: 'tag', blurb: 'Jump straight to a brand you know.' },
+      { label: 'Shop by brand', href: '/brand', icon: 'tag', blurb: 'Jump straight to a brand you know.' },
     ],
   },
   {
@@ -121,7 +121,7 @@ export const footerColumns: FooterColumn[] = [
       { label: 'Used', href: '/listings?condition=used' },
       { label: 'Electric & hybrid', href: '/listings?fuelType=electric,hybrid' },
       { label: 'Offers & specials', href: '/offers' },
-      { label: 'Shop by brand', href: '/listings' },
+      { label: 'Shop by brand', href: '/brand' },
     ],
   },
   {
