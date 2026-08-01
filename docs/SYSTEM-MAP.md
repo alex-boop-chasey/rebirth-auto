@@ -58,6 +58,13 @@ Cloudflare  ──►  Worker (Astro SSR)
 - **No shared page layout.** Each top-level page defines its own `<html>` shell inline
   (`src/layouts/` holds only `AuthLayout.astro`). The `Layout.astro` referenced in
   `src/chatbot/README.md` does **not** exist — treat that as a stale doc note.
+- **Client-side React islands.** The site is server-rendered `.astro` with no client framework by
+  default, but two surfaces hydrate as **React 19 islands** via `@astrojs/react`: the AI **search
+  dock** (`src/components/search/SmartSearch.tsx`, `client:idle`, production — §4) and the labs-only
+  **ShowroomTour** (`client:load` — §17). Shared island infrastructure lives in
+  `src/components/ai/hooks/` (SSR-/remount-safe wrappers). Rebi's chat widget is **not** React — it
+  stays vanilla by design (§5). The three `src/sanity/components/*.tsx` are Sanity Studio (CMS)
+  tooling, not part of the shipped site bundle.
 
 ---
 
@@ -199,8 +206,14 @@ client-side fetch-swap of results and the active-filter chips.
   `serializeFilters`/`hrefFor`, `activeChips`, enum code sets, `SORT_CLAUSES`.
 - `src/lib/client/filter-url.ts` — `applyFilterUrl` (the ONE fetch-swap path) + `updateBadge`.
 - Components: `src/components/filters/FilterDrawer.astro`, `.../InventoryResults.astro`,
-  `.../ActiveFilterChips.astro`, `src/components/ListingCard.astro`,
-  `src/components/search/SearchDock.astro` + `stage-engine.ts` + `stage.css`.
+  `.../ActiveFilterChips.astro`, `src/components/ListingCard.astro`.
+- **AI search island:** `src/components/search/SmartSearch.tsx` (React island) hosted by
+  `SearchDock.astro` — now a thin `client:idle` host; the old inline `<script>` was removed.
+  Styled by `search-dock.css` + `stage.css`; drives the framework-free `stage-engine.ts`
+  (`createFocusStage`), which is retained and now consumed by the island (not deleted).
+- **Shared island hooks:** `src/components/ai/hooks/` — `useFocusStage`, `useRebiSounds`,
+  `useFilterUrl`, `useReducedMotion` (SSR- and remount-safe wrappers around the imperative stage
+  engine, tone engine, and filter-URL seam; hold **no** filter state). Barrel: `hooks/index.ts`.
 - Partial: `src/pages/partials/inventory.astro`.
 
 **External services / bindings** — Sanity (GROQ). AI natural-language search adds OpenRouter (see below).
@@ -211,12 +224,21 @@ price/year/odo options, showCondition); `dealerConfig.chat.search.*` for the AI 
 **Data flow / processes** — URL params → `parseFilters` → `buildListingsQuery` (all user values via
 GROQ `$params`, never interpolated; only whitelisted sort clause + computed slice interpolated) →
 SSR render or `/partials/inventory` swap via `applyFilterUrl`. Back/forward re-syncs from URL.
+**AI search:** the `SmartSearch` island hydrates on idle (SSR'd `hidden` until then), POSTs
+`{ query, filters, refine }` to `/api/search` (AbortController + `seq` guard supersede stale
+responses), then drives the **same** `applyFilterUrl` grid swap and reads the true total back via
+`readGridTotal`. The island holds **no** filter state — the URL remains the single source of truth.
 
 **Entry points** — `/` and `/?<filters>`, `/partials/inventory` (fragment). AI search: `POST /api/search`.
 
 **Constraints & gotchas** — URL is the single source of truth; all filter-URL writes go through
 `applyFilterUrl`. Unknown/malformed params fall through to a no-op (never a silent guess). Enum code
-sets must mirror the Sanity schema (a `satisfies` check guards `SORT_KEYS`).
+sets must mirror the Sanity schema (a `satisfies` check guards `SORT_KEYS`). The React search island
+holds no filter state — this invariant must survive future island work. `filter-url.ts`'s top-level
+popstate binding is `typeof window`-guarded (SSR-safe) and bound once via a `__filterUrlPopstateBound`
+window flag (pulling it into the island's SSR graph previously 500'd server render). There is **no**
+`useReactIsland` config flag — the island is unconditional when `dealerConfig.chat.search.enabled` is
+on (that flag is the kill-switch, checked by the caller); rollback is `git revert`.
 
 **Audit checklist**
 - [ ] No feature constructs filter URLs outside `applyFilterUrl` / `serializeFilters`/`hrefFor`.
@@ -225,6 +247,9 @@ sets must mirror the Sanity schema (a `satisfies` check guards `SORT_KEYS`).
 - [ ] Pagination total uses the same shared filter as the page slice (counts match results).
 - [ ] Fetch-swap supersedes stale responses (the `seq` counter); popstate binds once.
 - [ ] No-JS `<form>` GET still filters (repeated + comma params both parse).
+- [ ] `SmartSearch` island holds no filter state; all URL writes still route through `applyFilterUrl`.
+- [ ] Search dock SSRs `hidden` and reveals on hydration (no pre-hydration interaction / layout shift).
+- [ ] Island hooks stay SSR-/remount-safe (no `window`/`localStorage`/`matchMedia` read during render).
 
 ## 5. Chatbot "Rebi"
 
@@ -243,7 +268,11 @@ continuity, and human handoff via Telegram.
   `verify.ts` (anti-hallucination firewall + `CAR_MAKES` lexicon), `cache.ts`.
 - Endpoints: `src/pages/api/chat.ts`, `chat-poll.ts`, `journey.ts`, `telegram-webhook.ts`,
   `compare-pick.ts`.
-- UI: `src/components/widgets/ChatWidget.astro`, `rebi-sounds.ts`, `src/components/AskRebiButton.astro`.
+- UI: `src/components/widgets/ChatWidget.astro` (**vanilla** — single inline `<script>`, ~1,180 lines
+  of client JS: SSE streaming, human-handoff polling, Turnstile, voice dictation, session/local
+  persistence; no React), `rebi-sounds.ts` (`createRebiSounds()` still vanilla/DOM-wired and
+  byte-compatible, but tone production now delegates to the shared pure `createToneEngine()` — the same
+  engine the search island's `useRebiSounds` hook wraps), `src/components/AskRebiButton.astro` (vanilla).
 - Shared limiter: `src/lib/rate-limit.ts` (chatbot has its own inline `checkLimit` in `core.ts`).
 
 **External services / bindings** — OpenRouter via `src/ai` (`chat-cheap` tier); Sanity (grounding
@@ -266,8 +295,11 @@ prices/brands → persist to D1. Escalation notifies Telegram; team quote-replie
 `POST /api/telegram-webhook`, `POST /api/compare-pick`.
 
 **Constraints & gotchas** — All AI through `src/ai/` (never OpenRouter directly). `dealerNotes` never
-exposed. Grounding is deterministic + fail-open; the anti-hallucination firewall is load-bearing while
-free-tier fallbacks are in the tier list. `knowledge.ts` identifying details are FICTIONAL
+exposed. The chat widget is **deliberately still vanilla** (inline `<script>`, no React): the run-5
+React-island migration covered AI **search** only; the Rebi chat migration was DEFERRED (parity-only on
+the core funnel over battle-tested vanilla — see REMAINING-WORK §"/auto run 5"). If migrated later, use
+`client:load` (not `idle`) so early "Ask Rebi" CTA clicks aren't dropped. Grounding is deterministic +
+fail-open; the anti-hallucination firewall is load-bearing while free-tier fallbacks are in the tier list. `knowledge.ts` identifying details are FICTIONAL
 placeholders — must not be presented as a real business. Optional grounding (manufacturer/reviews/
 webSearch) DEFAULT OFF and excluded from the firewall allow-list even when on. Brand list in
 `knowledge.ts` is disputed (see §12 / REMAINING-WORK — the reconcile diff is INVALID; do not apply blindly).
@@ -668,8 +700,10 @@ put `/studio` behind Cloudflare Access (TODO_KEYS.md) — not yet done.
 focus rings, chatbot styles).
 
 **Key files & dirs** — `src/styles/global.css` (Tailwind import, `@tailwindcss/typography`, focus-ring
-base, `--site-gutter`/`--site-max` width system, `.site-container`), `src/styles/rebi.css` (chatbot UI).
-Tailwind wired via `@tailwindcss/vite` in `astro.config.mjs`.
+base, `--site-gutter`/`--site-max` width system, `.site-container`), `src/styles/rebi.css` (chatbot UI,
+still vanilla/`.reb-*`). AI search island UI is styled by co-located CSS imported from the island:
+`src/components/search/stage.css` + `search-dock.css` (focus-stage / dock). Tailwind wired via
+`@tailwindcss/vite`; `@astrojs/react` (React 19) is now an integration in `astro.config.mjs`.
 
 **External services / bindings** — none.
 
