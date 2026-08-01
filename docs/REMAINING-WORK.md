@@ -9,6 +9,38 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 5 — AI-search → React island (refactor-first) (2026-08-01)
+
+Autonomous run, scope = the owner-approved React migration of the AI surfaces. A 3-agent planning pass
+(two cohesive planners + one critic, all verifying against the code) established that **both existing AI
+surfaces render imperatively via `createFocusStage`**, so wrapping them in React is parity-only cost on
+the SEO-critical shopper pages. Owner picked scope **"Refactor + SmartSearch only"**. Recorded here as the
+§3 checkpoint before executing.
+
+**Building autonomously this run:**
+- **Phase 1 — zero-React refactor.** Extract a pure `createToneEngine()` from `src/components/widgets/
+  rebi-sounds.ts`; keep `createRebiSounds()` byte-compatible so the still-vanilla ChatWidget is untouched.
+- **Phase 2 — shared React island foundation.** New `src/components/ai/hooks/`: `useReducedMotion`,
+  `useRebiSounds`, `useFocusStage`, `useFilterUrl`. SSR-safe and **remount-safe from day one** (defensive
+  re: a future `<ClientRouter>` — none exists today). Wraps the existing imperative engine + filter-URL
+  seam; **zero changes** to `stage-engine.ts` and `filter-url.ts`.
+- **Phase 3 — SmartSearch island.** `SmartSearch.tsx` replaces SearchDock's inline `<script>`;
+  `SearchDock.astro` becomes a thin host gated on a new `dealerConfig.chat.search.useReactIsland` flag
+  (config-as-data owner kill-switch). Filter state stays **URL-only** (DECISION 5) — island holds none.
+  Revives the currently-dead `reb:search` hero→Rebi handoff as a bonus.
+
+**Deliberately NOT done this run (with reasons):**
+- **Full Rebi chat migration to React** — DEFERRED. Parity-only on the product's core Google → listing →
+  enquiry funnel (1476-line battle-tested vanilla: SSE streaming, human-handoff polling, Turnstile,
+  dictation, persistence). Revisit only after SmartSearch is proven in prod, or when a genuinely-new
+  *declarative* chat feature justifies it. If migrated later, use `client:load` (not `idle`) so early
+  "Ask Rebi" CTA clicks on listing/compare pages aren't dropped.
+
+**Contest designated up front (§6):** **NONE.** This is a well-specified refactor + one island with a
+settled approach — no gold-standard-UI design contest and no open-ended coding contest is warranted.
+
+---
+
 ## /auto run 4 — audit verdicts, decisions & contest (2026-07-29)
 
 Autonomous run, scope = finish the backlog. Audited the code against this doc + `TODO_KEYS.md` first.
