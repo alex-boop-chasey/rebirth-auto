@@ -39,6 +39,30 @@ the SEO-critical shopper pages. Owner picked scope **"Refactor + SmartSearch onl
 **Contest designated up front (§6):** **NONE.** This is a well-specified refactor + one island with a
 settled approach — no gold-standard-UI design contest and no open-ended coding contest is warranted.
 
+**✅ Shipped this run** (commits `eca2999` → `a86769e`; `astro check` 0 errors, `npm run build` green;
+homepage driven on the dev server — dock SSR'd hidden until hydration, `/api/search` +
+`/partials/inventory` return the expected shapes, count node matches `readGridTotal`):
+- **Phase 1** `refactor(sounds)` — pure `createToneEngine()` extracted; `createRebiSounds()` byte-compatible.
+- **Phase 2** `feat(ai)` — shared island hooks `src/components/ai/hooks/` (`useFocusStage`, `useRebiSounds`,
+  `useFilterUrl`, `useReducedMotion`), SSR- and remount-safe. Zero changes to `stage-engine.ts`.
+- **Phase 3** `feat(search)` — `SmartSearch.tsx` island replaces SearchDock's inline script; `SearchDock.astro`
+  is now a thin `client:idle` host (filename kept → `index.astro` untouched). URL-only filter state preserved.
+
+**Two directional deviations from the approved plan (autonomous calls, §1):**
+1. **Dropped the `useReactIsland` config flag.** The existing `dealerConfig.chat.search.enabled` is already
+   the operational kill-switch for AI search; a second dual-implementation flag would have duplicated ~600
+   lines of dock CSS across a legacy component and the island for marginal benefit. Straight swap instead;
+   rollback is via `git revert`.
+2. **Did NOT revive `reb:search`.** Review found the `ChatWidget.astro:1284` listener *opens the chat panel*,
+   so dispatching it on every applied search would auto-open the corner chat every search — a regression, not
+   a bonus. Preserved today's behaviour (no dispatch). An explicit "ask Rebi about these results" affordance
+   remains a possible future feature.
+
+**One assumption corrected during integration:** `filter-url.ts` did NOT need "zero changes" — pulling it
+into the island's SSR graph exposed a top-level `window` (popstate binding) that 500'd server render; guarded
+with `typeof window` (behaviour-neutral for browser importers). Also fixed a hydration mismatch on the sound
+toggle (mute now reconciles in a mount effect). The **full Rebi chat migration remains DEFERRED** as planned.
+
 ---
 
 ## /auto run 4 — audit verdicts, decisions & contest (2026-07-29)
