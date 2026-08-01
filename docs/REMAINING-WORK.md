@@ -9,6 +9,36 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 6 — LLM search query planner (design contest, Phase 1) (2026-08-01)
+
+Scope = one two-phase ticket: **replace the regex search extractor with an LLM query planner** on the
+search path (`extractFilters()` stays as the fallback on LLM failure/timeout). The known failure this
+fixes: *"a secondhand vehicle as a second car for our family"* → the regex extractor returned ONLY
+`seats=[7,8]`, dropping "secondhand" (synonym gap) and "second car" (no soft-signal concept).
+
+**Contest designation (§6 — decided up front):** the schema + clarification-policy design (problems A
+and B — how soft inferences flow through the plan, and when to flag `needsClarification`) is genuinely
+open-ended and becomes an architectural commitment in `DECISIONS.md`, so it **warrants the sub-agent
+contest**: 3 agents in strict sequence — two committed competing designs (blind to each other) + a
+critic — then the orchestrator's named synthesis. Per this ticket's Phase 1, the synthesis + proof are
+presented for the **owner's sign-off before any production code** (Phase 2).
+
+**Phase 1 (this run) — design + prove only, no production code:**
+- Run the contest → candidates 1 & 2 + critique (`docs/briefs/search-planner-*`).
+- Orchestrator synthesis: final Zod v4 schema (`.describe()` per field), system-prompt template with
+  `{{config placeholders}}`, numbered clarification policy.
+- Test harness: ~15 queries (incl. the canonical case + adversarial) with expected outputs.
+- **Known blocker:** live model pass-rate needs `OPENROUTER_API_KEY` (absent from `.env`/`.dev.vars`
+  here). Harness runs offline Zod-conformance now and is wired to hit the real `structured` tier once
+  the key is present — reported as a risk, not silently skipped.
+- The family-trap fix (`familySeats [7,8]` → 5-seat-lean, `src/config/dealer.ts:772`) is proposed in
+  Phase 1 and applied in Phase 2.
+
+**Phase 2 (after approval only):** wire the planner into `/api/search` (regex fallback preserved),
+apply the config change, keep the harness as a permanent test, record the decision in `DECISIONS.md`.
+
+---
+
 ## /auto run 5 — AI-search → React island (refactor-first) (2026-08-01)
 
 Autonomous run, scope = the owner-approved React migration of the AI surfaces. A 3-agent planning pass
