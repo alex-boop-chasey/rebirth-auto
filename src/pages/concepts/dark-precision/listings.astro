@@ -1,0 +1,144 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+
+const results = [
+  { title: "Isuzu D-MAX X-Terrain", sub: "2024 · 4x4 Ute · Auto", price: "$62,990", km: "12,400 km", trans: "6-sp Auto", fuel: "Diesel", drive: "4x4", flag: "DEMO", glyph:"🛻", ai:"Rebi: 3,500kg braked tow" },
+  { title: "Hyundai Kona Electric", sub: "2024 · SUV · EV", price: "$54,500", km: "New", trans: "Single-sp", fuel: "Electric", drive: "FWD", flag: "EV", glyph:"⚡", ai:"Rebi: 505km WLTP range" },
+  { title: "Subaru Outback AWD", sub: "2023 · Wagon · CVT", price: "$47,880", km: "22,010 km", trans: "CVT", fuel: "Petrol", drive: "AWD", flag: "USED", glyph:"🚙", ai:"Rebi: full service history" },
+  { title: "Kia Sportage GT-Line", sub: "2024 · SUV · Auto", price: "$46,250", km: "New", trans: "8-sp Auto", fuel: "Petrol", drive: "AWD", flag: "NEW", glyph:"🚗", ai:"Rebi: top-value trim" },
+  { title: "Nissan Navara PRO-4X", sub: "2023 · 4x4 Ute · Auto", price: "$58,400", km: "18,900 km", trans: "7-sp Auto", fuel: "Diesel", drive: "4x4", flag: "USED", glyph:"🛻", ai:"Rebi: warranty to 2028" },
+  { title: "Honda CR-V VTi-L7", sub: "2024 · 7-seat SUV", price: "$49,900", km: "New", trans: "CVT", fuel: "Petrol", drive: "FWD", flag: "NEW", glyph:"🚙", ai:"Rebi: fits your 7-seat brief" },
+  { title: "LDV eDeliver 7", sub: "2024 · Van · EV", price: "$61,300", km: "New", trans: "Single-sp", fuel: "Electric", drive: "RWD", flag: "EV", glyph:"🚐", ai:"Rebi: 0% BEV road tax" },
+  { title: "Chery Tiggo 7 Pro", sub: "2024 · SUV · Auto", price: "$34,990", km: "New", trans: "7-sp DCT", fuel: "Petrol", drive: "FWD", flag: "NEW", glyph:"🚗", ai:"Rebi: 7yr warranty" },
+  { title: "Jeep Wrangler Rubicon", sub: "2022 · 4x4 · Auto", price: "$68,750", km: "31,200 km", trans: "8-sp Auto", fuel: "Petrol", drive: "4x4", flag: "USED", glyph:"🚙", ai:"Rebi: high resale hold" },
+];
+---
+<Layout title="Inventory — Dark Precision" current="listings" dockHint="Refine these results in plain language">
+
+  <!-- header -->
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap" style="padding-block:34px">
+      <span class="dp-eyebrow">Inventory · live sync</span>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px;gap:24px">
+        <h1 class="dp-h2">All vehicles</h1>
+        <span class="dp-mono dp-mute" style="font-size:12px">636 RESULTS · UPDATED 00:04 AGO</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI query bar -->
+  <section class="dp-wrap" style="padding-top:24px">
+    <div class="dp-ai">
+      <div style="display:flex;align-items:center;gap:14px;padding:16px 18px">
+        <span class="dp-rebi-avatar" style="width:26px;height:26px"></span>
+        <div style="flex:1">
+          <p class="dp-mono" style="font-size:10.5px;letter-spacing:0.16em;color:var(--signal)">REBI FILTER · NATURAL LANGUAGE</p>
+          <p style="font-size:15px;margin-top:4px">Under $50k, diesel, 4x4, tow-ready, under 25,000km<span class="dp-caret"></span></p>
+        </div>
+        <span class="dp-chip dp-chip--signal">4 filters applied</span>
+        <button class="dp-btn dp-btn--primary dp-btn--sm">Run</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="dp-wrap" style="padding-block:26px 60px;display:grid;grid-template-columns:288px 1fr;gap:30px;align-items:start">
+
+    <!-- ===================== FILTER PANEL ===================== -->
+    <aside style="position:sticky;top:88px;display:grid;gap:14px">
+      <div class="dp-seg">
+        <button aria-pressed="true">New</button>
+        <button aria-pressed="false">Demo</button>
+        <button aria-pressed="false">Used</button>
+      </div>
+
+      <div class="dp-filters">
+        <div class="dp-filter">
+          <div class="dp-filter__head"><span>Body type</span><span class="dp-mute">−</span></div>
+          <div class="dp-filter__body">
+            {[["SUV","218",true],["Ute","94",true],["Wagon","41",false],["Hatch","63",false],["Van","22",false],["Sedan","37",false]].map(([l,c,on]) => (
+              <label class="dp-facet">
+                <span class="dp-facet__left"><span class={`dp-facet__box ${on?"dp-facet__box--on":""}`}>{on?"✓":""}</span>{l}</span>
+                <span class="dp-facet__count">{c}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div class="dp-filter">
+          <div class="dp-filter__head"><span>Fuel</span><span class="dp-mute">−</span></div>
+          <div class="dp-filter__body">
+            {[["Petrol","392",false],["Diesel","151",true],["Electric","28",false],["Hybrid","19",false]].map(([l,c,on]) => (
+              <label class="dp-facet">
+                <span class="dp-facet__left"><span class={`dp-facet__box ${on?"dp-facet__box--on":""}`}>{on?"✓":""}</span>{l}</span>
+                <span class="dp-facet__count">{c}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div class="dp-filter">
+          <div class="dp-filter__head"><span>Price</span><span class="dp-mute">−</span></div>
+          <div class="dp-filter__body">
+            <div style="display:flex;justify-content:space-between" class="dp-mono">
+              <span class="dp-dim" style="font-size:12px">$0</span>
+              <span style="color:var(--signal);font-size:12px">$50,000</span>
+            </div>
+            <div class="dp-range"><span class="dp-range__fill" style="left:0;width:58%"></span><span class="dp-range__knob" style="left:0"></span><span class="dp-range__knob" style="left:58%"></span></div>
+          </div>
+        </div>
+
+        <div class="dp-filter">
+          <div class="dp-filter__head"><span>Odometer</span><span class="dp-mute">−</span></div>
+          <div class="dp-filter__body">
+            <div style="display:flex;justify-content:space-between" class="dp-mono">
+              <span class="dp-dim" style="font-size:12px">0</span>
+              <span style="color:var(--signal);font-size:12px">25,000 km</span>
+            </div>
+            <div class="dp-range"><span class="dp-range__fill" style="left:0;width:40%"></span><span class="dp-range__knob" style="left:0"></span><span class="dp-range__knob" style="left:40%"></span></div>
+          </div>
+        </div>
+
+        <div class="dp-filter">
+          <div class="dp-filter__head"><span>Drive</span><span class="dp-mute">−</span></div>
+          <div class="dp-filter__body dp-pillrow" style="grid-auto-flow:column">
+            <span class="dp-chip dp-chip--active">4x4</span>
+            <span class="dp-chip">AWD</span>
+            <span class="dp-chip">FWD</span>
+            <span class="dp-chip">RWD</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dp-insight">
+        <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI TIP</span>
+        <p>Your filters match <strong>9 vehicles</strong>. Drop to AWD and you'd see 14 — Rebi thinks 4 of them still tow 3t.</p>
+      </div>
+      <button class="dp-btn" style="justify-content:center">Reset all</button>
+    </aside>
+
+    <!-- ===================== RESULTS ===================== -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div class="dp-pillrow">
+          <span class="dp-chip dp-chip--active">Diesel ✕</span>
+          <span class="dp-chip dp-chip--active">4x4 ✕</span>
+          <span class="dp-chip dp-chip--active">Under $50k ✕</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="dp-label" style="margin:0">Sort</span>
+          <span class="dp-chip">Rebi match ▾</span>
+        </div>
+      </div>
+      <div class="dp-grid dp-cols-3">
+        {results.map((v) => <VehicleCard {...v} />)}
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:34px">
+        <a class="dp-btn" href={`${base}/listings`}>Load more ↓</a>
+      </div>
+    </div>
+  </div>
+</Layout>

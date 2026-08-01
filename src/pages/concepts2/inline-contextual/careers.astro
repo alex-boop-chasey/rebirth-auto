@@ -1,0 +1,48 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+const roles = [
+  ['Vehicle Sales Consultant','Sales · Full-time','Bundaberg'],
+  ['Diesel Technician','Service · Full-time','Bundaberg'],
+  ['Parts Interpreter','Parts · Full-time','Bundaberg'],
+  ['EV Delivery Specialist','Sales · Part-time','Bundaberg'],
+];
+---
+<Layout title="Careers — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from About ("Join the team") · footer · Rebi</div>
+    <span class="eyebrow"><span set:html={icon('briefcase',13)}></span> Careers</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Build the future of the yard with us</h1>
+    <p class="lead">Local team, modern tools, genuine progression. We hire for attitude and train the rest.</p>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+      {[['heart','People-first','Supportive, local, no ego'],['star','Grow with us','Real training & progression'],['shield','Do it right','Honest selling, backed by AI']].map(([ic,t,d]) => (
+        <div class="card" style="padding:18px"><span style="color:var(--teal-deep)" set:html={icon(ic as string,22)}></span><b style="display:block; font-size:15px; margin:10px 0 4px">{t}</b><p class="muted" style="font-size:13px">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:14px">Open roles</h2>
+    <div class="stack" style="gap:10px">
+      {roles.map(([title,meta,loc]) => (
+        <div class="card card-lift" style="padding:16px 18px; display:flex; align-items:center; gap:16px">
+          <div style="flex:1"><b style="font-size:15.5px">{title}</b><div class="faint" style="font-size:12.5px; margin-top:2px">{meta} · {loc}</div></div>
+          <button class="btn btn-primary btn-sm" data-rebi-open><span set:html={icon('arrow',14)}></span> Apply</button>
+        </div>
+      ))}
+    </div>
+    <p class="faint" style="font-size:11.5px; margin-top:12px">Demo roles for illustration only.</p>
+  </section>
+
+  <section class="site-container section">
+    <div class="ai-summary" style="padding:22px; max-width:44rem">
+      <div style="display:flex; gap:9px; align-items:center; margin-bottom:8px"><span class="orb" style="width:22px;height:22px"></span><b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b></div>
+      <p style="font-size:14px">"What's it like working in your service team?" Rebi answers general questions and hands you to HR to apply.</p>
+      <button class="btn btn-ghost btn-sm" data-rebi-open style="margin-top:12px"><span set:html={icon('spark',14)}></span> Ask about working here</button>
+    </div>
+  </section>
+</Layout>

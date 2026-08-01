@@ -1,0 +1,75 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, roles, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="Careers — Rebirth Auto" active="Careers">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Careers</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:16ch">Build a career, not just clock shifts.</h1>
+    <p class="lead" style="margin-top:16px">We're a local team that backs its people. Ask Rebi about a role and it'll tell you honestly what the day-to-day looks like.</p>
+  </section>
+
+  <!-- CULTURE -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-3">
+      {[
+        ['users','A real team','Long-tenure crew, low turnover, and managers who came up from the floor.'],
+        ['spark','Modern tools','You\'ll work alongside Rebi and modern systems — less busywork, more selling.'],
+        ['shield','Backed & trained','Ongoing manufacturer training and a clear path from junior to senior.'],
+      ].map(([ic, h, p]) => (
+        <div class="card" style="padding:24px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px">{h}</h3>
+          <p class="muted" style="margin-top:8px; font-size:14px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- OPEN ROLES -->
+  <section class="site-container section-tight">
+    <h2 class="rf-h2" style="margin-bottom:18px">Open roles</h2>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      {roles.map((r) => (
+        <div class="card card-lift" style="padding:18px 22px; display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+          <span class="brand-mark" set:html={icon('briefcase',17)}></span>
+          <div style="flex:1; min-width:180px">
+            <b style="font-family:var(--font-display); font-size:16px">{r.title}</b>
+            <div class="faint" style="font-size:12.5px">{r.dept} · {r.type} · Bundaberg</div>
+          </div>
+          <a href={`${BASE}/rebi`} class="rf-action"><span class="spark" set:html={icon('spark',13)}></span> Ask Rebi about this role</a>
+          <a href="#apply" class="btn btn-primary btn-sm">Apply</a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- APPLICATION -->
+  <section id="apply" class="site-container section-tight">
+    <div class="card" style="padding:28px 30px; max-width:640px">
+      <div class="rf-row" style="gap:9px; margin-bottom:20px"><span class="brand-mark" set:html={icon('doc',18)}></span><b class="rf-h3">Register your interest</b></div>
+      <div class="rf-grid-2" style="gap:16px">
+        <div><label class="rf-lab">Name</label><input class="rf-field" placeholder="Your name" /></div>
+        <div><label class="rf-lab">Role</label><input class="rf-field" placeholder="Which role?" /></div>
+        <div style="grid-column:1 / -1"><label class="rf-lab">Contact</label><input class="rf-field" placeholder="Email or phone (demo)" /></div>
+        <div style="grid-column:1 / -1"><label class="rf-lab">A line about you</label><textarea class="rf-field" rows="3" placeholder="Tell us a bit"></textarea></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:20px; justify-content:center; width:100%; pointer-events:none">Submit application</button>
+      <p class="faint" style="font-size:11px; margin-top:10px">Demo form — not submitted anywhere.</p>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="What's the sales consultant role actually like day-to-day?"
+      reply="Honestly? Less cold-calling than you'd expect — I handle a lot of the first questions, so consultants spend more time with genuinely interested buyers. Base plus commission, full manufacturer training, and a local, low-turnover team."
+      actions={[
+        { label: 'About the dealership', href: `${BASE}/about`, icon: 'users' },
+        { label: 'Contact HR', href: `${BASE}/contact`, icon: 'mail' },
+      ]}
+    />
+  </section>
+</Shell>

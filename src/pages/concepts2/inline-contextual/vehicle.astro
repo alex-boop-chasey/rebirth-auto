@@ -1,0 +1,93 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, fmt, fmtKm, BASE } from './_shell/data';
+export const prerender = false;
+const id = Astro.url.searchParams.get('id') ?? 'ry-01';
+const v = vehicles.find((x) => x.id === id) ?? vehicles[0];
+const isElectrified = v.fuel === 'Electric' || v.fuel === 'Hybrid';
+const brandSlug = v.make.toLowerCase().replace(/\s+/g, '');
+const weekly = Math.round(v.price / 260);
+---
+<Layout title={`${v.year} ${v.make} ${v.model} — Rebirth Auto`}>
+  <section class="site-container" style="padding-block:22px 12px">
+    <a href={`${BASE}/listings`} class="muted" style="font-size:13px; text-decoration:none">← Back to all stock</a>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.5fr 1fr; gap:30px; padding-bottom:20px; align-items:start">
+    <!-- gallery + specs -->
+    <div>
+      <div style={`height:360px; border-radius:var(--r-lg); background:${v.hue}`}></div>
+      <div style="display:flex; gap:9px; margin-top:12px; flex-wrap:wrap">
+        {v.badge && <span class="chip chip-teal">{v.badge}</span>}
+        <span class="chip">{v.condition}</span>
+        <!-- fuel badge → EV hub, contextual -->
+        {isElectrified ? (
+          <a href={`${BASE}/electric`} class="chip chip-ai" style="text-decoration:none"><span set:html={icon('bolt',13)}></span> {v.fuel} — see the EV hub</a>
+        ) : (<span class="chip"><span set:html={icon('fuel',13)}></span> {v.fuel}</span>)}
+        <!-- brand chip → brand hub, contextual -->
+        <a href={`${BASE}/brand?b=${brandSlug}`} class="chip" style="text-decoration:none"><span set:html={icon('star',13)}></span> More {v.make}</a>
+      </div>
+
+      <div class="card" style="padding:22px; margin-top:20px">
+        <h2 style="font-family:var(--font-display); font-size:18px; margin-bottom:14px">Specs</h2>
+        <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,9rem),1fr)); gap:14px">
+          {[['gauge','Odometer',fmtKm(v.odo)],['gear','Transmission',v.trans],['drive','Drive',v.drive],['body','Body',v.body],['seat','Seats',String(v.seats)],['fuel','Fuel',v.fuel]].map(([ic,k,val]) => (
+            <div><div class="faint" style="font-size:11px; display:flex; gap:6px; align-items:center"><span set:html={icon(ic as string,13)}></span> {k}</div><b style="font-size:14.5px">{val}</b></div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Rebi's take (ai-summary) -->
+      <div class="ai-summary scan" style="margin-top:20px">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px"><span class="orb orb-halo" style="width:24px;height:24px"></span><b style="color:var(--indigo-deep); font-size:13px">Rebi's take</b></div>
+        <p style="font-size:14.5px; line-height:1.6">{v.aiLine}</p>
+        <button class="btn btn-ghost btn-sm" data-rebi-open data-rebi-kind="listing" data-rebi-ref={v.id} style="margin-top:12px"><span set:html={icon('chat',14)}></span> Ask Rebi about this car</button>
+      </div>
+
+      <!-- Edmunds-style expert slot -->
+      <div class="card" style="padding:20px; margin-top:20px">
+        <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:8px">Expert review</div>
+        <p class="muted" style="font-size:14px; line-height:1.6">"Composed on the highway, genuinely capable off the black-top. A sensible, well-equipped pick for regional families." — placeholder expert copy.</p>
+      </div>
+    </div>
+
+    <!-- BUY RAIL — the dense inline-entry surface -->
+    <aside style="position:sticky; top:92px; display:flex; flex-direction:column; gap:14px">
+      <div class="card" style="padding:22px">
+        <b style="font-family:var(--font-display); font-size:20px">{v.year} {v.make} {v.model}</b>
+        <div class="muted" style="font-size:13.5px">{v.variant}</div>
+        <div style="font-family:var(--font-display); font-weight:700; font-size:30px; margin:14px 0 2px">{fmt(v.price)}</div>
+        <div class="faint" style="font-size:12px">drive away</div>
+
+        <!-- price → repayments (finance calculator, prefilled), in situ -->
+        <a href={`${BASE}/finance?price=${v.price}`} class="entry entry--ai" style="width:100%; margin-top:16px">
+          <span class="entry-ic" set:html={icon('calc',18)}></span>
+          <span class="entry-tx"><b>Work out repayments</b><span>≈ ${weekly}/wk · calculator prefilled</span></span>
+          <span class="entry-go" set:html={icon('arrow',15)}></span>
+        </a>
+
+        <!-- task chain: book a test drive, prefilled -->
+        <a href={`${BASE}/test-drive?id=${v.id}`} class="btn btn-primary" style="width:100%; justify-content:center; margin-top:12px"><span set:html={icon('play',16)}></span> Book a test drive</a>
+        <button class="btn btn-ghost" data-rebi-open style="width:100%; justify-content:center; margin-top:9px"><span set:html={icon('spark',15)}></span> Enquire with Rebi</button>
+      </div>
+
+      <!-- trade-in / sell fold -->
+      <div class="card" style="padding:18px">
+        <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Got a car to move?</div>
+        <div class="stack" style="gap:9px">
+          <a href={`${BASE}/trade-in`} class="entry entry--amber" style="box-shadow:none"><span class="entry-ic" set:html={icon('tag',16)}></span><span class="entry-tx"><b>Add your trade-in</b><span>offset this price</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+          <a href={`${BASE}/sell`} class="entry entry--amber" style="box-shadow:none"><span class="entry-ic" set:html={icon('doc',16)}></span><span class="entry-tx"><b>Sell it outright instead</b><span>compare sell vs trade</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+        </div>
+      </div>
+
+      <!-- parts for THIS model, contextual -->
+      <div class="card" style="padding:18px">
+        <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">After you buy</div>
+        <div class="stack" style="gap:9px">
+          <a href={`${BASE}/parts?model=${v.make}-${v.model}`} class="entry" style="box-shadow:none"><span class="entry-ic" set:html={icon('wrench',16)}></span><span class="entry-tx"><b>Genuine parts for this {v.model}</b><span>fitment checked</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+          <a href={`${BASE}/service`} class="entry" style="box-shadow:none"><span class="entry-ic" set:html={icon('clock',16)}></span><span class="entry-tx"><b>Book its first service</b><span>fixed-price plans</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+        </div>
+      </div>
+    </aside>
+  </section>
+</Layout>

@@ -23,11 +23,11 @@ const { chips } = Astro.props;
             href={chip.removeHref}
             data-filter-chip
             aria-label={`Remove filter ${chip.label}: ${chip.value}`}
-            class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10 transition hover:bg-slate-900/10 hover:text-slate-900"
+            class="inline-flex items-center gap-1.5 rounded-pill border border-line bg-surface px-3 py-1 text-xs font-medium text-ink-soft shadow-[var(--sh-1)] transition hover:border-teal hover:text-ink"
           >
-            <span class="text-slate-400">{chip.label}:</span>
-            <span class="font-semibold text-slate-700">{chip.value}</span>
-            <span class="text-slate-400" aria-hidden="true">
+            <span class="text-ink-faint">{chip.label}:</span>
+            <span class="font-semibold text-ink">{chip.value}</span>
+            <span class="text-ink-faint" aria-hidden="true">
               <Fragment set:html={iconSvg('cross', 'h-3 w-3')} />
             </span>
           </a>

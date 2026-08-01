@@ -1,0 +1,78 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+import { vehicles } from './_data';
+const models = [
+  { name: 'RAV4', body: 'Mid SUV', price: 'From $42,260', tag: 'g-sage' },
+  { name: 'Corolla Cross', body: 'Small SUV', price: 'From $34,590', tag: 'g-navy' },
+  { name: 'HiLux', body: '4x4 Ute', price: 'From $47,190', tag: 'g-clay' },
+  { name: 'Camry', body: 'Sedan', price: 'From $39,990', tag: 'g-teal' },
+  { name: 'LandCruiser', body: 'Large SUV', price: 'From $96,500', tag: 'g-sage' },
+  { name: 'Yaris Cross', body: 'Light SUV', price: 'From $30,900', tag: 'g-navy' },
+];
+const stock = vehicles.filter((v) => v.make === 'Toyota').concat(vehicles.slice(0, 2));
+---
+<Layout title="Toyota at Riverbend" active="listings">
+  <section class="rt-brand-hero">
+    <div class="rt-wrap rt-brand-hero-grid">
+      <div>
+        <div class="rt-brand-logo">Toyota</div>
+        <h1>Toyota at Riverbend Motor Co.</h1>
+        <p>Your local Toyota family since 1992. New, demo and certified used — plus genuine servicing and parts,
+          all under one roof, all backed by people you know.</p>
+        <div class="rt-brand-hero-btns">
+          <a href="/concepts/regional-trust/listings" class="rt-btn rt-btn-primary">Browse Toyota stock</a>
+          <a href="/concepts/regional-trust/offers" class="rt-btn rt-btn-ghost rt-btn-light">Toyota offers</a>
+        </div>
+      </div>
+      <div class="rt-brand-stats">
+        <div><strong>32</strong><span>Toyota in stock</span></div>
+        <div><strong>5yr</strong><span>warranty</span></div>
+        <div><strong>#1</strong><span>local for Toyota service</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">The range</span><h2>Popular Toyota models</h2></div>
+      <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-ghost"><span class="rt-rebi-orb"></span> Which Toyota suits me?</a></div>
+    <div class="rt-brand-models">
+      {models.map((m) => (
+        <a href="/concepts/regional-trust/listings" class="rt-brand-model rt-card">
+          <div class={`rt-photo ${m.tag} rt-brand-model-photo`}></div>
+          <div class="rt-brand-model-body"><strong>{m.name}</strong><span>{m.body}</span><em>{m.price}</em></div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">In stock now</span><h2>Available Toyota vehicles</h2></div></div>
+    <div class="rt-brand-stock">{stock.slice(0, 3).map((v) => <VehicleCard v={v} />)}</div>
+  </section>
+</Layout>
+
+<style>
+  .rt-brand-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-brand-hero-grid { display: grid; grid-template-columns: 1.3fr .7fr; gap: 48px; padding-block: 56px; align-items: center; }
+  .rt-brand-logo { display: inline-block; font-family: var(--ff-display); font-weight: 700; font-size: 20px; color: #fff; background: var(--clay); padding: 8px 20px; border-radius: 8px; margin-bottom: 18px; letter-spacing: .04em; }
+  .rt-brand-hero h1 { font-size: 44px; }
+  .rt-brand-hero p { font-size: 17px; color: var(--ink-70); max-width: 520px; margin-top: 14px; }
+  .rt-brand-hero-btns { display: flex; gap: 12px; margin-top: 24px; }
+  .rt-btn-light { background: var(--white); }
+  .rt-brand-stats { display: flex; flex-direction: column; gap: 16px; }
+  .rt-brand-stats div { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 22px; box-shadow: var(--shadow); }
+  .rt-brand-stats strong { font-family: var(--ff-display); font-size: 30px; color: var(--green-deep); display: block; }
+  .rt-brand-stats span { font-size: 13px; color: var(--muted); }
+  .rt-brand-models { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .rt-brand-model { overflow: hidden; transition: transform .18s; }
+  .rt-brand-model:hover { transform: translateY(-3px); }
+  .rt-brand-model-photo { height: 150px; }
+  .rt-brand-model-body { padding: 16px; }
+  .rt-brand-model-body strong { font-size: 18px; display: block; }
+  .rt-brand-model-body span { font-size: 13px; color: var(--muted); }
+  .rt-brand-model-body em { font-style: normal; display: block; margin-top: 8px; font-weight: 700; color: var(--green-deep); }
+  .rt-brand-stock { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+</style>

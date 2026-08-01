@@ -1,0 +1,32 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Trade-in valuation — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from a vehicle page ("add your trade-in") · footer · Rebi</div>
+    <span class="eyebrow"><span set:html={icon('tag',13)}></span> Trade-in</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Value your trade-in</h1>
+    <p class="lead">Offset the price of your next car. Prefer to just sell it and keep the cash? That's a different door — linked below.</p>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.3fr 1fr; gap:26px; padding-bottom:44px; align-items:start">
+    <div class="card" style="padding:26px">
+      <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:16px">Your current car</h2>
+      <div class="grid-auto" style="grid-template-columns:1fr 1fr; gap:14px">
+        {[['Make','e.g. Toyota'],['Model','e.g. Corolla'],['Year','2019'],['Odometer','76,000 km']].map(([l,ph]) => (
+          <label style="display:block"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+        ))}
+      </div>
+      <button class="btn btn-primary" data-rebi-open style="margin-top:18px; width:100%; justify-content:center"><span set:html={icon('spark',15)}></span> Get indicative trade value</button>
+      <p class="faint" style="font-size:11.5px; margin-top:10px">Indicative only — final figure after inspection. Demo form.</p>
+    </div>
+    <aside class="stack" style="gap:14px">
+      <!-- sell ↔ trade fold -->
+      <a href={`${BASE}/sell`} class="entry entry--amber"><span class="entry-ic" set:html={icon('doc',18)}></span><span class="entry-tx"><b>Rather sell outright?</b><span>walk away with cash</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/listings`} class="entry"><span class="entry-ic" set:html={icon('car',18)}></span><span class="entry-tx"><b>Find your next car</b><span>apply the trade value</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/finance`} class="entry entry--ai"><span class="entry-ic" set:html={icon('calc',18)}></span><span class="entry-tx"><b>Trade as deposit</b><span>see the new repayment</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+    </aside>
+  </section>
+</Layout>

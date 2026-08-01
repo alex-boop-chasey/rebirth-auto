@@ -8,21 +8,23 @@
    filter over the light page. Nothing here is scoped; selectors are unchanged.
    ========================================================================== */
 .reb-chat {
-  --reb-primary: rgb(1 97 239);
-  --reb-primary-hover: rgb(1 84 207);
-  /* Focus Stage brand tokens — inherited down into the .focus-stage cards so
-     the shared stage renders identically to the homepage search bar. */
-  --rebi-blue: rgb(1 97 239);
-  --rebi-blue-hover: rgb(1 84 207);
-  --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
-  --ink: rgb(15 23 42);
-  --muted: rgb(100 116 139);
-  /* Light / near-white glass palette (was a dark panel; now matches the stage). */
+  /* Near-Future Yard skin — Rebi speaks in indigo/aurora over glass. */
+  --reb-primary: var(--indigo);
+  --reb-primary-hover: var(--indigo-deep);
+  /* Focus Stage brand tokens — inherited down into the .focus-stage cards so the
+     shared stage renders identically to the homepage search bar. NAMES preserved
+     (SearchDock sets the same ones); only the VALUES are NFY now. --ink is left
+     unset so it inherits the global NFY ink (#0D1626); --muted maps to ink-soft. */
+  --rebi-blue: var(--indigo);
+  --rebi-blue-hover: var(--indigo-deep);
+  --rebi-grad: var(--aurora);
+  --muted: var(--ink-soft);
+  /* Light / near-white glass palette. */
   --reb-panel-bg: rgb(255 255 255 / 0.92);
-  --reb-panel-border: rgb(1 97 239 / 0.16);
-  --reb-bot-bg: rgb(241 245 249);        /* legacy .reb-msg (hidden log) fallbacks */
+  --reb-panel-border: rgb(85 102 240 / 0.18);
+  --reb-bot-bg: var(--bg-2);             /* legacy .reb-msg (hidden log) fallbacks */
   --reb-bot-text: var(--ink);
-  --reb-human-bg: rgb(16 122 87);
+  --reb-human-bg: var(--teal-deep);
   --reb-text: var(--ink);
   --reb-muted: var(--muted);
   position: fixed;
@@ -90,11 +92,15 @@
   z-index: 1; /* below .reb-panel (10000), above the page (inside #reb-chat's context) */
   pointer-events: none;
   opacity: 0;
-  background: radial-gradient(ellipse 52% 50% at 50% 46%,
-    rgb(236 243 255 / 0.96) 0%,
-    rgb(226 237 255 / 0.9) 30%,
-    rgb(210 226 255 / 0.6) 55%,
-    rgb(210 226 255 / 0) 76%);
+  /* NFY aurora wash: a near-white bloom to mask the busy page, tinted with the
+     mint + indigo glows so the chat reads as Rebi's own light-space. */
+  background:
+    radial-gradient(ellipse 46% 44% at 50% 44%,
+      rgb(255 255 255 / 0.96) 0%,
+      rgb(244 249 254 / 0.92) 34%,
+      rgb(240 246 252 / 0) 74%),
+    radial-gradient(ellipse 60% 55% at 68% 30%, var(--mint-glow), transparent 62%),
+    radial-gradient(ellipse 60% 55% at 30% 72%, var(--indigo-glow), transparent 62%);
   -webkit-filter: blur(30px);
   filter: blur(30px);
   transition: opacity 360ms ease;
@@ -150,9 +156,9 @@
   width: 1.95rem; height: 1.95rem;
   background: rgb(255 255 255 / 0.7);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  border: 1px solid rgb(1 97 239 / 0.16);
+  border: 1px solid var(--line);
   color: var(--muted); cursor: pointer; border-radius: 9999px;
-  box-shadow: 0 4px 12px -6px rgb(15 23 42 / 0.25);
+  box-shadow: 0 4px 12px -6px rgb(13 22 38 / 0.22);
   transition: color 0.15s ease, background 0.15s ease;
 }
 .reb-close:hover { background: rgb(255 255 255 / 0.95); color: var(--rebi-blue); }
@@ -176,10 +182,10 @@
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .reb-action-btn svg { width: 1rem; height: 1rem; flex-shrink: 0; }
-.reb-action-primary { background: var(--reb-primary); color: #fff; }
-.reb-action-primary:hover { background: var(--reb-primary-hover); }
-.reb-action-secondary { background: rgb(1 97 239 / 0.04); color: var(--ink); border-color: rgb(1 97 239 / 0.28); }
-.reb-action-secondary:hover { background: rgb(1 97 239 / 0.1); }
+.reb-action-primary { background: var(--aurora); background-size: 160% 160%; color: #fff; box-shadow: var(--sh-glow); }
+.reb-action-primary:hover { box-shadow: 0 16px 46px -12px rgb(85 102 240 / 0.55); }
+.reb-action-secondary { background: var(--indigo-glow); color: var(--ink); border-color: rgb(85 102 240 / 0.28); }
+.reb-action-secondary:hover { background: rgb(85 102 240 / 0.14); }
 
 /* ================= Focus Stage viewport (the 3D theatre) =================
    Transparent, no box (no background/border/shadow) — the receding bubble cards
@@ -267,8 +273,8 @@
 .reb-contact-label { font-size: 0.78rem; font-weight: 600; color: var(--ink); }
 .reb-contact-row { display: flex; gap: 0.4rem; }
 .reb-contact-input {
-  flex: 1; background: rgb(255 255 255 / 0.9); border: 1px solid rgb(1 97 239 / 0.25);
-  border-radius: 0.6rem; color: var(--ink); padding: 0.5rem 0.65rem; font-size: 0.88rem; font-family: inherit;
+  flex: 1; background: rgb(255 255 255 / 0.9); border: 1px solid rgb(85 102 240 / 0.25);
+  border-radius: var(--r-sm); color: var(--ink); padding: 0.5rem 0.65rem; font-size: 0.88rem; font-family: inherit;
   min-width: 0;
 }
 .reb-contact-input::placeholder { color: var(--muted); }
@@ -279,21 +285,22 @@
 }
 .reb-contact-send:hover { background: var(--reb-primary-hover); }
 
-/* Form — the search bar's underline "entry" row (light glass, blue underline). */
+/* Composer — the NFY aurora-bordered pill (mirrors .aisearch): a white surface
+   ringed by the aurora gradient via the two-layer padding-box/border-box trick. */
 .reb-form.reb-entry {
   display: flex; align-items: flex-end; gap: 0.4rem;
   margin: 0 0.75rem;
-  padding: 0.4rem 0.4rem 0.4rem 0.75rem;
-  border: 1px solid transparent;
-  border-bottom: 2px solid rgb(1 97 239 / 0.3);
-  border-radius: 0.75rem;
-  background: rgb(255 255 255 / 0.6);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  transition: border-color 200ms ease, background 200ms ease;
+  padding: 0.4rem 0.4rem 0.4rem 1rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-pill);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--aurora) border-box;
+  box-shadow: var(--sh-2);
+  transition: box-shadow 220ms ease;
 }
 .reb-form.reb-entry:focus-within {
-  border-bottom-color: var(--reb-primary);
-  background: rgb(255 255 255 / 0.9);
+  box-shadow: var(--sh-glow), var(--sh-2);
 }
 .reb-input {
   flex: 1;
@@ -308,7 +315,7 @@
   line-height: 1.4;
   min-width: 0;
 }
-.reb-input::placeholder { color: var(--muted); }
+.reb-input::placeholder { color: var(--ink-faint); }
 .reb-input:focus { outline: none; }
 
 /* Secondary icon buttons (mic + speaker) sit inline in the entry row. */
@@ -319,23 +326,24 @@
   border: none; border-radius: 9999px;
   cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
 }
-.reb-icon-btn:hover { background: rgb(1 97 239 / 0.08); color: var(--rebi-blue); }
+.reb-icon-btn:hover { background: var(--indigo-glow); color: var(--rebi-blue); }
 .reb-icon-btn:focus-visible { outline: 2px solid var(--rebi-blue); outline-offset: 2px; }
 .reb-icon-btn svg { width: 1.15rem; height: 1.15rem; }
 .reb-mic[hidden] { display: none; }
 .reb-mic.reb-recording { background: rgb(16 185 129 / 15%); color: rgb(16 185 129); animation: reb-pulse 1.4s ease-in-out infinite; }
 @keyframes reb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 45%); } 50% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0%); } }
 
-/* Send — the primary filled action (stays a solid blue button). */
+/* Send — the primary aurora action, matching the NFY composer button. */
 .reb-send {
   display: flex; align-items: center; justify-content: center;
   width: 2.5rem; height: 2.5rem; flex-shrink: 0;
-  background: var(--reb-primary); color: #fff; border: none;
-  border-radius: 9999px; cursor: pointer; transition: background 0.15s ease, transform 0.12s ease;
+  background: var(--aurora); background-size: 160% 160%; color: #fff; border: none;
+  box-shadow: var(--sh-glow);
+  border-radius: 9999px; cursor: pointer; transition: box-shadow 0.2s ease, transform 0.12s ease;
 }
-.reb-send:hover:not(:disabled) { background: var(--reb-primary-hover); }
+.reb-send:hover:not(:disabled) { box-shadow: 0 16px 40px -12px rgb(85 102 240 / 0.55); }
 .reb-send:active:not(:disabled) { transform: scale(0.94); }
-.reb-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.reb-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .reb-send svg { width: 1.15rem; height: 1.15rem; }
 
 .reb-foot { font-size: 0.68rem; color: var(--reb-muted); text-align: center; margin: 0; padding: 0 0.75rem 0.6rem; }
@@ -357,14 +365,14 @@
   position: relative;
   width: 100%;
   max-width: 20rem;
-  background: rgb(255 255 255);
+  background: var(--surface);
   border: 1px solid var(--reb-panel-border);
-  border-radius: 0.9rem;
+  border-radius: var(--r-lg);
   padding: 1.25rem 1.1rem 1.1rem;
-  box-shadow: 0 18px 40px -16px rgb(15 23 42 / 0.35);
+  box-shadow: var(--sh-3);
 }
 .reb-confirm-x { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--muted); }
-.reb-confirm-x:hover { background: rgb(1 97 239 / 0.08); color: var(--ink); }
+.reb-confirm-x:hover { background: var(--indigo-glow); color: var(--ink); }
 .reb-confirm-title { font-size: 1rem; font-weight: 600; margin: 0 1.25rem 0.35rem 0; color: var(--reb-text); }
 .reb-confirm-sub { font-size: 0.8rem; color: var(--reb-muted); margin: 0 0 0.9rem; }
 .reb-confirm-actions { flex-direction: column; } /* stacked — the primary label is long */

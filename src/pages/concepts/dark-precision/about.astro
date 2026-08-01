@@ -1,0 +1,49 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+---
+<Layout title="About — Dark Precision" current="about" dockHint="Ask me anything about the dealership">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">About</span>
+      <h1 class="dp-display" style="font-size:54px;margin-top:16px;max-width:18ch">A regional dealer group, rebuilt around the buyer.</h1>
+      <p class="dp-lead" style="margin-top:18px;max-width:56ch">Thirteen franchises under one roof, backed by an AI co-pilot that puts the same expert knowledge in every buyer's hands. This is a demo of that idea — the identity here is placeholder.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-grid dp-cols-4">
+      {[["312","Vehicles in stock"],["13","Franchise brands"],["40+","Team members"],["4.9★","Buyer rating"]].map(([b,s]) => (
+        <div class="dp-panel dp-tick" style="padding:24px"><div class="dp-stat"><b style="color:var(--signal)">{b}</b><span>{s}</span></div></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px">
+      <div class="dp-panel" style="padding:30px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:14px">Our approach</span>
+        <p class="dp-dim" style="font-size:15px;line-height:1.7">We think buying a car should feel like consulting an expert, not decoding a sales pitch. Rebi reads every spec sheet, service record and market comparison so you don't have to — then a local specialist closes it in person. Technology for clarity; people for trust.</p>
+      </div>
+      <div class="dp-panel" style="padding:30px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:14px">Why it matters here</span>
+        <p class="dp-dim" style="font-size:15px;line-height:1.7">Regional buyers deserve the same information advantage as the capitals. By grounding Rebi only in verified, public vehicle data, we keep the advice honest and the private dealer information private — a promise we hold to on every page.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <span class="dp-eyebrow">The team</span>
+    <h2 class="dp-h2" style="margin-top:14px;margin-bottom:24px">People behind the platform</h2>
+    <div class="dp-grid dp-cols-4">
+      {[["Sales","Dealer principal & brand specialists"],["Finance","Accredited F&I consultants"],["Service","Factory-trained technicians"],["Rebi","Your AI co-pilot · always on"]].map(([r,d]) => (
+        <div class="dp-panel dp-tick" style="padding:22px;display:grid;gap:12px">
+          <span class="dp-rebi-avatar" style="width:40px;height:40px;opacity:0.85"></span>
+          <h3 style="font-family:var(--font-display);font-weight:600;font-size:17px">{r}</h3>
+          <p class="dp-mute" style="font-size:13px;line-height:1.5">{d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+</Layout>

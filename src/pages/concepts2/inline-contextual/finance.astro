@@ -1,0 +1,77 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+const price = Number(Astro.url.searchParams.get('price') ?? 45000);
+const deposit = 5000;
+const term = 5;
+const rate = 6.9;
+const financed = price - deposit;
+const monthly = Math.round((financed * (1 + (rate/100) * term)) / (term * 12));
+const weekly = Math.round(monthly * 12 / 52);
+---
+<Layout title="Finance & repayments — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from a vehicle's price · Rebi · footer</div>
+    <span class="eyebrow"><span set:html={icon('calc',13)}></span> Finance</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Work out the repayment, then the car</h1>
+    <p class="lead">Drag the sliders for an indicative figure. When you open this from a car, the price is already filled in.</p>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.4fr 1fr; gap:26px; padding-bottom:20px; align-items:start">
+    <!-- CALCULATOR -->
+    <div class="card" style="padding:26px">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px">
+        <h2 style="font-family:var(--font-display); font-size:20px">Repayment calculator</h2>
+        <span class="chip chip-ai"><span set:html={icon('spark',12)}></span> prefilled from listing</span>
+      </div>
+      {[['Vehicle price', `$${price.toLocaleString('en-AU')}`, price, 15000, 120000],
+        ['Deposit', `$${deposit.toLocaleString('en-AU')}`, deposit, 0, 40000],
+        ['Term', `${term} years`, term, 1, 7],
+        ['Rate (comparison)', `${rate}% p.a.`, rate, 4, 12]].map(([label, val, cur, min, max]) => (
+        <div style="margin-bottom:20px">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px"><span class="muted" style="font-size:13.5px">{label}</span><b style="font-size:14.5px">{val}</b></div>
+          <input class="slider" type="range" min={min as number} max={max as number} value={cur as number} readonly />
+        </div>
+      ))}
+      <hr class="divider" style="margin:8px 0 20px" />
+      <div style="display:flex; gap:16px; flex-wrap:wrap">
+        <div class="ai-summary" style="flex:1; min-width:180px; padding:18px 20px">
+          <div class="faint" style="font-size:12px">Indicative weekly</div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:30px; color:var(--indigo-deep)">${weekly}<span style="font-size:14px; color:var(--ink-faint)">/wk</span></div>
+        </div>
+        <div class="ai-summary" style="flex:1; min-width:180px; padding:18px 20px">
+          <div class="faint" style="font-size:12px">Indicative monthly</div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:30px; color:var(--indigo-deep)">${monthly}<span style="font-size:14px; color:var(--ink-faint)">/mo</span></div>
+        </div>
+      </div>
+      <p class="faint" style="font-size:11.5px; margin-top:14px">Indicative only — not a quote or an offer of finance. Placeholder figures.</p>
+    </div>
+
+    <!-- side rail: pre-approval, offers fold, Rebi -->
+    <aside class="stack" style="gap:14px; position:sticky; top:92px">
+      <div class="card" style="padding:22px">
+        <h3 style="font-family:var(--font-display); font-size:17px; margin-bottom:6px">Get pre-approved</h3>
+        <p class="muted" style="font-size:13.5px">Shop with a firm budget. A quick form, no impact to browse.</p>
+        <button class="btn btn-primary" data-rebi-open style="width:100%; justify-content:center; margin-top:14px"><span set:html={icon('check',15)}></span> Start pre-approval</button>
+      </div>
+      <!-- finance ↔ offers fold -->
+      <a href={`${BASE}/offers`} class="entry entry--amber"><span class="entry-ic" set:html={icon('tag',18)}></span><span class="entry-tx"><b>See finance offers</b><span>low-rate & drive-away deals</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/listings`} class="entry"><span class="entry-ic" set:html={icon('filter',18)}></span><span class="entry-tx"><b>Find a car in this budget</b><span>filter by price</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <div class="ai-summary" style="padding:18px 20px">
+        <div style="display:flex; gap:9px; align-items:center; margin-bottom:8px"><span class="orb" style="width:22px;height:22px"></span><b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b></div>
+        <p style="font-size:13.5px">"Can I afford the D-MAX on $200/week?" — Rebi checks and shows the cars that fit.</p>
+        <button class="btn btn-ghost btn-sm" data-rebi-open style="margin-top:10px"><span set:html={icon('spark',14)}></span> Pre-qualify with Rebi</button>
+      </div>
+    </aside>
+  </section>
+
+  <section class="site-container section">
+    <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:16px">Common questions</h2>
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))">
+      {[['Do you finance used cars?','Yes — new, demo and used, subject to approval.'],['Will a quote affect my credit?','A browse-time estimate won\'t; a formal application may.'],['Can I pay it out early?','Most products allow early payout — ask about any fees.'],['Trade-in as deposit?','Absolutely — value it and it reduces the amount financed.']].map(([q,a]) => (
+        <div class="card" style="padding:18px"><b style="font-size:14.5px">{q}</b><p class="muted" style="font-size:13.5px; margin-top:6px">{a}</p></div>
+      ))}
+    </div>
+  </section>
+</Layout>

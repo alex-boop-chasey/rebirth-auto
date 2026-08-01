@@ -1,0 +1,132 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+---
+<Layout title="Rebi Console — Dark Precision" current="" showDock={false}>
+  <section class="dp-wrap" style="padding-block:30px 60px">
+    <div style="display:grid;grid-template-columns:250px 1fr 300px;gap:22px;align-items:start;height:calc(100vh - 160px);min-height:640px">
+
+      <!-- LEFT: session rail -->
+      <aside class="dp-panel" style="padding:18px;height:100%;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="dp-rebi-avatar"></span>
+          <div>
+            <div style="font-family:var(--font-display);font-weight:600">Rebi</div>
+            <div class="dp-mono" style="font-size:10px;color:var(--signal)">● ONLINE · v3.2</div>
+          </div>
+        </div>
+        <button class="dp-btn dp-btn--primary dp-btn--sm" style="justify-content:center">+ New session</button>
+        <div>
+          <span class="dp-label">Recent</span>
+          <div style="display:grid;gap:6px;margin-top:10px">
+            {[["Diesel ute, tow 3t","active"],["EV for daily commute",""],["Trade-in my 2018 Hilux",""],["Best 7-seat under $50k",""]].map(([t,a]) => (
+              <a href="#" class="dp-facet" style={`border:1px solid ${a?"var(--line-glow)":"var(--line)"};border-radius:3px;padding:9px 11px;font-size:12px;color:${a?"var(--signal)":"var(--ink-dim)"}`}>
+                <span>{t}</span>{a && <span class="dp-dot dp-dot--live"></span>}
+              </a>
+            ))}
+          </div>
+        </div>
+        <div class="dp-insight" style="margin-top:auto">
+          <span class="dp-insight__tag">CONTEXT</span>
+          <p>Grounded on <strong>636 live listings</strong> + verified spec. Private dealer data never used.</p>
+        </div>
+      </aside>
+
+      <!-- CENTRE: conversation -->
+      <div class="dp-ai" style="height:100%;display:flex;flex-direction:column">
+        <div class="dp-ai__head">
+          <span class="dp-rebi-avatar" style="width:24px;height:24px"></span>
+          <span style="color:var(--ink-dim)">REBI CONSOLE</span>
+          <span class="dp-chip" style="margin-left:auto">SESSION · DIESEL UTE</span>
+          <span class="dp-chip dp-chip--signal"><span class="dp-dot dp-dot--live"></span>STREAMING</span>
+        </div>
+
+        <div style="flex:1;overflow:hidden;padding:24px;display:flex;flex-direction:column;gap:20px">
+          <!-- user -->
+          <div style="align-self:flex-end;max-width:70%">
+            <div class="dp-panel dp-panel--raised" style="padding:13px 16px;border-color:var(--line-bright)">
+              <p style="font-size:14px;line-height:1.55">I need a 4x4 ute under $65k that can tow a 3-tonne caravan. Diesel. Low kms.</p>
+            </div>
+            <p class="dp-mono dp-mute" style="font-size:10px;text-align:right;margin-top:6px">YOU · 14:22</p>
+          </div>
+
+          <!-- rebi -->
+          <div style="display:flex;gap:14px;max-width:88%">
+            <span class="dp-rebi-avatar" style="width:30px;height:30px;flex:none"></span>
+            <div style="display:grid;gap:12px">
+              <div class="dp-insight" style="border-left-color:var(--signal)">
+                <p style="font-size:14.5px;line-height:1.65">Good brief. Three vehicles in the yard hit all four constraints — diesel, 4x4, ≥3t braked tow, under $65k. Here's how they compare:</p>
+              </div>
+
+              <!-- inline comparison card -->
+              <div class="dp-panel" style="padding:0;overflow:hidden">
+                {[
+                  ["Isuzu D-MAX X-Terrain","$62,990","3,500 kg","12,400 km","Best value"],
+                  ["Nissan Navara PRO-4X","$58,400","3,500 kg","18,900 km","Cheapest"],
+                  ["Ford Ranger Wildtrak","$64,200","3,500 kg","9,800 km","Lowest km"],
+                ].map(([n,p,tow,km,tag],i) => (
+                  <a href={`${base}/vehicle`} class="dp-readout" style={`grid-template-columns:1.6fr 1fr 1fr 1fr auto;padding:14px 16px;${i<2?"border-bottom:1px solid var(--line)":"border-bottom:0"}`}>
+                    <span style="font-family:var(--font-display);font-weight:600;font-size:13.5px">{n}</span>
+                    <span class="dp-readout__v">{p}</span>
+                    <span class="dp-mute dp-mono" style="font-size:11px">{tow}</span>
+                    <span class="dp-mute dp-mono" style="font-size:11px">{km}</span>
+                    <span class="dp-chip dp-chip--signal">{tag}</span>
+                  </a>
+                ))}
+              </div>
+
+              <div class="dp-panel dp-panel--raised" style="padding:15px 17px">
+                <p style="font-size:14.5px;line-height:1.65">My pick is the <strong style="color:var(--ink)">D-MAX X-Terrain</strong> — it's an ex-demo priced 4% under market and the interior spec is a step above the Navara. Want me to line up test drives, or run finance across all three?<span class="dp-caret"></span></p>
+              </div>
+
+              <div class="dp-pillrow">
+                <span class="dp-chip dp-chip--signal">Book all 3 test drives</span>
+                <span class="dp-chip dp-chip--signal">Compare finance</span>
+                <span class="dp-chip">Show me EV alternatives</span>
+              </div>
+              <p class="dp-mono dp-mute" style="font-size:10px">REBI · 14:22 · grounded in 3 listings · <span style="color:var(--signal)">sources ✓</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- input -->
+        <div style="border-top:1px solid var(--line);padding:16px 18px">
+          <div style="display:flex;align-items:center;gap:12px;background:var(--base);border:1px solid var(--line-bright);border-radius:4px;padding:12px 16px">
+            <span style="color:var(--signal);font-size:16px">◈</span>
+            <span style="flex:1;font-size:14px;color:var(--ink-mute)">Message Rebi… (specs, finance, trade-in, availability)</span>
+            <span class="dp-kbd">⏎</span>
+            <button class="dp-btn dp-btn--primary dp-btn--sm">Send</button>
+          </div>
+          <p class="dp-mono dp-mute" style="font-size:10px;margin-top:10px;text-align:center">Rebi is grounded on public listing data only · never sees private dealer notes</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: live context readout -->
+      <aside class="dp-panel" style="padding:20px;height:100%;display:grid;gap:18px;align-content:start">
+        <div>
+          <span class="dp-eyebrow--mute dp-eyebrow">Session context</span>
+          <div style="display:grid;gap:8px;margin-top:14px">
+            <div class="dp-readout" style="grid-template-columns:1fr auto"><span class="dp-readout__k">Budget</span><span class="dp-readout__v">≤ $65,000</span></div>
+            <div class="dp-readout" style="grid-template-columns:1fr auto"><span class="dp-readout__k">Fuel</span><span class="dp-readout__v">Diesel</span></div>
+            <div class="dp-readout" style="grid-template-columns:1fr auto"><span class="dp-readout__k">Drive</span><span class="dp-readout__v">4x4</span></div>
+            <div class="dp-readout" style="grid-template-columns:1fr auto"><span class="dp-readout__k">Tow min</span><span class="dp-readout__v">3,000 kg</span></div>
+          </div>
+        </div>
+        <hr class="dp-hr"/>
+        <div>
+          <span class="dp-eyebrow--mute dp-eyebrow">Match confidence</span>
+          <div class="dp-mono" style="font-size:40px;color:var(--signal);margin-top:10px">96%</div>
+          <p class="dp-mute" style="font-size:12px">3 of 636 listings meet all criteria.</p>
+        </div>
+        <hr class="dp-hr"/>
+        <div class="dp-ai" style="padding:14px">
+          <span class="dp-insight__tag" style="margin-bottom:8px;display:flex">SMART LEAD</span>
+          <p class="dp-dim" style="font-size:12.5px;line-height:1.55">Ready to hand this shortlist to a specialist — your brief travels with it.</p>
+          <button class="dp-btn dp-btn--primary dp-btn--sm" style="justify-content:center;margin-top:12px;width:100%">Talk to a human</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+</Layout>

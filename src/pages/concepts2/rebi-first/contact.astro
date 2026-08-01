@@ -1,0 +1,70 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, icon } from './_shell/data';
+export const prerender = false;
+const depts = [
+  ['car','Sales','Mon–Fri 8:30–5:30 · Sat 9–4','sales@rebirth.demo'],
+  ['wrench','Service','Mon–Fri 7:30–5:00','service@rebirth.demo'],
+  ['gear','Parts','Mon–Fri 8:00–5:00','parts@rebirth.demo'],
+];
+---
+<Shell title="Contact & find us — Rebirth Auto" active="Contact & locations">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Contact &amp; find us</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:16ch">Not sure who to ask? Ask Rebi.</h1>
+    <p class="lead" style="margin-top:16px">Tell Rebi what you need and it routes you to the right department — or reach one directly below.</p>
+  </section>
+
+  <!-- DEPARTMENTS -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-3">
+      {depts.map(([ic, name, hours, email]) => (
+        <div class="card" style="padding:24px 26px; display:flex; flex-direction:column; gap:10px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <b class="rf-h3" style="margin-top:4px">{name}</b>
+          <div class="rf-row" style="gap:8px; font-size:13.5px; color:var(--ink-soft)"><span set:html={icon('clock',14)} style="color:var(--teal-deep)"></span> {hours}</div>
+          <div class="rf-row" style="gap:8px; font-size:13.5px; color:var(--ink-soft)"><span set:html={icon('phone',14)} style="color:var(--teal-deep)"></span> (07) 4100 0000 <span class="faint">(demo)</span></div>
+          <div class="rf-row" style="gap:8px; font-size:13.5px; color:var(--ink-soft)"><span set:html={icon('mail',14)} style="color:var(--teal-deep)"></span> {email}</div>
+          <a href={`${BASE}/rebi`} class="rf-action" style="margin-top:6px; align-self:flex-start"><span class="spark" set:html={icon('spark',13)}></span> Ask Rebi about {name}</a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- MAP + ENQUIRY -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-2" style="align-items:stretch">
+      <div class="card" style="overflow:hidden; display:flex; flex-direction:column">
+        <div style="flex:1; min-height:260px; background:linear-gradient(135deg,#CBD8EA,#AFC2DC); position:relative">
+          <span class="chip" style="position:absolute; top:14px; left:14px; background:rgba(255,255,255,.85)"><span set:html={icon('pin',13)}></span> Map placeholder</span>
+        </div>
+        <div style="padding:18px 20px">
+          <div class="rf-row" style="gap:8px; font-size:14px"><span set:html={icon('pin',15)} style="color:var(--teal-deep)"></span> 100 Bruce Highway, Bundaberg QLD <span class="faint">(demo address)</span></div>
+        </div>
+      </div>
+      <div class="card" style="padding:28px 30px">
+        <div class="rf-row" style="gap:9px; margin-bottom:20px"><span class="brand-mark" set:html={icon('mail',18)}></span><b class="rf-h3">General enquiry</b></div>
+        <div class="rf-grid-2" style="gap:16px">
+          <div><label class="rf-lab">Name</label><input class="rf-field" placeholder="Your name" /></div>
+          <div><label class="rf-lab">Department</label><input class="rf-field" placeholder="Sales / Service / Parts" /></div>
+          <div style="grid-column:1 / -1"><label class="rf-lab">Contact</label><input class="rf-field" placeholder="Email or phone (demo)" /></div>
+          <div style="grid-column:1 / -1"><label class="rf-lab">Message</label><textarea class="rf-field" rows="3" placeholder="How can we help?"></textarea></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:20px; justify-content:center; width:100%; pointer-events:none">Send message</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Who do I talk to about a warranty repair?"
+      reply="That's the Service department. They're open Mon–Fri 7:30–5:00. I can pass your rego and describe the issue so they're ready when you call — or book you a slot now."
+      actions={[
+        { label: 'Book a service', href: `${BASE}/test-drive`, icon: 'wrench' },
+        { label: 'Parts enquiry', href: `${BASE}/parts`, icon: 'gear' },
+      ]}
+    />
+  </section>
+</Shell>

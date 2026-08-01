@@ -1,0 +1,74 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, vehicles, icon } from './_shell/data';
+export const prerender = false;
+const evStock = vehicles.filter((v) => v.fuel === 'Electric' || v.fuel === 'Hybrid');
+---
+<Shell title="Electric & hybrid hub — Rebirth Auto" active="Electric & hybrid">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <div class="rf-grid-2" style="align-items:center">
+      <div>
+        <span class="eyebrow">Electric &amp; hybrid</span>
+        <h1 class="rf-h1" style="margin-top:14px">Is an EV right for your drive?</h1>
+        <p class="lead" style="margin-top:16px">Ask Rebi your weekly kilometres and it works out whether electric, hybrid or petrol actually saves you money — no hype.</p>
+        <div class="rf-quick" style="margin-top:18px">
+          <a class="rf-action" href={`${BASE}/rebi`}><span class="spark" set:html={icon('spark',13)}></span> Is an EV right for me?</a>
+          <a class="rf-action" href={`${BASE}/#inventory`}><span class="spark" set:html={icon('filter',13)}></span> See all electric stock</a>
+        </div>
+      </div>
+      <div class="ai-summary" style="padding:24px 26px">
+        <div class="rf-mono-eyebrow" style="margin-bottom:12px">Running cost · 15,000 km/yr</div>
+        {[['EV (home charge)','~$430/yr','var(--teal-deep)'],['Hybrid','~$1,350/yr','var(--ink)'],['Petrol SUV','~$2,600/yr','var(--ink-soft)']].map(([k, v, c]) => (
+          <div class="rf-row" style="justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line)">
+            <span class="muted" style="font-size:14px">{k}</span><b style={`font-size:16px; color:${c}`}>{v}</b>
+          </div>
+        ))}
+        <p class="faint" style="font-size:11.5px; margin-top:12px">Indicative energy cost only. Placeholder figures.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY EV / CHARGING BASICS -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-4">
+      {[
+        ['dollar','Cheaper per km','Home charging is a fraction of petrol; fewer moving parts means less servicing.'],
+        ['plug','Charging basics','Most owners top up overnight at home. Public fast-charging covers the road trips.'],
+        ['leaf','Incentives','Stamp-duty and rego concessions may apply — Rebi flags what\'s current in your state.'],
+        ['range','Range, honestly','Rebi matches real WLTP range to your weekly drive so you don\'t over- or under-buy.'],
+      ].map(([ic, h, p]) => (
+        <div class="card" style="padding:22px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px; font-size:16px">{h}</h3>
+          <p class="muted" style="margin-top:7px; font-size:13.5px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- EV STOCK TEASER (fuel facet overlap) -->
+  <section class="site-container section-tight">
+    <div class="rf-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:20px">
+      <h2 class="rf-h2">Electric &amp; hybrid in stock</h2>
+      <a href={`${BASE}/finance`} class="btn btn-ghost btn-sm"><span set:html={icon('calc',15)}></span> EV repayments</a>
+    </div>
+    <div class="rf-grid-4">
+      {evStock.map((v) => <VehicleCard v={v} />)}
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="I drive about 60km a day, mostly town. EV or hybrid?"
+      reply="At ~60km/day and mostly town, a home-charged EV like the Kia EV5 pays off fastest — you'd rarely touch a public charger and running cost drops to about $430/yr. A hybrid is the safer pick if you can't charge at home."
+      actions={[
+        { label: 'See EV stock', href: `${BASE}/#inventory`, icon: 'filter' },
+        { label: 'EV repayments', href: `${BASE}/finance`, icon: 'calc' },
+        { label: 'Book a test drive', href: `${BASE}/test-drive`, icon: 'play' },
+      ]}
+    />
+  </section>
+</Shell>

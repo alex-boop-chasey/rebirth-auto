@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Near-Future Yard design tokens + reusable component primitives (Wave 0).
+   Owns the palette/depth/radii/type-role tokens, the Tailwind @theme mapping,
+   and the un-namespaced component classes (btn/card/chip/orb/ai-summary/…) plus
+   SiteNav/SiteFooter chrome. The width/grid/focus systems below are UNCHANGED. */
+@import "./theme.css";
+
 /* Guarantee a visible focus ring on every interactive element site-wide.
    :where() keeps specificity at 0 so component styles can still override. */
 @layer base {

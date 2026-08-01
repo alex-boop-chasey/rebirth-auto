@@ -70,12 +70,12 @@ if (dimensions.includes('condition') && showCondition)
 
 const sortOptions = Object.entries(sortLabels) as [string, string][];
 
-const fieldLabel = 'block text-xs font-semibold uppercase tracking-wide text-slate-400';
+const fieldLabel = 'block text-xs font-semibold uppercase tracking-wide text-ink-faint';
 // Sub-label for the paired min/max (price) and from/to (year) range selects, so a
 // shopper can tell the two side-by-side dropdowns apart. Subordinate to the legend.
-const subLabel = 'mb-1 block text-xs font-medium text-slate-500';
+const subLabel = 'mb-1 block text-xs font-medium text-ink-soft';
 const textInput =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20';
+  'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink shadow-[var(--sh-1)] focus:border-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/30';
 ---
 
 <dialog
@@ -83,7 +83,7 @@ const textInput =
   data-filter-drawer
   data-trigger={triggerId}
   aria-labelledby="filter-drawer-title"
-  class="m-0 ml-auto h-dvh w-full max-w-md overflow-y-auto bg-white p-0 shadow-2xl backdrop:bg-slate-900/50"
+  class="m-0 ml-auto h-dvh w-full max-w-md overflow-y-auto bg-surface p-0 shadow-2xl backdrop:bg-ink/40"
 >
   <form
     method="GET"
@@ -93,13 +93,13 @@ const textInput =
     class="flex min-h-full flex-col"
   >
     <!-- Header -->
-    <header class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
-      <h2 id="filter-drawer-title" class="text-lg font-semibold tracking-tight text-slate-900">Filters</h2>
+    <header class="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface/95 px-5 py-4 backdrop-blur">
+      <h2 id="filter-drawer-title" class="text-lg font-semibold tracking-tight text-ink">Filters</h2>
       <button
         type="button"
         data-drawer-close
         aria-label="Close filters"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint transition hover:bg-bg-2 hover:text-ink"
       >
         <Fragment set:html={iconSvg('cross', 'h-4 w-4')} />
       </button>
@@ -210,7 +210,7 @@ const textInput =
             <legend class={fieldLabel}>{group.legend}</legend>
             <div class="mt-2 flex flex-wrap gap-2">
               {group.options.map((o) => (
-                <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-700 transition has-[:checked]:border-slate-900 has-[:checked]:bg-slate-900 has-[:checked]:text-white hover:border-slate-300">
+                <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm text-ink-soft transition has-[:checked]:border-teal has-[:checked]:bg-teal has-[:checked]:text-white hover:border-teal">
                   <input
                     type="checkbox"
                     name={group.name}
@@ -228,18 +228,15 @@ const textInput =
     </div>
 
     <!-- Footer -->
-    <footer class="sticky bottom-0 z-10 flex items-center gap-3 border-t border-slate-200 bg-white/95 px-5 py-4 backdrop-blur">
+    <footer class="sticky bottom-0 z-10 flex items-center gap-3 border-t border-line bg-surface/95 px-5 py-4 backdrop-blur">
       <a
         href="/"
         data-filter-clear
-        class="text-sm font-medium text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline"
+        class="text-sm font-medium text-ink-soft underline-offset-2 transition hover:text-ink hover:underline"
       >
         Clear all
       </a>
-      <button
-        type="submit"
-        class="ml-auto rounded-xl bg-slate-900 px-5 py-2.5 font-semibold text-white transition hover:bg-slate-700"
-      >
+      <button type="submit" class="btn btn-primary ml-auto">
         Apply filters
       </button>
     </footer>

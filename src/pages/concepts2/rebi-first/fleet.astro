@@ -1,0 +1,69 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, brands, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="Fleet & business — Rebirth Auto" active="Fleet & business">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Fleet &amp; business</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:18ch">Fleet buying without the runaround.</h1>
+    <p class="lead" style="margin-top:16px">One point of contact, priority servicing and pricing that scales with volume. Rebi can spec a fleet before you ever pick up the phone.</p>
+  </section>
+
+  <!-- BENEFITS -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-4">
+      {[
+        ['truck','Volume pricing','Sharper the more you run — utes, vans and SUVs.'],
+        ['clock','Priority servicing','Booked-ahead slots and loan vehicles to keep you moving.'],
+        ['doc','Novated & chattel','Structures that suit your accountant, explained in plain English.'],
+        ['shield','One account manager','A single local contact who knows your business.'],
+      ].map(([ic, h, p]) => (
+        <div class="card" style="padding:22px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px; font-size:16px">{h}</h3>
+          <p class="muted" style="margin-top:7px; font-size:13.5px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- BRANDS AVAILABLE + ENQUIRY -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-2" style="grid-template-columns:.85fr 1.15fr; align-items:start">
+      <div class="card" style="padding:24px 26px">
+        <div class="rf-mono-eyebrow" style="margin-bottom:14px">Fleet brands available</div>
+        <div class="rf-quick">{brands.map((b) => <a href={`${BASE}/brand`} class="chip" style="text-decoration:none">{b}</a>)}</div>
+        <div class="rf-quick" style="margin-top:18px">
+          <a class="rf-action" href={`${BASE}/electric`}><span class="spark" set:html={icon('leaf',13)}></span> Electrify the fleet</a>
+          <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Fleet finance</a>
+        </div>
+      </div>
+      <div class="card" style="padding:28px 30px">
+        <div class="rf-row" style="gap:9px; margin-bottom:20px"><span class="brand-mark" set:html={icon('briefcase',18)}></span><b class="rf-h3">Fleet enquiry</b></div>
+        <div class="rf-grid-2" style="gap:16px">
+          <div><label class="rf-lab">Business name</label><input class="rf-field" placeholder="Your company" /></div>
+          <div><label class="rf-lab">Fleet size</label><input class="rf-field" placeholder="e.g. 8 vehicles" /></div>
+          <div><label class="rf-lab">Vehicle types</label><input class="rf-field" placeholder="Utes / vans / SUVs" /></div>
+          <div><label class="rf-lab">Contact</label><input class="rf-field" placeholder="Email or phone (demo)" /></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:20px; justify-content:center; width:100%; pointer-events:none">Request a fleet quote</button>
+        <p class="faint" style="font-size:11px; margin-top:10px">Demo form — not submitted anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="We run a trades business and need 6 utes with tow packs."
+      reply="For six tow-capable utes I'd look at the Isuzu D-MAX and Nissan Navara — both 3,500kg braked and eligible for volume fleet pricing. I can pull the spec sheet and hand you to our fleet manager with the numbers ready."
+      actions={[
+        { label: 'Fleet finance', href: `${BASE}/finance`, icon: 'calc' },
+        { label: 'Talk to fleet manager', href: `${BASE}/contact`, icon: 'phone' },
+        { label: 'Browse utes', href: `${BASE}/#inventory`, icon: 'truck' },
+      ]}
+    />
+  </section>
+</Shell>

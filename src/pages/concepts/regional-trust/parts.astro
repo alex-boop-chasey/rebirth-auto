@@ -1,0 +1,57 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+const cats = ['Filters & fluids', 'Brakes', 'Batteries', 'Tyres & wheels', 'Tow bars', 'Roof racks', 'Floor mats', 'Service kits'];
+---
+<Layout title="Genuine parts" active="">
+  <section class="rt-parts-hero">
+    <div class="rt-wrap rt-parts-grid">
+      <div>
+        <span class="rt-eyebrow">Genuine parts &amp; accessories</span>
+        <h1>The right part, first time.</h1>
+        <p>Genuine and quality-matched parts for every brand we sell, fitted by our own techs or ready to collect.
+          Not sure what you need? Rebi can identify it from your rego.</p>
+        <div class="rt-parts-trust">
+          <span class="rt-pill rt-pill-green">✓ Genuine parts</span>
+          <span class="rt-pill rt-pill-gold">✓ Fitment guaranteed</span>
+          <span class="rt-pill rt-pill-sand">✓ Local pickup</span>
+        </div>
+      </div>
+      <div class="rt-card rt-parts-form">
+        <div class="rt-parts-form-head"><span class="rt-rebi-orb lg"></span><div><strong>Parts enquiry</strong><em>Rebi finds the exact fit</em></div></div>
+        <div class="rt-field"><label>Your rego</label><input class="rt-input" placeholder="ABC123" /></div>
+        <div class="rt-field"><label>What do you need?</label><textarea class="rt-input" rows="3" placeholder="e.g. front brake pads and a cabin filter"></textarea></div>
+        <button class="rt-btn rt-btn-primary rt-parts-cta">Send enquiry</button>
+        <p class="rt-parts-rebi"><span class="rt-rebi-orb"></span> “Pop your rego in and I’ll match genuine parts to your exact build.”</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">Shop by category</span><h2>Popular parts &amp; accessories</h2></div></div>
+    <div class="rt-parts-cats">
+      {cats.map((c) => <a href="#" class="rt-parts-cat rt-card"><span class="rt-parts-cat-ic"></span>{c}</a>)}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-parts-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-parts-grid { display: grid; grid-template-columns: 1fr 420px; gap: 48px; padding-block: 56px; align-items: center; }
+  .rt-parts-hero h1 { font-size: 46px; margin: 16px 0; }
+  .rt-parts-hero p { font-size: 17px; color: var(--ink-70); max-width: 460px; }
+  .rt-parts-trust { display: flex; gap: 10px; margin-top: 22px; }
+  .rt-parts-form { padding: 24px; }
+  .rt-parts-form-head { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .rt-parts-form-head strong { display: block; font-size: 17px; color: var(--green-deep); }
+  .rt-parts-form-head em { font-style: normal; font-size: 13px; color: var(--muted); }
+  .rt-parts-form .rt-field { margin-bottom: 14px; }
+  .rt-parts-cta { width: 100%; }
+  .rt-parts-rebi { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--ink-70); font-style: italic; margin-top: 14px; }
+  .rt-parts-rebi .rt-rebi-orb { flex: 0 0 auto; }
+  .rt-parts-cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .rt-parts-cat { display: flex; align-items: center; gap: 12px; padding: 20px; font-weight: 700; color: var(--ink); font-size: 15px; transition: transform .18s; }
+  .rt-parts-cat:hover { transform: translateY(-2px); color: var(--green); }
+  .rt-parts-cat-ic { width: 40px; height: 40px; border-radius: 10px; background: var(--green-soft); border: 1px solid var(--green-line); flex: 0 0 auto; }
+</style>

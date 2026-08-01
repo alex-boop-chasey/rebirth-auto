@@ -1,0 +1,68 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+const brands = ["Chery","Honda","Hyundai","Isuzu","Jaecoo","Jeep","Kia","Leapmotor","LDV","Nissan","Ram","Subaru"];
+const models = [
+  { title: "Isuzu D-MAX", sub: "Ute · from $38,900", price: "$38,900", km: "New", trans: "6-sp Auto", fuel: "Diesel", drive: "4x4", flag: "RANGE", glyph:"🛻", ai:"Rebi: 6 variants in stock" },
+  { title: "Isuzu MU-X", sub: "7-seat SUV · from $50,400", price: "$50,400", km: "New", trans: "6-sp Auto", fuel: "Diesel", drive: "4x4", flag: "RANGE", glyph:"🚙", ai:"Rebi: family + tow favourite" },
+  { title: "Isuzu D-MAX X-Terrain", sub: "Flagship ute", price: "$67,500", km: "New", trans: "6-sp Auto", fuel: "Diesel", drive: "4x4", flag: "FLAGSHIP", glyph:"🛻", ai:"Rebi: top-spec, demo savings" },
+];
+---
+<Layout title="Isuzu — Brand hub — Dark Precision" current="" dockHint="Ask me to compare Isuzu variants">
+  <!-- brand hero -->
+  <section style="border-bottom:1px solid var(--line);position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(60% 120% at 80% -10%, rgba(62,230,203,0.10), transparent 55%)"></div>
+    <div class="dp-wrap dp-section--tight" style="position:relative;display:flex;align-items:center;gap:26px">
+      <span style="width:88px;height:88px;border:1px solid var(--signal);border-radius:8px;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:36px;color:var(--signal);background:radial-gradient(circle at 50% 120%, var(--glow), transparent 70%)">Is</span>
+      <div>
+        <span class="dp-eyebrow">Franchise brand hub</span>
+        <h1 class="dp-display" style="font-size:52px;margin-top:10px">Isuzu Ute</h1>
+        <p class="dp-lead" style="margin-top:8px;max-width:48ch">Built to work, priced to move. Explore the full Isuzu range with Rebi decoding every variant.</p>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:12px">
+        <a class="dp-btn dp-btn--primary" href={`${base}/listings`}>View stock</a>
+        <a class="dp-btn" href={`${base}/offers`}>Isuzu offers</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- brand switcher -->
+  <section class="dp-wrap" style="padding-top:24px">
+    <div class="dp-pillrow">
+      {brands.map((b) => <span class={`dp-chip ${b==="Isuzu"?"dp-chip--active":""}`}>{b}</span>)}
+    </div>
+  </section>
+
+  <!-- stats -->
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-grid dp-cols-4">
+      {[["18","Isuzu in stock"],["6","D-MAX variants"],["5★","ANCAP safety"],["6yr","Warranty"]].map(([b,s]) => (
+        <div class="dp-panel dp-tick" style="padding:22px"><div class="dp-stat"><b style="color:var(--signal)">{b}</b><span>{s}</span></div></div>
+      ))}
+    </div>
+  </section>
+
+  <!-- models -->
+  <section class="dp-wrap dp-section--tight">
+    <span class="dp-eyebrow">The range</span>
+    <h2 class="dp-h2" style="margin-top:14px;margin-bottom:24px">Explore Isuzu models</h2>
+    <div class="dp-grid dp-cols-3">
+      {models.map((v) => <VehicleCard {...v} />)}
+    </div>
+  </section>
+
+  <!-- offers strip -->
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-ai" style="padding:28px;display:flex;align-items:center;gap:24px">
+      <span class="dp-rebi-avatar" style="width:44px;height:44px;flex:none"></span>
+      <div style="flex:1">
+        <span class="dp-mono" style="font-size:11px;color:var(--signal);letter-spacing:0.14em">REBI · CURRENT ISUZU DEAL</span>
+        <p style="font-size:16px;margin-top:6px;color:var(--ink)">D-MAX SX 4x4 drive-away at <strong>$48,990</strong> — that's <strong>$4,100</strong> under RRP on demo units. Three left.</p>
+      </div>
+      <a class="dp-btn dp-btn--primary" href={`${base}/offers`}>See the deal</a>
+    </div>
+  </section>
+</Layout>

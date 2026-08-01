@@ -1,0 +1,33 @@
+---
+/**
+ * RebiDock — the persistent Rebi launcher orb, bottom-right on every page.
+ * Rebi is a first-class navigator in this IA: the dock links straight to the
+ * chat mock where Rebi returns clickable cards + action buttons.
+ */
+import { base } from './data';
+const { prompt } = Astro.props;
+---
+<a href={base + '/rebi'} class="sh-dock" aria-label="Ask Rebi">
+  <span class="orb orb-halo sh-dock-orb"></span>
+  <span class="sh-dock-body">
+    <b>Ask Rebi</b>
+    <small>{prompt ?? 'Tell me what you need — I’ll take you there.'}</small>
+  </span>
+</a>
+
+<style>
+  .sh-dock {
+    position: fixed; right: 22px; bottom: 22px; z-index: 50;
+    display: flex; align-items: center; gap: 12px; padding: 12px 18px 12px 12px;
+    border-radius: var(--r-pill); text-decoration: none; color: var(--ink);
+    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.86));
+    backdrop-filter: blur(14px) saturate(1.2);
+    border: 1px solid var(--line); box-shadow: var(--sh-3);
+    transition: transform 0.18s ease, box-shadow 0.22s ease;
+  }
+  .sh-dock:hover { transform: translateY(-3px); box-shadow: 0 22px 54px -14px rgba(85,102,240,0.5); }
+  .sh-dock-orb { width: 40px; height: 40px; }
+  .sh-dock-body b { display: block; font-size: 14px; font-weight: 700; }
+  .sh-dock-body small { display: block; font-size: 11.5px; color: var(--ink-faint); max-width: 22ch; }
+  @media (max-width: 560px) { .sh-dock-body { display: none; } }
+</style>

@@ -1,0 +1,39 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, brands, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Fleet & business — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from About / Contact (business) · footer · Rebi</div>
+    <span class="eyebrow"><span set:html={icon('briefcase',13)}></span> Fleet &amp; business</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Fleet solutions for local business</h1>
+    <p class="lead">ABN buyers, one point of contact, and priority servicing. From a single ute to a whole fleet.</p>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+      {[['tag','Fleet pricing','Volume discounts across brands'],['clock','Priority service','Minimise downtime'],['doc','Simplified admin','One invoice, one contact'],['bolt','EV transition','Plan your electric switch']].map(([ic,t,d]) => (
+        <div class="card" style="padding:18px"><span style="color:var(--teal-deep)" set:html={icon(ic as string,22)}></span><b style="display:block; font-size:15px; margin:10px 0 4px">{t}</b><p class="muted" style="font-size:13px">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="entry-origin">Brands available for fleet</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px">{brands.map((b) => (<a class="facet" href={`${BASE}/brand?b=${b.slug}`}>{b.name}</a>))}</div>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.3fr 1fr; gap:26px; padding-bottom:44px; align-items:start">
+    <div class="card" style="padding:26px">
+      <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:16px">Fleet enquiry</h2>
+      <div class="grid-auto" style="grid-template-columns:1fr 1fr; gap:14px">
+        {[['Business name','Your company'],['ABN','__ ___ ___ ___'],['Fleet size','e.g. 6 vehicles'],['Contact','Email or phone']].map(([l,ph]) => (
+          <label style="display:block"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+        ))}
+      </div>
+      <button class="btn btn-primary" data-rebi-open style="margin-top:18px"><span set:html={icon('send',15)}></span> Talk to the fleet team</button>
+    </div>
+    <a href={`${BASE}/contact`} class="entry" style="align-self:start"><span class="entry-ic" set:html={icon('phone',18)}></span><span class="entry-tx"><b>Prefer to call?</b><span>fleet department direct</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+  </section>
+</Layout>

@@ -55,10 +55,10 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
 <a
   href={href}
   aria-label={`View listing: ${listing.title}`}
-  class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+  class="group card card-lift relative flex flex-col overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
 >
   {/* Hero */}
-  <div class="relative aspect-video overflow-hidden bg-slate-100">
+  <div class="relative aspect-video overflow-hidden bg-bg-2">
     {
       heroUrl ? (
         <img
@@ -68,7 +68,7 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
           class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
       ) : (
-        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-bg-2 to-bg text-ink-faint">
           <Fragment set:html={svg(categoryIconName(listing.category), 'h-12 w-12')} />
         </div>
       )
@@ -96,7 +96,7 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
       data-thumb={heroUrl ?? ''}
       aria-pressed="false"
       aria-label="Add to compare"
-      class="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow ring-1 ring-inset ring-slate-200 backdrop-blur transition hover:bg-white aria-pressed:bg-slate-900 aria-pressed:text-white aria-pressed:ring-slate-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
+      class="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-ink-soft shadow ring-1 ring-inset ring-line backdrop-blur transition hover:bg-white aria-pressed:bg-teal aria-pressed:text-white aria-pressed:ring-teal disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
     >
       <span data-compare-icon class="inline-flex"><Fragment set:html={svg('check', 'h-3.5 w-3.5')} /></span>
       <span data-compare-label>Compare</span>
@@ -106,7 +106,7 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
         it doesn't collide with the Compare toggle (top-left) or status (top-right). */}
     {
       showDrop && (
-        <span class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+        <span class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-amber px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
           <Fragment set:html={svg('tag', 'h-3.5 w-3.5')} />
           Just Reduced
         </span>
@@ -129,32 +129,32 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
   {/* Body */}
   <div class="flex flex-1 flex-col gap-3 p-4">
     <div class="flex items-baseline gap-2">
-      <p class="text-2xl font-bold text-slate-900">{priceLabel}</p>
+      <p class="text-2xl font-bold text-ink">{priceLabel}</p>
       {
         showDrop && previousLabel && (
-          <span class="text-sm font-medium text-slate-400 line-through" aria-label={`Was ${previousLabel}`}>
+          <span class="text-sm font-medium text-ink-faint line-through" aria-label={`Was ${previousLabel}`}>
             {previousLabel}
           </span>
         )
       }
     </div>
 
-    <h3 class="line-clamp-2 text-base font-semibold text-slate-700">{listing.title}</h3>
+    <h3 class="line-clamp-2 text-base font-semibold text-ink-soft">{listing.title}</h3>
 
     {
       visibleDetails.length > 0 && (
         <ul class="flex flex-wrap gap-2">
           {visibleDetails.map((d) => (
-            <li class="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+            <li class="inline-flex items-center gap-1.5 rounded-lg bg-bg-2 px-2.5 py-1 text-xs font-medium text-ink-soft ring-1 ring-inset ring-line">
               {d.valueType === 'boolean' ? (
-                <Fragment set:html={svg(d.valueBoolean ? 'check' : 'cross', 'h-3.5 w-3.5 ' + (d.valueBoolean ? 'text-emerald-600' : 'text-red-500'))} />
+                <Fragment set:html={svg(d.valueBoolean ? 'check' : 'cross', 'h-3.5 w-3.5 ' + (d.valueBoolean ? 'text-teal-deep' : 'text-red-500'))} />
               ) : (
-                <span class="text-slate-400">
+                <span class="text-teal-deep">
                   <Fragment set:html={svg(detailIconName(d.label))} />
                 </span>
               )}
-              <span class="text-slate-500">{d.label}</span>
-              <span class="font-semibold text-slate-700">{detailDisplay(d)}</span>
+              <span class="text-ink-faint">{d.label}</span>
+              <span class="font-semibold text-ink-soft">{detailDisplay(d)}</span>
             </li>
           ))}
         </ul>
@@ -163,8 +163,8 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
 
     {/* Footer */}
     <div class="mt-auto flex items-center justify-between pt-2">
-      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
-        <span class="text-slate-400">
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint">
+        <span class="text-teal-deep">
           <Fragment set:html={svg(categoryIconName(listing.category), 'h-3.5 w-3.5')} />
         </span>
         {categoryLabel || 'Listing'}
@@ -172,7 +172,7 @@ const status = statusConfig[listing.status] ?? statusConfig.draft;
 
       <span
         aria-hidden="true"
-        class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition group-hover:bg-slate-700"
+        class="inline-flex items-center gap-1 rounded-pill bg-ink px-3.5 py-1.5 text-sm font-semibold text-white transition group-hover:bg-teal-deep"
       >
         View listing
         <Fragment set:html={svg('arrow', 'h-3.5 w-3.5')} />

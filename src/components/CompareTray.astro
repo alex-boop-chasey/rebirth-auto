@@ -16,32 +16,48 @@
 import AskRebiButton from './AskRebiButton.astro';
 ---
 
-<div
-  id="compare-tray"
-  class="fixed inset-x-0 bottom-0 z-40 hidden border-t border-slate-200 bg-white/95 shadow-[0_-4px_20px_rgba(15,23,42,0.08)] backdrop-blur"
->
-  <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-    <span class="hidden shrink-0 text-sm font-semibold text-slate-700 sm:inline">Compare</span>
-    <div id="compare-thumbs" class="flex items-center gap-2 overflow-x-auto"></div>
-    <div class="ml-auto flex shrink-0 items-center gap-3">
-      <button
-        type="button"
-        data-compare-clear
-        class="text-sm font-medium text-slate-500 underline transition hover:text-slate-900"
-      >
-        Clear
-      </button>
+<div id="compare-tray" class="compare-tray hidden">
+  <div class="compare-tray-inner">
+    <span class="compare-tray-lbl">Compare</span>
+    <div id="compare-thumbs" class="compare-tray-thumbs"></div>
+    <div class="compare-tray-actions">
+      <button type="button" data-compare-clear class="compare-tray-clear">Clear</button>
       <AskRebiButton id="compare-ask-ai" data-rebi-open data-rebi-kind="compare" label="Ask Rebi" />
-      <a
-        id="compare-go"
-        href="/compare"
-        class="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-      >
+      <a id="compare-go" href="/compare" class="btn btn-dark btn-sm compare-tray-go">
         Compare (<span id="compare-count">0</span>)
       </a>
     </div>
   </div>
 </div>
+
+<style is:global>
+  .compare-tray {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 40;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.96));
+    backdrop-filter: blur(14px) saturate(1.15);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 26px rgba(13, 22, 38, 0.08);
+  }
+  .compare-tray.hidden { display: none; }
+  .compare-tray-inner {
+    max-width: var(--site-max); margin: 0 auto;
+    padding: 12px var(--site-gutter);
+    display: flex; align-items: center; gap: 16px;
+  }
+  .compare-tray-lbl {
+    flex: none; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  @media (max-width: 560px) { .compare-tray-lbl { display: none; } }
+  .compare-tray-thumbs { display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+  .compare-tray-actions { margin-left: auto; display: flex; flex: none; align-items: center; gap: 12px; }
+  .compare-tray-clear {
+    border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px;
+    font-weight: 500; color: var(--ink-faint); text-decoration: underline; transition: color 0.16s;
+  }
+  .compare-tray-clear:hover { color: var(--ink); }
+  .compare-tray-go { text-decoration: none; }
+</style>
 
 <script>
   import { iconSvg } from '../lib/listing';
@@ -155,11 +171,11 @@ import AskRebiButton from './AskRebiButton.astro';
           const title = esc(m?.title ?? 'Listing');
           const inner = m?.thumb
             ? `<img src="${esc(m.thumb)}" alt="" class="h-full w-full object-cover" />`
-            : `<div class="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400">${iconSvg('image', 'h-4 w-4')}</div>`;
-          return `<div class="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-slate-200" title="${title}">
+            : `<div class="flex h-full w-full items-center justify-center bg-bg-2 text-ink-faint">${iconSvg('image', 'h-4 w-4')}</div>`;
+          return `<div class="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-line" title="${title}">
               ${inner}
               <button type="button" data-compare-remove="${esc(id)}" aria-label="Remove ${title} from compare"
-                class="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-900/80 text-white transition hover:bg-slate-900">
+                class="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink/80 text-white transition hover:bg-ink">
                 ${removeIcon}
               </button>
             </div>`;

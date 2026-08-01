@@ -1,0 +1,68 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, brands, icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const subaru = vehicles.filter(v => v.make === 'Subaru' || v.make === 'Hyundai' || v.make === 'Kia').slice(0,3);
+const models = ['Outback','Forester','XV','WRX','Crosstrek','BRZ'];
+---
+<Layout title="Subaru at Rebirth Auto — brand hub" active="listings" dockPrompt="Want to compare two Subaru models?">
+  <!-- brand hero -->
+  <section class="nfy-hero nfy-grid-lines" style="background:linear-gradient(180deg, #24384F, #16222F); color:#fff">
+    <div class="nfy-hero-mesh" style="opacity:.55"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 34px">
+      <div class="nfy-row" style="gap:16px; margin-bottom:16px">
+        <span class="nfy-logo-mark" set:html={icon('star',22)} style="color:#fff; width:52px; height:52px"></span>
+        <div><div style="font-family:var(--font-display); font-size:30px; font-weight:700; color:#fff">Subaru</div><div style="font-size:13px; color:#9FB0C6">Authorised dealer · Bundaberg region</div></div>
+      </div>
+      <h1 class="nfy-h1" style="font-size:44px; color:#fff; max-width:20ch">Symmetrical AWD, built for the land beyond the bitumen.</h1>
+      <div class="nfy-row" style="gap:12px; margin-top:24px">
+        <a href="#brand-stock" class="nfy-btn nfy-btn-primary nfy-btn-lg">Browse Subaru stock</a>
+        <a href={`${base}/offers`} class="nfy-btn nfy-btn-ghost nfy-btn-lg" style="background:rgba(255,255,255,.08); color:#fff; border-color:rgba(255,255,255,.2)">Subaru offers</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- brand switch -->
+  <section class="nfy-wrap" style="padding-block:20px 8px">
+    <div class="nfy-pillrow">
+      {brands.map(b => <a href="#" class={`nfy-chip ${b==='Subaru'?'nfy-chip--teal':''}`} style="text-decoration:none">{b}</a>)}
+    </div>
+  </section>
+
+  <!-- model range -->
+  <section class="nfy-wrap nfy-section--tight">
+    <span class="nfy-eyebrow">The range</span>
+    <h2 class="nfy-h2" style="margin-top:10px; font-size:30px">Explore the Subaru line-up</h2>
+    <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-top:22px">
+      {models.map(m => (
+        <a href="#" class="nfy-brandtile" style="text-decoration:none; color:inherit">
+          <span set:html={icon('car',26)} style="color:var(--teal-deep)"></span>
+          <b>{m}</b>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- AI banner -->
+  <section class="nfy-wrap" style="padding-bottom:8px">
+    <div class="nfy-ai-summary nfy-scan" style="display:flex; gap:16px; align-items:center; padding:20px 24px">
+      <span class="nfy-orb nfy-orb--halo" style="width:40px;height:40px"></span>
+      <div style="flex:1"><b style="font-size:15px; color:var(--indigo-deep)">New to Subaru?</b><p style="font-size:14px; color:var(--ink-soft); margin-top:3px">Rebi knows the whole range — ask “Forester or Outback for towing a camper?” and get a straight answer.</p></div>
+      <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary"><span set:html={icon('spark',16)}></span> Ask about Subaru</a>
+    </div>
+  </section>
+
+  <!-- stock -->
+  <section id="brand-stock" class="nfy-wrap nfy-section--tight">
+    <div class="nfy-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:22px">
+      <div><span class="nfy-eyebrow">In stock</span><h2 class="nfy-h2" style="margin-top:10px; font-size:28px">Available now</h2></div>
+      <a href={`${base}/listings`} class="nfy-btn nfy-btn-ghost">All stock <span set:html={icon('arrow',16)}></span></a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px">
+      {subaru.map(v => <VehicleCard v={v} />)}
+    </div>
+  </section>
+</Layout>

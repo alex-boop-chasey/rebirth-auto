@@ -37,7 +37,7 @@
   background: var(--rebi-grad);
   display: grid; place-items: center;
   color: #fff;
-  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.92), 0 8px 20px -8px rgb(1 97 239 / 0.55);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.92), 0 8px 20px -8px rgb(85 102 240 / 0.55);
 }
 .focus-stage .avatar svg { width: 1.35rem; height: 1.35rem; }
 
@@ -49,14 +49,14 @@
   line-height: 1.5;
   letter-spacing: -0.005em;
 }
-/* Rebi bubble — frosted light, blue-tinted ring, squared bottom-left tail */
+/* Rebi bubble — frosted glass, indigo-tinted ring, squared bottom-left tail */
 .focus-stage .turn.rebi .bubble {
   background: rgb(255 255 255 / 0.94);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  border: 1px solid rgb(1 97 239 / 0.22);
+  border: 1px solid rgb(85 102 240 / 0.22);
   border-bottom-left-radius: 0.4rem;
   color: var(--ink);
-  box-shadow: 0 18px 40px -20px rgb(1 97 239 / 0.35), 0 2px 6px -2px rgb(15 23 42 / 0.08);
+  box-shadow: 0 18px 40px -20px rgb(85 102 240 / 0.3), 0 2px 6px -2px rgb(13 22 38 / 0.08);
 }
 .focus-stage .turn.rebi .name,
 .focus-stage .turn.human .name {
@@ -65,40 +65,40 @@
   text-transform: uppercase; color: var(--rebi-blue);
   margin-bottom: 0.2rem;
 }
-/* User bubble — Rebi-blue, white text, squared bottom-right tail */
+/* User bubble — deep ink (NFY), white text, squared bottom-right tail */
 .focus-stage .turn.user .bubble {
-  background: var(--rebi-blue);
+  background: var(--ink);
   color: #fff;
   border-bottom-right-radius: 0.4rem;
-  box-shadow: 0 16px 34px -18px rgb(1 97 239 / 0.6);
+  box-shadow: 0 16px 34px -18px rgb(13 22 38 / 0.4);
 }
 .focus-stage .bubble .count { font-weight: 800; }
 
-/* Team (human handoff) card — green avatar + accent ring, "Team" label. */
+/* Team (human handoff) card — teal avatar + accent ring, "Team" label. */
 .focus-stage .avatar.human {
-  background: linear-gradient(135deg, rgb(16 185 129), rgb(4 120 87));
-  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.92), 0 8px 20px -8px rgb(4 120 87 / 0.55);
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.92), 0 8px 20px -8px rgb(10 134 123 / 0.55);
 }
 .focus-stage .turn.human .bubble {
-  background: rgb(240 253 249 / 0.96);
+  background: rgb(240 251 250 / 0.96);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  border: 1px solid rgb(16 122 87 / 0.28);
+  border: 1px solid rgb(15 181 166 / 0.3);
   border-bottom-left-radius: 0.4rem;
   color: var(--ink);
-  box-shadow: 0 18px 40px -20px rgb(4 120 87 / 0.35), 0 2px 6px -2px rgb(15 23 42 / 0.08);
+  box-shadow: 0 18px 40px -20px rgb(10 134 123 / 0.32), 0 2px 6px -2px rgb(13 22 38 / 0.08);
 }
-.focus-stage .turn.human .name { color: rgb(4 120 87); }
+.focus-stage .turn.human .name { color: var(--teal-deep); }
 
 /* System notice — centered, avatarless, muted glass. */
 .focus-stage .turn.system .bubble {
   background: rgb(248 250 252 / 0.85);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  border: 1px solid rgb(148 163 184 / 0.28);
+  border: 1px solid rgb(13 22 38 / 0.1);
   border-radius: 0.9rem;
   color: var(--muted);
   font-size: 0.9rem;
   text-align: center;
-  box-shadow: 0 10px 24px -16px rgb(15 23 42 / 0.3);
+  box-shadow: 0 10px 24px -16px rgb(13 22 38 / 0.28);
 }
 
 /* Rebi error bubble — red-tinted variant of the Rebi card. */
@@ -127,10 +127,10 @@
   width: 100%;
   background: rgb(255 255 255 / 0.96);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  border: 1px solid rgb(1 97 239 / 0.28);
+  border: 1px solid rgb(85 102 240 / 0.28);
   border-radius: 1rem;
   padding: 0.85rem 0.95rem;
-  box-shadow: 0 20px 44px -22px rgb(1 97 239 / 0.4), 0 2px 6px -2px rgb(15 23 42 / 0.1);
+  box-shadow: 0 20px 44px -22px rgb(85 102 240 / 0.4), 0 2px 6px -2px rgb(13 22 38 / 0.1);
   display: block;
 }
 
@@ -160,21 +160,22 @@
 .focus-stage .newsearch {
   display: inline-flex; align-items: center; gap: 0.4rem;
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
-  background: var(--rebi-blue); color: #fff; border: none; border-radius: 9999px;
+  background: var(--rebi-grad); color: #fff; border: none; border-radius: 9999px;
+  background-size: 160% 160%;
   padding: 0.5rem 1rem;
-  box-shadow: 0 8px 18px -8px rgb(1 97 239 / 0.6);
-  transition: background 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 8px 18px -8px rgb(85 102 240 / 0.6);
+  transition: background 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
-.focus-stage .newsearch:hover { background: rgb(1 84 207); transform: translateY(-1px); }
-.focus-stage .newsearch:focus-visible { outline: 2px solid rgb(109 40 217); outline-offset: 2px; }
+.focus-stage .newsearch:hover { box-shadow: 0 12px 26px -8px rgb(85 102 240 / 0.6); transform: translateY(-1px); }
+.focus-stage .newsearch:focus-visible { outline: 2px solid var(--indigo-deep); outline-offset: 2px; }
 .focus-stage .newsearch svg { width: 0.95rem; height: 0.95rem; }
 .focus-stage .newsearch:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 /* Ghost (secondary) action button — outlined, not filled. */
 .focus-stage .newsearch.ghost {
   background: transparent; color: var(--rebi-blue);
-  border: 1px solid rgb(1 97 239 / 0.4); box-shadow: none;
+  border: 1px solid rgb(85 102 240 / 0.4); box-shadow: none;
 }
-.focus-stage .newsearch.ghost:hover { background: rgb(1 97 239 / 0.08); }
+.focus-stage .newsearch.ghost:hover { background: rgb(85 102 240 / 0.08); }
 
 @media (max-width: 420px) {
   .focus-stage .bubble { font-size: 0.96rem; padding: 0.7rem 0.9rem; }

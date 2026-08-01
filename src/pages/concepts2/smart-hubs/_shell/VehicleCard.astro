@@ -1,0 +1,44 @@
+---
+/**
+ * VehicleCard — the shared listing tile. Clickable → vehicle detail. Reuses
+ * shipped .card / .card-lift / .chip primitives.
+ */
+import { fmt, fmtKm, icon, base, type Vehicle } from './data';
+interface Props { v: Vehicle; }
+const { v } = Astro.props as Props;
+---
+<a href={base + '/vehicle'} class="card card-lift sh-vcard">
+  <div class="sh-vcard-img" style={`background:${v.hue}`}>
+    {v.badge && <span class="chip chip-teal sh-vcard-badge">{v.badge}</span>}
+    <span class="chip sh-vcard-cond">{v.condition}</span>
+  </div>
+  <div class="sh-vcard-body">
+    <div class="sh-vcard-title">{v.year} {v.make} {v.model}</div>
+    <div class="sh-vcard-variant">{v.variant}</div>
+    <div class="sh-vcard-specs">
+      <span><span set:html={icon('gauge',13)}></span> {fmtKm(v.odo)}</span>
+      <span><span set:html={icon('fuel',13)}></span> {v.fuel}</span>
+      <span><span set:html={icon('drive',13)}></span> {v.drive}</span>
+    </div>
+    <div class="sh-vcard-foot">
+      <div class="sh-vcard-price">{fmt(v.price)}<small>drive away</small></div>
+      <span class="btn btn-ghost btn-sm">View</span>
+    </div>
+  </div>
+</a>
+
+<style>
+  .sh-vcard { display: flex; flex-direction: column; overflow: hidden; text-decoration: none; color: inherit; }
+  .sh-vcard-img { position: relative; aspect-ratio: 16 / 10; }
+  .sh-vcard-badge { position: absolute; top: 12px; left: 12px; }
+  .sh-vcard-cond { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.9); }
+  .sh-vcard-body { padding: 15px 16px 16px; }
+  .sh-vcard-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--ink); }
+  .sh-vcard-variant { font-size: 13px; color: var(--ink-faint); margin-top: 1px; }
+  .sh-vcard-specs { display: flex; gap: 14px; margin: 12px 0; font-size: 12.5px; color: var(--ink-soft); }
+  .sh-vcard-specs span { display: inline-flex; align-items: center; gap: 5px; }
+  .sh-vcard-specs span span { color: var(--teal-deep); display: inline-flex; }
+  .sh-vcard-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--line); }
+  .sh-vcard-price { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); }
+  .sh-vcard-price small { display: block; font-size: 11px; font-weight: 500; color: var(--ink-faint); }
+</style>

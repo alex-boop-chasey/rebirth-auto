@@ -1,0 +1,65 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const depts = [
+  ['car','New & demo sales','Mon–Sat 8:30–17:30 · Sun 10:00–16:00'],
+  ['tag','Used vehicles','Mon–Sat 8:30–17:30'],
+  ['wrench','Service & parts','Mon–Fri 7:30–17:00'],
+  ['calc','Finance & insurance','Mon–Fri 9:00–17:30 · Sat by appt'],
+];
+---
+<Layout title="Contact & find us — Rebirth Auto" active="" dockPrompt="I can answer most questions right now — try me.">
+  <section class="nfy-wrap" style="padding-block:34px 12px">
+    <span class="nfy-eyebrow"><span set:html={icon('pin',14)}></span> Contact</span>
+    <h1 class="nfy-h2" style="margin-top:12px; font-size:36px">We’re local, and easy to reach.</h1>
+    <p class="nfy-lead" style="margin-top:12px">Message Rebi any hour, or reach the right department below. A real person from the Bundaberg team will always follow up.</p>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:22px 40px; display:grid; grid-template-columns:1.2fr .8fr; gap:28px; align-items:start">
+    <div>
+      <!-- map placeholder -->
+      <div class="nfy-card" style="overflow:hidden; height:280px; position:relative; background:linear-gradient(135deg,#DDE7F2,#C6D6E8)">
+        <div class="nfy-grid-lines" style="position:absolute; inset:0"></div>
+        <div style="position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); text-align:center">
+          <span class="nfy-logo-mark" set:html={icon('pin',22)} style="color:#fff; width:52px; height:52px; margin-inline:auto"></span>
+          <div style="font-family:var(--font-display); font-weight:600; margin-top:8px">Rebirth Auto demo yard</div>
+          <div style="font-size:12px; color:var(--ink-soft)">Bundaberg region, QLD (map placeholder)</div>
+        </div>
+      </div>
+
+      <!-- departments -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px">
+        {depts.map(([ic,name,hrs]) => (
+          <div class="nfy-card" style="padding:18px 20px">
+            <div class="nfy-row" style="gap:10px; margin-bottom:8px"><span set:html={icon(ic as string,18)} style="color:var(--teal-deep)"></span><b style="font-family:var(--font-display); font-size:15px">{name}</b></div>
+            <div class="nfy-row" style="gap:8px; font-size:13px; color:var(--ink-soft)"><span set:html={icon('clock',14)}></span> {hrs}</div>
+            <div class="nfy-row" style="gap:8px; font-size:13px; color:var(--ink-soft); margin-top:5px"><span set:html={icon('phone',14)}></span> (07) 0000 0000 · demo</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- enquiry + rebi -->
+    <div style="display:flex; flex-direction:column; gap:16px; position:sticky; top:92px">
+      <div class="nfy-ai-summary nfy-scan" style="padding:22px">
+        <div class="nfy-row" style="gap:11px; margin-bottom:12px"><span class="nfy-orb nfy-orb--halo" style="width:38px;height:38px"></span><div><b style="font-family:var(--font-display); font-size:16px">Ask Rebi first</b><div style="font-size:12px; color:var(--teal-deep)">Fastest way to an answer</div></div></div>
+        <p style="font-size:14px; color:var(--ink-soft)">Stock, pricing, finance, opening hours — Rebi answers instantly and books you in if you need a human.</p>
+        <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary" style="margin-top:14px; width:100%; justify-content:center"><span set:html={icon('spark',16)}></span> Chat with Rebi</a>
+      </div>
+      <div class="nfy-card" style="padding:22px">
+        <h3 style="font-family:var(--font-display); font-size:17px; font-weight:600; margin-bottom:14px">Send a message</h3>
+        <div style="display:flex; flex-direction:column; gap:12px">
+          <input class="nfy-input" placeholder="Your name" readonly />
+          <input class="nfy-input" placeholder="Email or mobile (demo)" readonly />
+          <select class="nfy-select"><option>Choose a department</option><option>Sales</option><option>Service</option><option>Finance</option></select>
+          <textarea class="nfy-textarea" placeholder="How can we help?" readonly></textarea>
+          <button class="nfy-btn nfy-btn-dark" style="justify-content:center; pointer-events:none"><span set:html={icon('send',15)}></span> Send message</button>
+        </div>
+        <p class="nfy-faint" style="font-size:11.5px; margin-top:10px">Demo form — nothing is submitted.</p>
+      </div>
+    </div>
+  </section>
+</Layout>

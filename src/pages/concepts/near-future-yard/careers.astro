@@ -1,0 +1,56 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+const roles = [
+  ['Vehicle Sales Consultant','Sales','Full-time · Bundaberg','No cold-calling. Rebi warms every lead — you focus on people.'],
+  ['EV Specialist','Sales','Full-time · Bundaberg','Own our electric transition and coach customers through the switch.'],
+  ['Automotive Technician','Service','Full-time · Bundaberg','Modern workshop, all brands, ongoing manufacturer training.'],
+  ['Finance & Insurance Consultant','Finance','Full-time · Bundaberg','Structure honest deals with strong lender relationships.'],
+  ['Parts Interpreter','Parts','Full-time · Bundaberg','Fast, accurate fitment across a 12-brand catalogue.'],
+  ['Digital & AI Coordinator','Marketing','Full-time · Hybrid','Help shape how Rebi and our team work side by side.'],
+];
+---
+<Layout title="Careers — Rebirth Auto" active="" dockPrompt="Curious about a role? Ask me what a day looks like.">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 28px; max-width:60%">
+      <span class="nfy-eyebrow"><span set:html={icon('users',14)}></span> Careers</span>
+      <h1 class="nfy-h1" style="font-size:44px; margin-top:14px">Build the future of the yard.</h1>
+      <p class="nfy-lead" style="margin-top:16px">We pair good local people with smart tools. Rebi takes the grind off the job so our team can do what machines can’t — build trust. Grow a career in a regional business that’s genuinely modern.</p>
+    </div>
+  </section>
+
+  <section class="nfy-wrap nfy-section--tight">
+    <div class="nfy-row" style="gap:34px; flex-wrap:wrap; margin-bottom:34px">
+      {[['heart','People-first culture'],['spark','AI does the busywork'],['shield','Secure regional employer'],['leaf','Training & progression']].map(([ic,t]) => (
+        <div class="nfy-row" style="gap:10px; font-size:15px; font-weight:600"><span class="nfy-logo-mark" set:html={icon(ic as string,16)} style="color:#fff; width:34px; height:34px"></span> {t}</div>
+      ))}
+    </div>
+
+    <h2 class="nfy-h3" style="margin-bottom:16px">Open roles</h2>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      {roles.map(([title,dept,meta,blurb]) => (
+        <div class="nfy-card nfy-card--lift" style="padding:20px 24px; display:grid; grid-template-columns:auto 1fr auto; gap:20px; align-items:center">
+          <span class="nfy-chip nfy-chip--teal" style="align-self:start; margin-top:2px">{dept}</span>
+          <div>
+            <h3 style="font-family:var(--font-display); font-size:18px; font-weight:600">{title}</h3>
+            <p class="nfy-muted" style="font-size:13.5px; margin-top:3px">{blurb}</p>
+            <div class="nfy-row" style="gap:8px; font-size:12.5px; color:var(--ink-faint); margin-top:7px"><span set:html={icon('pin',13)}></span> {meta}</div>
+          </div>
+          <span class="nfy-btn nfy-btn-ghost nfy-btn-sm" style="pointer-events:none">Apply <span set:html={icon('arrow',14)}></span></span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:10px 70px">
+    <div class="nfy-glass nfy-scan" style="padding:28px 32px; display:flex; gap:20px; align-items:center">
+      <span class="nfy-orb nfy-orb--halo" style="width:46px;height:46px"></span>
+      <div style="flex:1"><h3 class="nfy-h3">Don’t see your role?</h3><p class="nfy-muted" style="font-size:14.5px; margin-top:6px">Tell Rebi what you do and we’ll keep you in mind. Good people are always worth a conversation.</p></div>
+      <span class="nfy-btn nfy-btn-primary nfy-btn-lg" style="pointer-events:none"><span set:html={icon('send',16)}></span> Register interest</span>
+    </div>
+    <p class="nfy-faint" style="font-size:11.5px; margin-top:12px">Demo listings — placeholder roles for this concept.</p>
+  </section>
+</Layout>

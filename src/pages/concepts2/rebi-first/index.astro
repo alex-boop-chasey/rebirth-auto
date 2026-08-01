@@ -1,0 +1,158 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { BASE, vehicles, brands, icon, fmt } from './_shell/data';
+export const prerender = false;
+
+const picks = [vehicles[0], vehicles[3]];
+const featured = vehicles.slice(0, 8);
+
+// The suggested prompts double as navigation: each maps to a destination.
+const promptChips: [string, string][] = [
+  ['Family SUV under $45k', `${BASE}/rebi`],
+  ['Work out repayments', `${BASE}/finance`],
+  ['Show me EVs', `${BASE}/electric`],
+  ['This week\'s deals', `${BASE}/offers`],
+  ['Sell my car', `${BASE}/sell`],
+  ['Book a test drive', `${BASE}/test-drive`],
+];
+---
+<Shell title="Rebirth Auto — ask Rebi anything">
+  <!-- HERO: Rebi IS the navigation. Conversation-forward. -->
+  <section class="site-container section" style="padding-block:56px 40px">
+    <div style="display:grid; grid-template-columns:1.02fr .98fr; gap:56px; align-items:center">
+      <div>
+        <span class="eyebrow">AI-native car buying · Bundaberg region</span>
+        <h1 class="rf-h1" style="margin-top:18px">Don't scroll a menu.<br/>Just ask Rebi.</h1>
+        <p class="lead" style="margin-top:18px">Rebi reads all 305 cars, works out your repayments, values your trade, and books your test drive — then takes you straight there. No hunting through tabs.</p>
+
+        <!-- The primary way in: one bar, not a nav -->
+        <div class="aisearch" style="margin-top:28px; max-width:580px">
+          <span class="orb orb-halo" style="width:30px;height:30px"></span>
+          <input type="text" placeholder="Ask Rebi: “reliable 7-seater under $45k for gravel roads”" readonly />
+          <a href={`${BASE}/rebi`} class="btn btn-primary"><span class="spark" set:html={icon('send',16)}></span> Ask</a>
+        </div>
+        <div class="rf-quick" style="margin-top:16px; max-width:580px">
+          {promptChips.map(([t, href]) => (
+            <a href={href} class="rf-action">
+              <span class="spark" set:html={icon('spark',12)}></span> {t}
+            </a>
+          ))}
+        </div>
+
+        <div class="rf-row" style="gap:34px; margin-top:34px">
+          <div><b style="font-family:var(--font-display); font-size:26px">305</b><div class="faint" style="font-size:12.5px">vehicles in stock</div></div>
+          <div><b style="font-family:var(--font-display); font-size:26px">12</b><div class="faint" style="font-size:12.5px">franchise brands</div></div>
+          <div><b style="font-family:var(--font-display); font-size:26px">4.8★</b><div class="faint" style="font-size:12.5px">1,200+ reviews</div></div>
+        </div>
+      </div>
+
+      <!-- LIVE REBI THREAD: cards + action buttons that navigate -->
+      <div class="card" style="overflow:hidden; display:flex; flex-direction:column">
+        <div class="rf-row" style="gap:11px; padding:16px 20px; border-bottom:1px solid var(--line); background:linear-gradient(120deg, rgba(15,181,166,.06), rgba(85,102,240,.06))">
+          <span class="orb orb-halo" style="width:32px;height:32px"></span>
+          <div style="flex:1"><b style="font-family:var(--font-display); font-size:15px">Rebi</b>
+          <div style="font-size:11.5px; color:var(--teal-deep)">Online · grounded on 305 cars</div></div>
+          <span class="chip chip-teal"><span set:html={icon('shield',13)}></span> Private &amp; honest</span>
+        </div>
+        <div style="padding:20px; display:flex; flex-direction:column; gap:16px">
+          <div class="rf-user">Family of five near Bundaberg — highway plus gravel to the farm. Around $55k. What should we look at?</div>
+          <div class="rf-rebi">
+            <div class="rf-rebi-head"><span class="orb" style="width:22px;height:22px"></span><b style="font-size:12px; color:var(--indigo-deep)">Rebi</b></div>
+            <div class="ai-summary scan" style="padding:14px 16px">
+              <p style="margin:0; font-size:13.5px; color:var(--ink); line-height:1.55">That mix wants full-time AWD with real clearance, not a soft crossover. Two 5-star ANCAP picks under $55k:</p>
+            </div>
+          </div>
+          <!-- clickable listing cards INSIDE the thread -->
+          <div style="display:flex; flex-direction:column; gap:10px">
+            {picks.map((p, i) => (
+              <a href={`${BASE}/rebi`} class="card card-lift rf-listing">
+                <div class="rf-listing-img" style={`background:${p.hue}`}></div>
+                <div style="flex:1">
+                  <div class="rf-row" style="gap:7px; margin-bottom:2px"><span class="chip chip-ai" style="padding:2px 8px; font-size:11px">{i === 0 ? 'Top match' : 'Value pick'}</span></div>
+                  <div style="font-family:var(--font-display); font-weight:600; font-size:14px">{p.year} {p.make} {p.model}</div>
+                  <div class="faint" style="font-size:11.5px">{fmt(p.price)} · {p.drive} · {p.fuel}</div>
+                </div>
+                <span set:html={icon('arrow',18)} style="color:var(--teal-deep)"></span>
+              </a>
+            ))}
+          </div>
+          <!-- action buttons that NAVIGATE -->
+          <div class="rf-quick">
+            <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Work out repayments</a>
+            <a class="rf-action" href={`${BASE}/test-drive`}><span class="spark" set:html={icon('play',13)}></span> Book a test drive</a>
+            <a class="rf-action" href={`${BASE}/sell`}><span class="spark" set:html={icon('tag',13)}></span> Add my trade-in</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BRAND STRIP — brands as contextual buttons, not a nav item -->
+  <section class="site-container" style="padding-block:14px">
+    <div class="card" style="padding:18px 24px; display:flex; align-items:center; gap:22px; flex-wrap:wrap">
+      <div class="rf-mono-eyebrow" style="white-space:nowrap">Franchise brands</div>
+      <div class="rf-row" style="gap:22px; flex-wrap:wrap; flex:1">
+        {brands.map((b) => <a href={`${BASE}/brand`} style="font-family:var(--font-display); font-weight:600; font-size:15px; color:var(--ink-soft); text-decoration:none">{b}</a>)}
+      </div>
+      <a href={`${BASE}/brand`} class="btn btn-ghost btn-sm">All brands <span set:html={icon('arrow',15)}></span></a>
+    </div>
+  </section>
+
+  <!-- WHAT REBI CAN TAKE YOU TO — contextual entry points (the folded sprawl) -->
+  <section class="site-container section-tight">
+    <div style="text-align:center; margin-bottom:26px">
+      <span class="eyebrow" style="justify-content:center">Everything, one question away</span>
+      <h2 class="rf-h2" style="margin-top:12px">Or tap a shortcut — Rebi takes it from here</h2>
+    </div>
+    <div class="rf-grid-4">
+      {[
+        ['calc','Finance & repayments','Sliders + instant weekly/monthly', `${BASE}/finance`],
+        ['tag','Sell your car','Outright offer or trade-in', `${BASE}/sell`],
+        ['leaf','Electric & hybrid','Range, running cost, EV stock', `${BASE}/electric`],
+        ['play','Book a test drive','Pick a car + a time', `${BASE}/test-drive`],
+        ['star','Offers & specials','This week\'s drive-away deals', `${BASE}/offers`],
+        ['wrench','Genuine parts','Fitment-checked enquiries', `${BASE}/parts`],
+        ['truck','Fleet & business','Volume + novated', `${BASE}/fleet`],
+        ['pin','Contact & find us','Sales · Service · Parts', `${BASE}/contact`],
+      ].map(([ic, h, sub, href]) => (
+        <a href={href} class="card card-lift" style="padding:20px; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:8px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <b style="font-family:var(--font-display); font-size:15.5px; margin-top:4px">{h}</b>
+          <span class="faint" style="font-size:12.5px">{sub}</span>
+          <span class="rf-row" style="gap:6px; font-size:12.5px; color:var(--teal-deep); font-weight:600; margin-top:2px">Open <span set:html={icon('arrow',14)}></span></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- INVENTORY (the one browse CTA target) -->
+  <section id="inventory" class="site-container section-tight">
+    <div class="rf-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:22px">
+      <div>
+        <span class="eyebrow">Curated by Rebi</span>
+        <h2 class="rf-h2" style="margin-top:10px">Browse the yard</h2>
+      </div>
+      <a href={`${BASE}/rebi`} class="btn btn-primary btn-sm"><span class="spark" set:html={icon('spark',15)}></span> Let Rebi shortlist for me</a>
+    </div>
+    <div class="rf-grid-4">
+      {featured.map((v) => <VehicleCard v={v} />)}
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section class="site-container" style="padding-block:24px 70px">
+    <div class="card" style="background:var(--ink); color:#fff; border:0; padding:48px 52px; display:grid; grid-template-columns:1.3fr .7fr; gap:36px; align-items:center">
+      <div>
+        <span class="eyebrow" style="color:#7FE6DA">Local, and always on</span>
+        <h2 class="rf-h2" style="color:#fff; margin-top:12px">Rebi never clocks off.</h2>
+        <p style="color:#C4D0E0; font-size:16px; margin-top:10px; max-width:52ch">Weigh up finance, trade-in and a test drive at 11pm on a Sunday. When you want a human, our team is a message away.</p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <a href={`${BASE}/rebi`} class="btn btn-primary btn-lg" style="justify-content:center"><span class="spark" set:html={icon('spark',17)}></span> Chat with Rebi</a>
+        <a href={`${BASE}/contact`} class="btn btn-ghost btn-lg" style="justify-content:center; background:rgba(255,255,255,.08); color:#fff; border-color:rgba(255,255,255,.2)">Find our yard</a>
+      </div>
+    </div>
+  </section>
+</Shell>

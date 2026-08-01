@@ -94,34 +94,29 @@ function fmtCreated(createdAt: number): string {
 const title = `${copy.heading} — ${dealerConfig.identity.name}`;
 ---
 
-<AuthLayout title={title} description={copy.subheading} noindex>
+<AuthLayout title={title} description={copy.subheading} noindex navActive="account">
   <section class="mx-auto max-w-4xl py-10 md:py-14">
     <!-- Welcome header -->
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-lg font-bold text-white"
+          class="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white"
+          style="background:var(--aurora); box-shadow: var(--sh-glow)"
           aria-hidden="true"
         >
           {initial}
         </div>
         <div>
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
-          >
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          <span class="chip chip-teal">
+            <span class="h-1.5 w-1.5 rounded-full bg-teal"></span>
             {copy.eyebrow}
           </span>
-          <h1 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+          <h1 class="mt-2 text-2xl font-bold tracking-tight text-ink md:text-3xl">
             Welcome, {userName}
           </h1>
         </div>
       </div>
-      <button
-        type="button"
-        id="btn-signout"
-        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="button" id="btn-signout" class="btn btn-ghost btn-sm disabled:cursor-not-allowed disabled:opacity-60">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -141,44 +136,44 @@ const title = `${copy.heading} — ${dealerConfig.identity.name}`;
     </div>
 
     <!-- Account details -->
-    <div class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-      <h2 class="text-sm font-semibold text-slate-900">Account details</h2>
+    <div class="card mt-8 p-6 md:p-8">
+      <h2 class="text-sm font-semibold text-ink">Account details</h2>
       <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Email</dt>
-          <dd class="mt-1 truncate text-sm font-semibold text-slate-900">{userEmail}</dd>
+        <div class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-ink-faint">Email</dt>
+          <dd class="mt-1 truncate text-sm font-semibold text-ink">{userEmail}</dd>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Member since</dt>
-          <dd class="mt-1 text-sm font-semibold text-slate-900">{joinDate}</dd>
+        <div class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-ink-faint">Member since</dt>
+          <dd class="mt-1 text-sm font-semibold text-ink">{joinDate}</dd>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Sign-in method</dt>
-          <dd class="mt-1 text-sm font-semibold capitalize text-slate-900">{provider}</dd>
+        <div class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-ink-faint">Sign-in method</dt>
+          <dd class="mt-1 text-sm font-semibold capitalize text-ink">{provider}</dd>
         </div>
       </dl>
     </div>
 
     <!-- Service history + saved searches (real per-user data, keyed by email) -->
     <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-sm font-semibold text-slate-900">{copy.serviceHistoryHeading}</h2>
+      <div class="card p-6">
+        <h2 class="text-sm font-semibold text-ink">{copy.serviceHistoryHeading}</h2>
         {
           bookings.length === 0 ? (
-            <p class="mt-2 text-sm text-slate-500">
+            <p class="mt-2 text-sm text-ink-soft">
               Your service history will appear here once your vehicle records are linked to your account.
             </p>
           ) : (
             <ul class="mt-4 space-y-3">
               {bookings.map((b) => (
-                <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <li class="rounded-sm border border-line bg-bg-2 px-4 py-3">
                   <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span class="text-sm font-semibold text-slate-900">{b.service_type}</span>
-                    <span class="text-xs font-medium text-slate-400">{fmtCreated(b.created_at)}</span>
+                    <span class="text-sm font-semibold text-ink">{b.service_type}</span>
+                    <span class="text-xs font-medium text-ink-faint">{fmtCreated(b.created_at)}</span>
                   </div>
-                  <p class="mt-1 truncate text-sm text-slate-600">{b.vehicle}</p>
+                  <p class="mt-1 truncate text-sm text-ink-soft">{b.vehicle}</p>
                   {b.preferred_date && (
-                    <p class="mt-0.5 text-xs text-slate-500">Preferred: {b.preferred_date}</p>
+                    <p class="mt-0.5 text-xs text-ink-soft">Preferred: {b.preferred_date}</p>
                   )}
                 </li>
               ))}
@@ -186,17 +181,17 @@ const title = `${copy.heading} — ${dealerConfig.identity.name}`;
           )
         }
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-sm font-semibold text-slate-900">Saved searches</h2>
+      <div class="card p-6">
+        <h2 class="text-sm font-semibold text-ink">Saved searches</h2>
         {
           savedSearches.length === 0 ? (
             <Fragment>
-              <p class="mt-2 text-sm text-slate-500">
+              <p class="mt-2 text-sm text-ink-soft">
                 Save a search from the inventory and get an email when new matches arrive.
               </p>
               <a
                 href="/#inventory"
-                class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:decoration-slate-900"
+                class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-ink underline decoration-indigo/40 underline-offset-4 transition hover:decoration-indigo"
               >
                 {copy.savedSearchesLabel}
               </a>
@@ -204,15 +199,15 @@ const title = `${copy.heading} — ${dealerConfig.identity.name}`;
           ) : (
             <ul class="mt-4 space-y-3">
               {savedSearches.map((s) => (
-                <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <li class="rounded-sm border border-line bg-bg-2 px-4 py-3">
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <a
                       href={rerunHref(s.query)}
-                      class="text-sm font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:decoration-slate-900"
+                      class="text-sm font-semibold text-ink underline decoration-indigo/40 underline-offset-4 transition hover:decoration-indigo"
                     >
                       {s.label?.trim() || summarize(s.query)}
                     </a>
-                    <span class="text-xs font-medium text-slate-400">{fmtCreated(s.created_at)}</span>
+                    <span class="text-xs font-medium text-ink-faint">{fmtCreated(s.created_at)}</span>
                   </div>
                 </li>
               ))}

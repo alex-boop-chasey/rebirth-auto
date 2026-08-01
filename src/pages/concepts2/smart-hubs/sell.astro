@@ -1,0 +1,50 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { icon, base } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Sell your car — Smart Hubs" active="buy-own" dockPrompt="Want a cash offer or a trade-in? I’ll compare both.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Buy & Own', base + '/buy-own'], ['Sell your car']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="buy-own" current={base + '/sell'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow">Sell your car</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Sell outright — cash, no purchase needed.</h1>
+    <p class="sh-sub">Distinct from a trade-in: you don’t have to buy from us. Not sure which is better? The
+      sell-vs-trade explainer and Rebi will compare them side by side.</p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid" style="grid-template-columns:1.2fr 1fr; gap:22px">
+      <!-- valuation intake -->
+      <div class="card sh-panel">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('dollar',18)}></span><b style="font-size:16px">Get an indicative offer</b></div>
+        <div class="sh-grid sh-cols-2" style="gap:0 14px">
+          <div class="sh-field"><label>Make</label><input placeholder="e.g. Toyota" /></div>
+          <div class="sh-field"><label>Model</label><input placeholder="e.g. Corolla" /></div>
+          <div class="sh-field"><label>Year</label><select><option>2024</option><option>2023</option><option>2022</option></select></div>
+          <div class="sh-field"><label>Odometer (km)</label><input placeholder="e.g. 42,000" /></div>
+        </div>
+        <div class="sh-field"><label>Condition</label><select><option>Excellent</option><option>Good</option><option>Fair</option></select></div>
+        <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center"><span set:html={icon('spark',15)}></span> Value my car with Rebi</button>
+        <p class="sh-note" style="margin-top:10px">Indicative only. Final offer after a quick inspection.</p>
+      </div>
+
+      <!-- how it works + sell vs trade -->
+      <div style="display:flex; flex-direction:column; gap:18px">
+        <div class="card sh-panel">
+          <div class="eyebrow" style="margin-bottom:12px">How it works</div>
+          {[['1','Tell us the car','30 seconds, no obligation'],['2','Get an indicative price','Rebi + our buyer confirm'],['3','Inspect &amp; get paid','Same-day bank transfer (demo)']].map(([n,t,d]) => (
+            <div style="display:flex; gap:12px; padding:9px 0"><span class="avatar" style="width:30px; height:30px; font-size:13px">{n}</span><div><b style="font-size:14px">{t}</b><div style="font-size:12.5px; color:var(--ink-faint)">{d}</div></div></div>
+          ))}
+        </div>
+        <div class="ai-summary sh-panel">
+          <div class="chip chip-ai" style="margin-bottom:10px"><span set:html={icon('swap',13)}></span> Sell vs trade-in</div>
+          <p style="font-size:14px; color:var(--ink-soft)">Trading in against a new car can cut your stamp duty and paperwork. Selling outright may net more cash. <a href={base + '/trade-in'} style="color:var(--indigo-deep); font-weight:600">Compare with a trade-in →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

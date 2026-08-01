@@ -1,0 +1,24 @@
+---
+// Persistent floating Rebi console — the product's signature AI entry point.
+const { hint = "Ask about any vehicle, price or match" } = Astro.props;
+const base = "/concepts/dark-precision";
+---
+<aside class="dp-dock">
+  <div class="dp-dock__card">
+    <div class="dp-ai__head">
+      <span class="dp-rebi-avatar" style="width:26px;height:26px"></span>
+      <strong style="font-family:var(--font-display);letter-spacing:-0.01em">Rebi</strong>
+      <span class="dp-chip dp-chip--signal" style="margin-left:auto"><span class="dp-dot dp-dot--live"></span>LIVE</span>
+    </div>
+    <div style="padding:14px 16px;display:grid;gap:12px">
+      <p class="dp-mono" style="font-size:11px;color:var(--ink-mute);letter-spacing:0.08em">REBI · CO-PILOT</p>
+      <p style="font-size:13px;line-height:1.55;color:var(--ink-dim)">{hint}. I read specs, finance and history so you don't have to.<span class="dp-caret"></span></p>
+      <div class="dp-pillrow">
+        <span class="dp-chip">Best under $30k</span>
+        <span class="dp-chip">7 seats, diesel</span>
+      </div>
+      <a class="dp-btn dp-btn--primary" href={`${base}/rebi`} style="justify-content:center">Open Rebi console</a>
+    </div>
+  </div>
+  <div class="dp-dock__orb" title="Rebi">R</div>
+</aside>

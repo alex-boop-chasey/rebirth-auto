@@ -1,0 +1,37 @@
+---
+import { icon, fmt, fmtKm, type Vehicle } from './data';
+const { v } = Astro.props as { v: Vehicle };
+const base = '/concepts/near-future-yard';
+const condClass = v.condition === 'New' ? 'nfy-chip--teal' : v.condition === 'Demo' ? 'nfy-chip--ai' : '';
+---
+<a href={`${base}/vehicle`} class="nfy-card nfy-card--lift nfy-vcard" style="text-decoration:none; color:inherit">
+  <div class="nfy-vcard-img" style={`background:${v.hue}`}>
+    <div class="nfy-vcard-tags">
+      <span class={`nfy-chip ${condClass}`} style="background:rgba(255,255,255,.9); backdrop-filter:blur(4px)">{v.condition}</span>
+      {v.badge && <span class="nfy-chip nfy-chip--amber" style="backdrop-filter:blur(4px)">{v.badge}</span>}
+    </div>
+    <div class="nfy-vcard-fav" set:html={icon('heart', 16)} style="color:var(--ink-soft)"></div>
+  </div>
+  <div class="nfy-vcard-body">
+    <div class="nfy-row" style="justify-content:space-between; align-items:baseline">
+      <div>
+        <div style="font-size:12px; color:var(--ink-faint); font-weight:600">{v.year} · {v.make}</div>
+        <div style="font-family:var(--font-display); font-weight:600; font-size:17px; letter-spacing:-.01em">{v.model} <span style="color:var(--ink-soft); font-weight:500; font-size:14px">{v.variant}</span></div>
+      </div>
+    </div>
+    <div class="nfy-vcard-spec">
+      <span><i set:html={icon('gauge',15)} style="color:var(--teal-deep)"></i> {fmtKm(v.odo)}</span>
+      <span><i set:html={icon('fuel',15)} style="color:var(--teal-deep)"></i> {v.fuel}</span>
+      <span><i set:html={icon('gear',15)} style="color:var(--teal-deep)"></i> {v.trans}</span>
+      <span><i set:html={icon('drive',15)} style="color:var(--teal-deep)"></i> {v.drive}</span>
+    </div>
+    <div class="nfy-vcard-ai">
+      <span class="nfy-spark" set:html={icon('spark',14)} style="color:var(--indigo); margin-top:1px"></span>
+      <span>{v.aiLine}</span>
+    </div>
+    <div class="nfy-row" style="justify-content:space-between; margin-top:auto; padding-top:6px">
+      <div class="nfy-vcard-price">{fmt(v.price)} <span style="font-size:12px; color:var(--ink-faint); font-weight:500">drive away</span></div>
+      <span class="nfy-btn nfy-btn-ghost nfy-btn-sm" style="pointer-events:none">View</span>
+    </div>
+  </div>
+</a>

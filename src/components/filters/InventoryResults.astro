@@ -57,11 +57,11 @@ function pageWindow(current: number, last: number): (number | 'gap')[] {
 const windowPages = pages > 1 ? pageWindow(currentPage, pages) : [];
 
 const pageLink =
-  'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50';
+  'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-soft transition hover:border-teal hover:text-ink';
 const pageLinkActive =
-  'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-900 bg-slate-900 px-3 text-sm font-semibold text-white';
+  'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-ink bg-ink px-3 text-sm font-semibold text-white';
 const pageLinkDisabled =
-  'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-100 bg-white px-3 text-sm font-medium text-slate-300 cursor-not-allowed';
+  'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-line bg-surface px-3 text-sm font-medium text-ink-faint/50 cursor-not-allowed';
 ---
 
 <div id="inventory-results">
@@ -73,7 +73,7 @@ const pageLinkDisabled =
           <a
             href="/"
             data-filter-clear
-            class="text-xs font-medium text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline"
+            class="text-xs font-medium text-ink-soft underline-offset-2 transition hover:text-ink hover:underline"
           >
             Clear all
           </a>
@@ -82,7 +82,7 @@ const pageLinkDisabled =
               type="button"
               data-save-search-toggle
               aria-expanded="false"
-              class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 underline-offset-2 transition hover:text-slate-900 hover:underline"
+              class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-deep underline-offset-2 transition hover:text-indigo hover:underline"
             >
               <Fragment set:html={iconSvg('heart', 'h-3.5 w-3.5')} />
               {savedSearchCfg.copy.toggleLabel}
@@ -96,10 +96,10 @@ const pageLinkDisabled =
             data-label={savedSearchLabel}
             data-error={savedSearchCfg.copy.errorMessage}
             hidden
-            class="mt-3 max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            class="mt-3 max-w-md rounded-lg border border-indigo/20 bg-surface p-4 shadow-[var(--sh-2)]"
           >
-            <p class="text-sm font-semibold text-slate-900">{savedSearchCfg.copy.heading}</p>
-            <p class="mt-1 text-xs text-slate-500">{savedSearchCfg.copy.description}</p>
+            <p class="text-sm font-semibold text-ink">{savedSearchCfg.copy.heading}</p>
+            <p class="mt-1 text-xs text-ink-soft">{savedSearchCfg.copy.description}</p>
             <form data-save-search-form class="mt-3 flex flex-wrap gap-2">
               <input
                 type="email"
@@ -107,12 +107,12 @@ const pageLinkDisabled =
                 data-save-search-email
                 placeholder={savedSearchCfg.copy.emailPlaceholder}
                 aria-label={savedSearchCfg.copy.emailPlaceholder}
-                class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                class="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink shadow-[var(--sh-1)] focus:border-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-teal/30"
               />
               <button
                 type="submit"
                 data-save-search-submit
-                class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+                class="rounded-pill bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-deep disabled:opacity-60"
               >
                 {savedSearchCfg.copy.submitLabel}
               </button>
@@ -130,7 +130,7 @@ const pageLinkDisabled =
     )
   }
 
-  <p class="mt-6 text-sm text-slate-500" data-results-count>
+  <p class="mt-6 text-sm text-ink-soft" data-results-count>
     {
       total === 0
         ? 'No vehicles match your filters'
@@ -146,24 +146,20 @@ const pageLinkDisabled =
         ))}
       </section>
     ) : (
-      <div class="mt-6 rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center">
-        <div class="mx-auto mb-4 flex w-fit justify-center text-slate-300">
+      <div class="card mt-6 px-6 py-16 text-center">
+        <div class="mx-auto mb-4 flex w-fit justify-center text-ink-faint">
           <Fragment set:html={iconSvg('car', 'h-10 w-10')} />
         </div>
-        <h2 class="text-lg font-semibold text-slate-900">
+        <h2 class="text-lg font-semibold text-ink">
           {chips.length > 0 ? 'No vehicles match your filters' : 'No vehicles in stock right now'}
         </h2>
-        <p class="mt-1 text-sm text-slate-500">
+        <p class="mt-1 text-sm text-ink-soft">
           {chips.length > 0
             ? 'Try widening or clearing a filter to see more.'
             : 'New arrivals land regularly — check back soon or get in touch.'}
         </p>
         {chips.length > 0 && (
-          <a
-            href="/"
-            data-filter-clear
-            class="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-700"
-          >
+          <a href="/" data-filter-clear class="btn btn-primary mt-6">
             Clear all filters
           </a>
         )}

@@ -1,0 +1,517 @@
+/* =============================================================================
+   Near-Future Yard (NFY) — design-token + component-primitive layer
+   -----------------------------------------------------------------------------
+   The REAL, themeable, un-namespaced port of the NFY contest system
+   (src/pages/concepts/near-future-yard/_shell/theme.css — reference only, never
+   imported). Everything here is token-driven so a future tenant swap restyles by
+   editing the tokens alone. Imported by global.css (which owns the width/grid/
+   focus systems — those are NOT duplicated here).
+
+   Light-theme standard: NFY is light-first. Classes are OPT-IN — nothing here
+   changes a page's appearance until the page adopts these classes.
+   ========================================================================== */
+
+/* ---- design tokens -------------------------------------------------------- */
+:root {
+  /* palette */
+  --bg:        #F5F8FC;   /* page mist */
+  --bg-2:      #EBF1F8;   /* recessed panels */
+  --surface:   #FFFFFF;   /* cards */
+  --ink:       #0D1626;   /* primary text / deep slate-navy */
+  --ink-soft:  #47566B;   /* secondary text */
+  --ink-faint: #8494A8;   /* tertiary / captions */
+  --line:      rgba(13, 22, 38, 0.09);
+  --line-2:    rgba(13, 22, 38, 0.05);
+
+  --teal:       #0FB5A6;  /* tech accent (primary) */
+  --teal-deep:  #0A867B;
+  --indigo:     #5566F0;  /* Rebi / AI */
+  --indigo-deep:#3A46C8;
+  --amber:      #E0813B;  /* local warmth / offers / established cues */
+  --amber-soft: #FBEBDD;
+  --mint-glow:   rgba(15, 181, 166, 0.14);
+  --indigo-glow: rgba(85, 102, 240, 0.14);
+
+  --aurora:      linear-gradient(115deg, #0FB5A6 0%, #2E86E4 48%, #5566F0 100%);
+  --aurora-soft: linear-gradient(115deg, rgba(15, 181, 166, 0.12), rgba(85, 102, 240, 0.12));
+
+  /* depth */
+  --sh-1: 0 1px 2px rgba(13, 22, 38, 0.05), 0 2px 8px rgba(13, 22, 38, 0.04);
+  --sh-2: 0 6px 22px rgba(13, 22, 38, 0.09), 0 2px 6px rgba(13, 22, 38, 0.05);
+  --sh-3: 0 20px 50px rgba(13, 22, 38, 0.14), 0 6px 16px rgba(13, 22, 38, 0.08);
+  --sh-glow: 0 10px 40px -12px rgba(15, 181, 166, 0.45);
+
+  /* radii */
+  --r-sm: 10px;
+  --r:    16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+  --r-pill: 999px;
+
+  /* type roles — the shipped site ships NO custom font. Display/UI/body all map
+     to the default system-ui sans; the "near-future" mono accent uses a SYSTEM
+     ui-monospace stack (no imported font). NFY's Space Grotesk/Inter/JetBrains
+     Mono are deliberately NOT used. */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: var(--font-ui);
+  --font-body: var(--font-ui);
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+/* ---- Tailwind v4 theme mapping -------------------------------------------
+   `@theme inline` points Tailwind utilities at the tokens above WITHOUT
+   re-emitting them, so bg-surface / text-ink / text-ink-soft / rounded-lg /
+   font-mono etc. resolve to the single source of truth in :root. */
+@theme inline {
+  --color-bg:         var(--bg);
+  --color-bg-2:       var(--bg-2);
+  --color-surface:    var(--surface);
+  --color-ink:        var(--ink);
+  --color-ink-soft:   var(--ink-soft);
+  --color-ink-faint:  var(--ink-faint);
+  --color-line:       var(--line);
+  --color-teal:       var(--teal);
+  --color-teal-deep:  var(--teal-deep);
+  --color-indigo:     var(--indigo);
+  --color-indigo-deep:var(--indigo-deep);
+  --color-amber:      var(--amber);
+  --color-amber-soft: var(--amber-soft);
+
+  --radius-sm:   var(--r-sm);
+  --radius:      var(--r);
+  --radius-lg:   var(--r-lg);
+  --radius-xl:   var(--r-xl);
+  --radius-pill: var(--r-pill);
+
+  --font-sans:    var(--font-ui);
+  --font-display: var(--font-display);
+  --font-mono:    var(--font-mono);
+}
+
+/* ---- keyframes ------------------------------------------------------------ */
+@keyframes aurora-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(0.7); opacity: 0.85; }
+  50%      { transform: scale(1);   opacity: 1; }
+}
+@keyframes scan-sweep {
+  0%, 15%   { transform: translateY(-100%); }
+  60%, 100% { transform: translateY(100%); }
+}
+@keyframes think-dot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  40%      { opacity: 1;   transform: translateY(-3px); }
+}
+
+/* ---- text roles ----------------------------------------------------------- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1.5px;
+  background: var(--teal);
+  display: inline-block;
+}
+.lead  { font-size: 19px; color: var(--ink-soft); max-width: 60ch; }
+.muted { color: var(--ink-soft); }
+.faint { color: var(--ink-faint); }
+.mono  { font-family: var(--font-mono); }
+
+/* ---- buttons -------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 13px 22px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, background 0.2s ease,
+    border-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn-primary {
+  background: var(--aurora);
+  color: #fff;
+  box-shadow: var(--sh-glow);
+  background-size: 160% 160%;
+}
+.btn-primary:hover {
+  box-shadow: 0 16px 46px -12px rgba(85, 102, 240, 0.55);
+  animation: aurora-shift 3s ease infinite;
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--line);
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal-deep); }
+.btn-amber {
+  background: var(--amber);
+  color: #fff;
+  box-shadow: 0 10px 30px -12px rgba(224, 129, 59, 0.6);
+}
+.btn-dark { background: var(--ink); color: #fff; }
+.btn-sm { padding: 9px 16px; font-size: 13.5px; }
+.btn-lg { padding: 16px 28px; font-size: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover { transform: none; }
+  .btn-primary:hover { animation: none; }
+}
+
+/* ---- surfaces / glass ----------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sh-2);
+  border-color: rgba(15, 181, 166, 0.28);
+}
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.62));
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--sh-2);
+  border-radius: var(--r-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:hover { transform: none; }
+}
+
+/* ---- chips / tags --------------------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: var(--r-pill);
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--bg-2);
+  color: var(--ink-soft);
+  border: 1px solid var(--line-2);
+}
+.chip-teal  { background: var(--mint-glow);   color: var(--teal-deep);   border-color: rgba(15, 181, 166, 0.22); }
+.chip-amber { background: var(--amber-soft);  color: #B4611F;            border-color: rgba(224, 129, 59, 0.25); }
+.chip-ai    { background: var(--indigo-glow); color: var(--indigo-deep); border-color: rgba(85, 102, 240, 0.22); }
+
+/* ---- AI system: the ambient Rebi language --------------------------------- */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 5px 11px 5px 8px;
+  border-radius: var(--r-pill);
+  background: var(--indigo-glow);
+  color: var(--indigo-deep);
+  border: 1px solid rgba(85, 102, 240, 0.22);
+  cursor: pointer;
+  text-decoration: none;
+}
+.spark { width: 14px; height: 14px; display: inline-block; flex: none; }
+.spark path { fill: currentColor; }
+
+/* Rebi orb — the recurring AI mark. A living aurora bead. */
+.orb {
+  position: relative;
+  border-radius: 50%;
+  background: var(--aurora);
+  background-size: 180% 180%;
+  animation: aurora-shift 6s ease infinite;
+  box-shadow: 0 6px 18px -4px rgba(85, 102, 240, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  flex: none;
+}
+.orb::after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  filter: blur(1px);
+  animation: orb-pulse 2.6s ease-in-out infinite;
+}
+.orb-halo::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: var(--aurora);
+  opacity: 0.35;
+  filter: blur(9px);
+  z-index: -1;
+  animation: orb-pulse 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb, .orb::after, .orb-halo::before { animation: none; }
+}
+
+/* AI summary card — the signature "Rebi read this for you" block */
+.ai-summary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(85, 102, 240, 0.05), rgba(15, 181, 166, 0.05));
+  border: 1px solid rgba(85, 102, 240, 0.18);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+}
+.ai-summary::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--aurora);
+}
+/* animated scan line — "AI reading" feel, purely visual */
+.scan { position: relative; overflow: hidden; }
+.scan::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(15, 181, 166, 0.1), transparent);
+  transform: translateY(-100%);
+  animation: scan-sweep 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan::after { animation: none; }
+}
+
+/* thinking dots */
+.dots { display: inline-flex; gap: 5px; align-items: center; }
+.dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--indigo);
+  display: inline-block;
+  animation: think-dot 1.3s ease-in-out infinite;
+}
+.dots i:nth-child(2) { animation-delay: 0.18s; }
+.dots i:nth-child(3) { animation-delay: 0.36s; }
+@media (prefers-reduced-motion: reduce) {
+  .dots i { animation: none; }
+}
+
+/* AI search bar — appears on inventory-facing surfaces */
+.aisearch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1.5px solid transparent;
+  background-image: linear-gradient(var(--surface), var(--surface)), var(--aurora);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border-radius: var(--r-pill);
+  padding: 8px 8px 8px 20px;
+  box-shadow: var(--sh-2);
+}
+.aisearch input {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 16px;
+  font-family: var(--font-ui);
+  color: var(--ink);
+}
+.aisearch input::placeholder { color: var(--ink-faint); }
+
+/* ---- section wrapper + page surface --------------------------------------- */
+.section { padding-block: 76px; }
+.section-tight { padding-block: 48px; }
+
+/* Opt-in page background: the soft ambient mesh painted behind a page. Apply to
+   a page's <body>/root when a surface adopts the NFY skin — never global, so
+   un-reskinned pages are untouched. */
+.page-surface {
+  background: var(--bg);
+  color: var(--ink);
+  background-image:
+    radial-gradient(60rem 40rem at 82% -8%, var(--mint-glow), transparent 60%),
+    radial-gradient(50rem 40rem at -6% 8%, var(--indigo-glow), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* ---- brand mark + avatar helpers ------------------------------------------ */
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--aurora);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-glow);
+  flex: none;
+  color: #fff;
+}
+.avatar {
+  border-radius: 50%;
+  background: linear-gradient(135deg, #CBD8EA, #AFC2DC);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: #3A4A63;
+  flex: none;
+}
+
+/* =============================================================================
+   Site chrome — SiteNav / SiteFooter component styles (token-driven)
+   ========================================================================== */
+
+/* ---- sticky glass nav ----------------------------------------------------- */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(245, 248, 252, 0.9), rgba(245, 248, 252, 0.72));
+  backdrop-filter: blur(14px) saturate(1.15);
+  border-bottom: 1px solid var(--line);
+}
+.site-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  height: 74px;
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.site-brand small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--ink-faint);
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-top: -1px;
+}
+.site-navlinks {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-left: 8px;
+}
+.site-navlinks a {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  padding: 9px 13px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.16s, color 0.16s;
+}
+.site-navlinks a:hover { background: rgba(15, 181, 166, 0.09); color: var(--ink); }
+.site-navlinks a.is-active { color: var(--ink); background: rgba(13, 22, 38, 0.05); }
+.site-nav-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* Mobile: collapse the marketing links; keep brand + primary actions. */
+@media (max-width: 900px) {
+  .site-navlinks { display: none; }
+}
+
+/* ---- dark footer ---------------------------------------------------------- */
+.site-footer {
+  background: var(--ink);
+  color: #C4D0E0;
+  margin-top: 40px;
+}
+.site-footer a { color: #C4D0E0; text-decoration: none; }
+.site-footer a:hover { color: #fff; }
+.site-foot-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr 1.3fr;
+  gap: 40px;
+  padding-block: 60px 44px;
+}
+.site-foot-h {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7A8AA0;
+  font-family: var(--font-mono);
+  margin-bottom: 16px;
+}
+.site-foot-grid ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+.site-foot-bar {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-block: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 12.5px;
+  color: #7A8AA0;
+}
+.site-brand-footer { color: #fff; }
+.site-brand-footer small { color: #7A8AA0; }
+@media (max-width: 900px) {
+  .site-foot-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+@media (max-width: 560px) {
+  .site-foot-grid { grid-template-columns: 1fr; }
+  .site-foot-bar { flex-direction: column; align-items: flex-start; }
+}
