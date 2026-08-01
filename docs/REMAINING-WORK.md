@@ -9,6 +9,34 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 7 — Site remodel to inline-contextual (build) (2026-08-01)
+
+Scope = **remodel the ENTIRE site onto the `inline-contextual` design**, with the **top nav from
+`smart-hubs`** (mega-menu), preserving every AI tool's mechanics and the docs' hard constraints.
+Definitive spec: `docs/briefs/REMODEL-BRIEF.md`. Branch: `redesign/inline-contextual` (off `main` — has
+the query planner + free tiers — merged with the NFY visual foundation + both `concepts2` mockups).
+
+**Contest designation (§6): NONE** — design fully chosen (inline-contextual + smart-hubs nav); every
+page is a built mockup template to port. Directed execution, not an open design question.
+
+**Wave plan** (each: port from the matching `concepts2/inline-contextual` mockup → real inventory/AI/
+forms; `astro check` + drive-the-flow + commit; preserve all seams):
+- **Wave 0 — Foundation:** port the inline-contextual design layer (`.entry`/`.entry-rail`/`.entry-origin`
+  + page helpers) into the real styling; rebuild `SiteNav` as the **Smart Hubs mega-menu** (productionised
+  + config-driven) and `SiteFooter` as the inline-contextual full-directory footer; `data-rebi-open`
+  opens the real ChatWidget. No page reskin yet.
+- **Wave 1 — Home + `/listings` + vehicle:** home = front-door (AI search + facet chips + featured);
+  move the grid/filters/SearchDock to `/listings` (PRESERVE the grid/filter/searchdock contract);
+  vehicle detail gets inline `.entry` contextual jumps. HIGHEST RISK.
+- **Wave 2 — Buy & Own:** finance (calculator), offers, trade-in (exists), sell, test-drive (forms → stubs).
+- **Wave 3 — Service & Parts + Shop:** service (exists), parts, fleet, electric (EV hub), brand (`/brand/[slug]`).
+- **Wave 4 — Dealership + Rebi:** about, contact, careers (config facts only — no fabricated data),
+  account (exists), `/rebi` full navigator.
+
+**Status:** IN PROGRESS — foundation branch merged (`astro check` 0 errors); Wave 0 building.
+
+---
+
 ## /auto run 6 — LLM search query planner (design contest, Phase 1) (2026-08-01)
 
 Scope = one two-phase ticket: **replace the regex search extractor with an LLM query planner** on the
