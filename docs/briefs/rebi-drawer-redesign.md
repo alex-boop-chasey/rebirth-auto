@@ -208,12 +208,12 @@ older brief. Decisions:
 2. **Drop the dreaming/greyscale backdrop** (`body.reb-dreaming > :not(#reb-chat)` filter + `#reb-glow`
    spotlight). The demo is a corner card over an untouched page; a full-page dim behind a small corner
    card is incoherent. Remove that CSS/JS as part of the "remove old interface" cleanup.
-3. **No carousel.** Replace the receding 3D Focus Stage layout for chat with a normal vertical
-   scroll-flow thread (newest at bottom, nothing recedes/blurs). **Preferred implementation:** add an
-   opt-in `layout:'thread'` mode to `createFocusStage` (`src/components/search/stage-engine.ts`) that
-   the widget passes; **the default must stay the current cinematic mode so SearchDock / `SmartSearch`
-   are byte-for-byte unchanged.** (A bespoke thread renderer in the widget is acceptable only if it
-   preserves every mechanic in §5 and touches nothing search uses.)
+3. **No carousel — for chat AND for AI search.** Replace the receding 3D Focus Stage layout with a
+   normal vertical scroll-flow thread (newest at bottom, nothing recedes/blurs). Implementation: add a
+   `layout:'thread'` mode to `createFocusStage` (`src/components/search/stage-engine.ts`) that the
+   widget passes. **See the §7a-CORRECTION below — the earlier "leave SmartSearch byte-for-byte" call
+   was WRONG and is reversed: the AI search on `/listings` is a front-facing AI interaction and must
+   also route into the drawer, not its own carousel.**
 4. **Seams preserved (hard).** Every `#reb-*` id (incl. the 10 guarded ones and hidden `#reb-log`),
    every `data-rebi-*` attribute, the `reb:search` CustomEvent, and the **`/api/chat` request shape**
    (`{messages, sessionId?, turnstileToken?, context:{kind,refs}, stream?}`) stay unchanged. `cards`
@@ -226,6 +226,43 @@ older brief. Decisions:
    matching the demo.
 7. **Not a contest.** The design is fixed by an owner-approved demo; built directly, no owner judging
    step.
+
+## 7a-CORRECTION (post-review, 2026-08-02) — the AI search bar must open the drawer
+
+**What was wrong.** The first pass (§7a.3, original) carved the hero/`/listings` AI search
+(`SmartSearch` island) OUT of scope and kept its `rebi-stage` **focus-stage carousel** unchanged. That
+contradicted the prompt ("*all front facing ai interactions and 'ask rebi' buttons should open the
+chat*") and this doc's own **§2.4** ("every front-facing AI trigger opens this one drawer") and **§7**
+("no carousel"). The internal contradiction was never surfaced, and the run was reported "shipped"
+with §7's visual-verification lines unmet. This section reverses that error.
+
+**Corrected requirement.** The plain-English AI search is a front-facing AI interaction and must open
+the **Rebi drawer**, not render its own carousel:
+
+1. **Retire the `rebi-stage` carousel** in `SmartSearch.tsx` / `SearchDock.astro` (the
+   `stage.addUserTurn` / `stage.landReply` / `<section class="rebi-stage">` conversational surface).
+   The search **input** stays (it's the entry affordance); its **answer** no longer renders in a hero
+   carousel.
+2. **Keep driving the grid.** The query-planner → `applyFilterUrl` filtering of the `/listings` grid
+   is the deliberate run-6 behavior and the URL-as-source-of-truth rule (Decision 5) — **preserve it
+   unchanged.** Only the *conversational presentation* moves.
+3. **Open the drawer with the query auto-sent.** On submit (and on load with `?q=`), after driving the
+   grid, open the Rebi drawer seeded with the query so Rebi immediately answers in-thread with the new
+   `cards`/`actions`. Extend the existing `reb:search` seam (`ChatWidget.astro`) to carry the raw
+   `query` + an `autoSend` flag: the widget renders the user's query as a user turn and runs the
+   normal `/api/chat` send (streaming into the thread). No new endpoint; the request shape is
+   unchanged (`context:{kind:'search', refs:[filterString]}` as today, plus the query as the user
+   message).
+4. **`createFocusStage` default (`'stage'`) may become unused** once SmartSearch stops rendering its
+   carousel. Leaving the engine's stage-mode code in place is fine (dead-but-harmless) OR remove it if
+   cleanly unused — do not break `useFocusStage.ts` / any remaining caller. Remove the now-dead
+   `rebi-stage` CSS.
+
+**Verification for this correction (must actually be done, not assumed):** on `/listings?q=7+seater`,
+the served page has **no `rebi-stage` carousel**; submitting the AI search opens the Rebi drawer with
+the query as a user turn and a Rebi reply carrying tiles/actions; the grid still filters. `astro
+check` green. The open-drawer visual confirmation is the owner's to eyeball — it will **not** be
+reported "done" on markup alone.
 
 ## 8. Out of scope
 

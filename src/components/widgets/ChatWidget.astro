@@ -1473,10 +1473,25 @@ const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
       const detail = (e as CustomEvent).detail || {};
       const ref: string = typeof detail.ref === 'string' ? detail.ref : '';
       const opening: string = typeof detail.opening === 'string' ? detail.opening : '';
+      const query: string = typeof detail.query === 'string' ? detail.query : '';
+      const autoSend: boolean = detail.autoSend === true;
       // A search always primes with exactly one ref (may be '' → server drops it,
       // Rebi just chats). Pass the composed opening through as the `title`.
       activeContext = { kind: 'search', refs: [ref], opening: buildOpening('search', opening) };
       try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+      // AUTO-SEND (the /listings AI search): open the drawer and run the query as a
+      // normal user turn so Rebi answers in-thread with cards/actions. renderHistory
+      // paints the primed greeting IMMEDIATELY (clearing the typing→greeting timer)
+      // so it can't land after the auto-sent turn; then the existing send() path
+      // runs — no new endpoint, request shape unchanged (context:{kind:'search',
+      // refs:[ref]} + the query as the user message).
+      if (autoSend && query.trim()) {
+        if (panel.hidden) openPanel();
+        renderHistory();
+        send(query);
+        return;
+      }
+      // HANDOFF (SearchDock hero, ref:'' / no autoSend): open primed, no auto turn.
       if (panel.hidden) openPanel();
       else renderHistory();
     });
