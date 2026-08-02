@@ -12,11 +12,14 @@
  * through `buildEnrichmentInput` before `deriveAttributes`, so a private field can
  * never reach the enrichment input.
  *
- * MODEL PATH — rules-only. `deriveAttributes` is called with `{ judge: false }`,
- * which skips the `structured`-tier `usageFit` model call entirely. A Node script
- * has no Worker AI runtime configured, so the deterministic fields are what we
- * backfill here; the `usageFit` model refinement is left to the live endpoint.
- * This is why the dry-run completes WITHOUT any API key.
+ * MODEL PATH — key-gated. When `OPENROUTER_API_KEY` is present in `.env` we
+ * `configureAI(...)` (mirroring the endpoint's config) and call `deriveAttributes`
+ * WITHOUT `judge:false`, so the SAME `structured`-tier model call that refines
+ * `usageFit` also supplies the `runningCost` fallback for listings with no
+ * measured fuel economy (a measured rule value always wins; the model abstaining
+ * leaves the field blank). When NO key is present we fall back to `{ judge: false }`
+ * (rules-only), so the dry-run still completes offline — running cost just stays
+ * blank on petrol/diesel cars that lack a numeric economy figure.
  *
  * Idempotency: a field is only written when its current `aiAttributes.<field>` is
  * null/undefined, so re-running is a no-op once populated. `--force` overwrites
@@ -37,11 +40,21 @@ import {
   type AiAttributes,
   type AttributeField,
 } from '../src/lib/generate-description/enrich-attributes';
+import { configureAI } from '../src/ai/config';
+
+// Mirror of the OpenRouter attribution + timeout values in `src/chatbot/config.ts`.
+// Those constants are re-declared here as literals rather than imported because
+// that module reads `import.meta.env` at load time, which is undefined under tsx
+// (Node) and would crash this script. Keep these in sync with chatbot/config.ts.
+const APP_URL = 'https://rebirth-listings-auto.pages.dev';
+const APP_TITLE = 'Rebirth Auto';
+const REQUEST_TIMEOUT_MS = 22000;
 
 const projectId = process.env.PUBLIC_SANITY_PROJECT_ID;
 const dataset = process.env.PUBLIC_SANITY_DATASET;
 const apiVersion = process.env.PUBLIC_SANITY_API_VERSION ?? '2024-01-01';
 const token = process.env.SANITY_TOKEN;
+const openrouterApiKey = process.env.OPENROUTER_API_KEY;
 
 if (!projectId || !dataset || !token) {
   throw new Error(
@@ -98,9 +111,29 @@ function fmt(v: unknown): string {
 }
 
 async function run() {
+  // Model path is key-gated. With a key we configure the AI layer (mirroring the
+  // endpoint's config) and let the SAME structured call fill the runningCost
+  // fallback; without one we stay rules-only so the dry-run still runs offline.
+  const useModel = Boolean(openrouterApiKey);
+  if (useModel) {
+    configureAI({
+      openrouterApiKey: openrouterApiKey!,
+      referer: APP_URL,
+      appTitle: APP_TITLE,
+      attemptTimeoutMs: REQUEST_TIMEOUT_MS,
+    });
+  } else {
+    console.log(
+      'NOTE: OPENROUTER_API_KEY not set — running RULES-ONLY (judge=false). ' +
+        'runningCost will stay blank on petrol/diesel listings with no numeric fuelEconomy. ' +
+        'Set the key in .env to let the model judge the fallback.\n',
+    );
+  }
+
   const listings = await client.fetch<ListingRow[]>(QUERY);
   console.log(
-    `${commit ? 'COMMIT' : 'DRY-RUN'}${force ? ' --force' : ''} — scanning ${listings.length} automotive listing(s). (rules-only: judge=false)\n`,
+    `${commit ? 'COMMIT' : 'DRY-RUN'}${force ? ' --force' : ''} — scanning ${listings.length} automotive listing(s). ` +
+      `(${useModel ? 'model path: runningCost fallback ON' : 'rules-only: judge=false'})\n`,
   );
 
   let scanned = 0;
@@ -111,11 +144,12 @@ async function run() {
   for (const listing of listings) {
     scanned += 1;
 
-    // Public choke point, then rules-only derivation (no model call).
+    // Public choke point, then derivation. With a key, the model runs (default
+    // judge) and can fill the runningCost fallback; without one, rules-only.
     const input = buildEnrichmentInput(listing);
     const { aiAttributes, sources, warnings } = await deriveAttributes(input, {
       id: listing._id,
-      judge: false,
+      ...(useModel ? {} : { judge: false as const }),
     });
     warnCount += warnings.length;
 

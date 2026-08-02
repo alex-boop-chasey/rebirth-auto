@@ -22,10 +22,13 @@
  *
  * Determinism: the rules are pure. Anything that cannot be confidently derived
  * is left UNSET and logged as a WARN — never guessed or defaulted. All AI routes
- * through `~/ai` (`generateObject` on the `structured` tier); the model is used
- * ONLY for the `usageFit` judgment and degrades to the rule leans on any failure.
- * The `~/ai` barrel is DYNAMICALLY imported inside the judge so the pure-rule
- * path (and its offline tests) never loads the AI client.
+ * through `~/ai` (`generateObject` on the `structured` tier) via ONE structured
+ * call per listing that refines `usageFit` and, ONLY when the rule found no
+ * measured fuel economy, supplies a `runningCost` fallback. A measured rule
+ * `runningCost` always wins; the model abstaining (null) leaves the field unset.
+ * The judgment degrades to the rule results on any failure. The `~/ai` barrel is
+ * DYNAMICALLY imported inside the judge so the pure-rule path (and its offline
+ * tests) never loads the AI client.
  */
 import { z } from 'zod';
 
@@ -173,25 +176,41 @@ export interface DeriveResult {
   warnings: string[];
 }
 
-/** Injectable `usageFit` model judge — the endpoint uses the default; tests pass
- *  `false` to run the pure rules fully offline. */
-export type UsageFitJudge = (input: EnrichmentInput, ruleLeans: UsageFit[]) => Promise<UsageFit[]>;
+/** The one structured judgment the model returns per listing: the `usageFit`
+ *  refinement AND a `runningCost` fallback (null = abstain). Both come from the
+ *  SAME `generateObject` call — never a second round-trip. */
+export interface EnrichmentJudgment {
+  usageFit: UsageFit[];
+  /** Model's running-cost call, consulted ONLY when the rule had no measured
+   *  data. `null` = the model genuinely couldn't tell → we leave it unset. */
+  runningCost: RunningCost | null;
+}
+
+/** Injectable model judge — the endpoint uses the default; tests pass `false` to
+ *  run the pure rules fully offline, or a function to inject a fixed judgment. */
+export type EnrichmentJudge = (
+  input: EnrichmentInput,
+  ruleLeans: UsageFit[],
+) => Promise<EnrichmentJudgment>;
 
 export interface DeriveOptions {
   /** Listing id, for WARN log correlation. */
   id?: string;
   /** `false` → skip the model entirely (offline/rule-only). A function → use it.
    *  Omitted → the default `generateObject` judge (degrades on any failure). */
-  judge?: UsageFitJudge | false;
+  judge?: EnrichmentJudge | false;
 }
 
 // --- Pure rules --------------------------------------------------------------
 
-/** runningCost — pure rule. EV/hybrid → low; else by combined L/100km. */
-function deriveRunningCost(
-  input: EnrichmentInput,
-  warn: (field: AttributeField, reason: string) => void,
-): RunningCost | undefined {
+/**
+ * runningCost — pure rule. EV/hybrid → low; else by combined L/100km. Returns
+ * undefined when there is no measured signal. It does NOT warn: a measured rule
+ * value always wins, but when the rule can't decide the model may fill it in, so
+ * the "no measured data" WARN is deferred to `deriveAttributes` and only logged
+ * if BOTH the rule and the model leave it unset.
+ */
+function deriveRunningCost(input: EnrichmentInput): RunningCost | undefined {
   const fuel = input.vehicleSpecs.fuelType;
   if (fuel === 'electric' || fuel === 'hybrid') return 'low';
 
@@ -202,7 +221,6 @@ function deriveRunningCost(
     return 'high';
   }
 
-  warn('runningCost', 'no EV/hybrid fuelType and no numeric fuelEconomy');
   return undefined;
 }
 
@@ -252,9 +270,9 @@ function usageFitLeans(
   return [...leans];
 }
 
-// --- Model judgment (usageFit only) ------------------------------------------
+// --- Model judgment (usageFit refinement + runningCost fallback) -------------
 
-const UsageFitJudgment = z.object({
+const EnrichmentJudgment = z.object({
   usageFit: z
     .array(z.enum(['city', 'family', 'highway', 'towing', 'tradie', 'first-car']))
     .describe(
@@ -263,47 +281,72 @@ const UsageFitJudgment = z.object({
         'a comfortable long-distance tourer, "family" for a roomy 5-seater. Return ' +
         '[] if nothing is clearly supported. Never invent facts beyond the input.',
     ),
+  runningCost: z
+    .enum(['low', 'medium', 'high'])
+    .nullable()
+    .describe(
+      'How cheap this vehicle is to run (fuel + typical servicing) judged from ' +
+        'make/model/engine/body/year. low = economical (small/efficient/EV-like), ' +
+        'medium = average, high = thirsty (large/performance/heavy). Return null if ' +
+        'you genuinely cannot tell from the data — do not guess.',
+    ),
 });
 
-const JUDGE_SYSTEM = `You classify a used vehicle's best-fit use cases for a car-search filter.
+const JUDGE_SYSTEM = `You classify a used vehicle for a car-search filter from PUBLIC data only.
 You are given ONLY public vehicle data as JSON (specs, make/model, doors, asking price, extra details)
-plus the rule-based leans already applied. Return a JSON object matching the schema: a "usageFit" array
-drawn ONLY from these six codes — city, family, highway, towing, tradie, first-car.
+plus the rule-based leans already applied. Return a JSON object matching the schema with two fields:
 
-Rules:
+"usageFit" — an array drawn ONLY from these six codes: city, family, highway, towing, tradie, first-car.
 - Ground every choice strictly in the provided data. Never invent condition, history, or features.
 - Add codes the rules may have missed (e.g. "highway" for a comfortable long-distance vehicle, a
   borderline "family" call). You may re-list the leans; they will be merged and de-duplicated.
 - If the data does not clearly support a use case, do not include it. Return [] when unsure.
+
+"runningCost" — one of "low", "medium", "high", or null. Rate how cheap the vehicle is to run (fuel
+plus typical servicing) from the make/model/engine/body/year: low = economical (small/efficient/EV-like),
+medium = average, high = thirsty (large/performance/heavy). Return null if you genuinely cannot tell
+from the data — never guess.
+
 Return ONLY the JSON object.`;
 
-/** Default judge — `generateObject` on the `structured` tier. Grounds ONLY in the
+/** Default judge — ONE `generateObject` call on the `structured` tier that returns
+ *  BOTH the usageFit refinement and the runningCost fallback. Grounds ONLY in the
  *  public enrichment input. Assumes the caller has already `configureAI(...)`d. */
-async function defaultUsageFitJudge(input: EnrichmentInput, ruleLeans: UsageFit[]): Promise<UsageFit[]> {
+async function defaultEnrichmentJudge(
+  input: EnrichmentInput,
+  ruleLeans: UsageFit[],
+): Promise<EnrichmentJudgment> {
   // Dynamic import: the rule-only path never loads the AI client (mirrors the
-  // search-planner eval). Still routes through the `~/ai` barrel, never a deeper
-  // provider path.
-  const { generateObject } = await import('~/ai');
+  // search-planner eval). Routes through the public AI surface (`~/ai/client`,
+  // which the `~/ai` barrel re-exports these functions from) — never a deeper
+  // `providers/` path. Importing the client module directly (not the full barrel)
+  // keeps the enrichment path free of the barrel's Sanity-loading side deps, so
+  // this same shared module runs under both the Worker and Node scripts (tsx).
+  const { generateObject } = await import('~/ai/client');
   const { content } = await generateObject({
     capability: 'structured',
-    schema: UsageFitJudgment,
-    schemaName: 'UsageFitJudgment',
+    schema: EnrichmentJudgment,
+    schemaName: 'EnrichmentJudgment',
     maxTokens: 256, // tiny payload — bound cost/latency
     messages: [
       { role: 'system', content: JUDGE_SYSTEM },
       { role: 'user', content: JSON.stringify({ ...input, ruleLeans }) },
     ],
   });
-  return content.usageFit;
+  return { usageFit: content.usageFit, runningCost: content.runningCost };
 }
 
 // --- Public API --------------------------------------------------------------
 
 /**
  * Derive `aiAttributes` from the PUBLIC enrichment input. Pure rules for
- * `runningCost`/`sizeClass` and the confident `usageFit` leans; an optional model
- * judgment refines `usageFit` only. Never throws — degrades to the rule result on
- * any model failure. Unset fields are omitted; each unset field logs a WARN.
+ * `sizeClass` and the confident `usageFit` leans; an optional model judgment
+ * refines `usageFit` AND, only when the rule found no measured fuel-economy
+ * signal, fills `runningCost` as a fallback. A measured rule `runningCost` ALWAYS
+ * wins over the model; the model is consulted for it ONLY when the rule returned
+ * undefined, and if the model abstains (null) the field stays UNSET + WARN — we
+ * never invent. Never throws — degrades to the rule result on any model failure.
+ * Unset fields are omitted; each unset field logs a WARN.
  */
 export async function deriveAttributes(
   input: EnrichmentInput,
@@ -315,39 +358,62 @@ export async function deriveAttributes(
     warnings.push(`${field}: ${reason}`);
   };
 
-  const runningCost = deriveRunningCost(input, warn);
+  // Rule runningCost first, but DO NOT warn yet — the model may fill it when the
+  // rule had no measured data. A measured rule value wins and is never overridden.
+  const ruleRunningCost = deriveRunningCost(input);
   const sizeClass = deriveSizeClass(input, warn);
 
-  const leans = usageFitLeans(input, sizeClass, runningCost);
+  const leans = usageFitLeans(input, sizeClass, ruleRunningCost);
   let usageFit = [...leans];
   let usageSource: Provenance | undefined = leans.length ? 'rule' : undefined;
 
-  // Optional model judgment for `usageFit`. Side-effect free on failure: any
-  // throw/timeout keeps the rule leans. `judge === false` skips it (offline).
+  // runningCost resolution: start from the rule; the model may only fill a gap.
+  let runningCost: RunningCost | undefined = ruleRunningCost;
+  let runningCostSource: Provenance | undefined = ruleRunningCost ? 'rule' : undefined;
+
+  // Optional model judgment — ONE call refines `usageFit` and, when the rule left
+  // runningCost unset, provides a fallback. Side-effect free on failure: any
+  // throw/timeout keeps the rule results. `judge === false` skips it (offline).
   if (opts.judge !== false) {
-    const judge = typeof opts.judge === 'function' ? opts.judge : defaultUsageFitJudge;
+    const judge = typeof opts.judge === 'function' ? opts.judge : defaultEnrichmentJudge;
     try {
-      const raw = await judge(input, leans);
-      const valid = (Array.isArray(raw) ? raw : []).filter((f): f is UsageFit =>
+      const judgment = await judge(input, leans);
+
+      // usageFit merge — unchanged behaviour (union with rule leans, off-enum dropped).
+      const rawFit = judgment?.usageFit;
+      const validFit = (Array.isArray(rawFit) ? rawFit : []).filter((f): f is UsageFit =>
         (USAGE_FITS as readonly string[]).includes(f),
       );
-      if (valid.length) {
-        const merged = new Set<UsageFit>([...leans, ...valid]);
+      if (validFit.length) {
+        const merged = new Set<UsageFit>([...leans, ...validFit]);
         if (merged.size > leans.length || leans.length === 0) usageSource = 'model';
         usageFit = [...merged];
       }
+
+      // runningCost fallback — ONLY when the rule had no measured value. The rule
+      // value (when present) is left untouched: measured always beats the model.
+      if (ruleRunningCost === undefined) {
+        const rawCost = judgment?.runningCost;
+        // Validate against the enum; null/abstain or anything off-enum → leave unset.
+        if (rawCost != null && (RUNNING_COSTS as readonly string[]).includes(rawCost)) {
+          runningCost = rawCost;
+          runningCostSource = 'model';
+        }
+      }
     } catch (err) {
-      console.warn('[enrich] usageFit model judgment failed — keeping rule leans', opts.id ?? '(no id)', err);
+      console.warn('[enrich] model judgment failed — keeping rule results', opts.id ?? '(no id)', err);
     }
   }
 
   if (!usageFit.length) warn('usageFit', 'no confident usage signal from rules or model');
+  // Only warn once BOTH the rule and the model have left runningCost unset.
+  if (!runningCost) warn('runningCost', 'no measured fuelEconomy and no model judgment');
 
   const aiAttributes: AiAttributes = {};
   const sources: DeriveResult['sources'] = {};
   if (runningCost) {
     aiAttributes.runningCost = runningCost;
-    sources.runningCost = 'rule';
+    sources.runningCost = runningCostSource ?? 'rule';
   }
   if (sizeClass) {
     aiAttributes.sizeClass = sizeClass;

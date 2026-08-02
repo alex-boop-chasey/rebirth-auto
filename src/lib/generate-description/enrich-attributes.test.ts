@@ -212,11 +212,67 @@ await (async () => {
   await test('injected judge merges with rule leans (union, deduped)', async () => {
     const { aiAttributes, sources } = await deriveAttributes(
       buildEnrichmentInput({ vehicleSpecs: { bodyType: 'suv', seatCount: 5 } }),
-      { judge: async () => ['highway', 'family', 'not-a-code' as unknown as never] },
+      {
+        judge: async () => ({
+          usageFit: ['highway', 'family', 'not-a-code' as unknown as never],
+          runningCost: null,
+        }),
+      },
     );
     // 'family' is a rule lean (suv); model adds 'highway'; off-enum dropped.
     assert.deepEqual([...(aiAttributes.usageFit ?? [])].sort(), ['family', 'highway']);
     assert.equal(sources.usageFit, 'model');
+  });
+
+  console.log('runningCost — model fallback (rule-first precedence)');
+
+  await test('no measured economy + model says high → runningCost high, source model, no warn', async () => {
+    // Petrol, no fuelEconomy → rule leaves runningCost unset; model fills it.
+    const { aiAttributes, sources, warnings } = await deriveAttributes(
+      buildEnrichmentInput({
+        make: 'Ford',
+        model: 'Ranger',
+        vehicleSpecs: { bodyType: 'ute', fuelType: 'petrol', year: 2019 },
+      }),
+      { judge: async () => ({ usageFit: [], runningCost: 'high' }) },
+    );
+    assert.equal(aiAttributes.runningCost, 'high');
+    assert.equal(sources.runningCost, 'model');
+    assert.ok(
+      !warnings.some((w) => w.startsWith('runningCost')),
+      'no runningCost warning when the model supplied a value',
+    );
+  });
+
+  await test('no measured economy + model abstains (null) → runningCost unset + warning (never invented)', async () => {
+    const { aiAttributes, sources, warnings } = await deriveAttributes(
+      buildEnrichmentInput({
+        make: 'Ford',
+        model: 'Ranger',
+        vehicleSpecs: { bodyType: 'ute', fuelType: 'petrol', year: 2019 },
+      }),
+      { judge: async () => ({ usageFit: [], runningCost: null }) },
+    );
+    assert.equal(aiAttributes.runningCost, undefined);
+    assert.equal(sources.runningCost, undefined);
+    assert.ok(
+      warnings.some((w) => w.startsWith('runningCost')),
+      'expected a runningCost warning when the model abstained',
+    );
+  });
+
+  await test('measured economy beats the model — rule value wins, source rule', async () => {
+    // fuelEconomy 5 → rule says low; injected judge says high; the RULE must win.
+    const { aiAttributes, sources } = await deriveAttributes(
+      buildEnrichmentInput({
+        make: 'Mazda',
+        model: '2',
+        vehicleSpecs: { bodyType: 'hatchback', fuelType: 'petrol', fuelEconomy: 5 },
+      }),
+      { judge: async () => ({ usageFit: [], runningCost: 'high' }) },
+    );
+    assert.equal(aiAttributes.runningCost, 'low');
+    assert.equal(sources.runningCost, 'rule');
   });
 })();
 
