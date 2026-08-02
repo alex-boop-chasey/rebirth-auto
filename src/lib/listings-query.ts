@@ -304,10 +304,21 @@ export function serializeFilters(state: FilterState): string {
   return sp.toString();
 }
 
-/** Path (`/?…` or `/`) for a filter state — for links and history.pushState. */
+/**
+ * Base path that owns the inventory grid + filter contract. The full browse
+ * experience (grid, filters, SearchDock, `#inventory-results`) lives at
+ * `/listings` (Wave 1 remodel); the home page `/` is now the front-door and has
+ * no grid. This is the SINGLE source of truth for the filter-URL base — `hrefFor`
+ * (and everything that writes the filter URL through it: pagination, chip
+ * removal, the SmartSearch island's `apply`, ChatWidget's filter-apply) all
+ * resolve here, and the FilterDrawer / InventoryResults SSR links import it too.
+ */
+export const LISTINGS_PATH = '/listings';
+
+/** Path (`/listings?…` or `/listings`) for a filter state — for links and history.pushState. */
 export function hrefFor(state: FilterState): string {
   const qs = serializeFilters(state);
-  return qs ? `/?${qs}` : '/';
+  return qs ? `${LISTINGS_PATH}?${qs}` : LISTINGS_PATH;
 }
 
 // --- Pagination --------------------------------------------------------------

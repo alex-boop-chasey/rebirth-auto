@@ -1,0 +1,45 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { icon, base } from './_shell/data';
+export const prerender = false;
+const cats = [['gear','Servicing','Filters, oil, brake pads, wipers'],['bolt','Electrical','Batteries, globes, sensors'],['drive','Wheels & tyres','Alloys, tyres, TPMS'],['shield','Accessories','Tow bars, mats, roof racks'],['truck','4x4 & towing','Bars, lift kits, canopies'],['car','Body','Panels, mirrors, trim']];
+---
+<Layout title="Parts enquiry — Smart Hubs" active="service-parts" dockPrompt="Give me your rego or VIN and the part — I’ll check fitment.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Service & Parts', base + '/service-parts'], ['Parts']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="service-parts" current={base + '/parts'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow">Genuine parts</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Parts that fit, first time.</h1>
+    <p class="sh-sub">Genuine parts and accessories for every make. Rebi can check fitment against your rego
+      before you order.</p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-3">
+      {cats.map(([ic,t,d]) => (
+        <div class="card card-lift sh-panel"><span set:html={icon(ic,20)} style="color:var(--teal-deep)"></span><b style="display:block; margin:10px 0 4px; font-size:15px">{t}</b><p style="font-size:13.5px; color:var(--ink-soft)">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid" style="grid-template-columns:1fr 1fr; gap:22px">
+      <div class="card sh-panel">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('doc',18)}></span><b style="font-size:16px">Parts enquiry</b></div>
+        <div class="sh-field"><label>Rego or VIN (for fitment)</label><input placeholder="e.g. 123ABC" /></div>
+        <div class="sh-field"><label>Part needed</label><input placeholder="e.g. front brake pads" /></div>
+        <div class="sh-field"><label>Notes</label><textarea rows="3" placeholder="Anything else we should know"></textarea></div>
+        <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center"><span set:html={icon('send',15)}></span> Send enquiry</button>
+      </div>
+      <div class="ai-summary scan sh-panel" style="display:flex; flex-direction:column; justify-content:center">
+        <div class="chip chip-ai" style="align-self:flex-start; margin-bottom:12px"><span set:html={icon('spark',13)}></span> Faster with Rebi</div>
+        <p style="font-size:15px; color:var(--ink); line-height:1.6">“Check the cabin filter for my 2022 CR-V” — Rebi confirms the right part number and fitment note, then hands the enquiry to the parts desk.</p>
+        <a href={base + '/rebi'} class="btn btn-primary btn-sm" style="align-self:flex-start; margin-top:16px"><span set:html={icon('chat',15)}></span> Ask Rebi about a part</a>
+      </div>
+    </div>
+    <p class="sh-note" style="margin-top:14px">Fitment note: always confirm with your VIN — variants differ. Demo copy.</p>
+  </section>
+</Layout>

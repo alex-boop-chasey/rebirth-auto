@@ -1,0 +1,47 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import { icon, base } from './_shell/data';
+export const prerender = false;
+const depts = [['car','Sales','Mon–Fri 8:30–17:30 · Sat 9–16','sales@ (demo)'],['wrench','Service','Mon–Fri 7:30–17:00','service@ (demo)'],['gear','Parts','Mon–Fri 8:00–17:00','parts@ (demo)']];
+---
+<Layout title="Contact & find us — Smart Hubs" active="" dockPrompt="Not sure who to ask? Tell me the topic.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Contact']]} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow">Contact / find a dealer</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Talk to the right department.</h1>
+    <p class="sh-sub">Sales, service or parts — pick the desk you need. Or ask Rebi “who do I talk to about X”
+      and it routes you.</p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-3">
+      {depts.map(([ic,t,h,e]) => (
+        <div class="card sh-panel">
+          <div style="display:flex; align-items:center; gap:9px; margin-bottom:10px"><span set:html={icon(ic,20)} style="color:var(--teal-deep)"></span><b style="font-size:16px">{t}</b></div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); margin-bottom:6px"><span set:html={icon('clock',14)}></span> {h}</div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); margin-bottom:4px"><span set:html={icon('phone',14)}></span> (07) 0000 0000 (demo)</div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft)"><span set:html={icon('mail',14)}></span> {e}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid" style="grid-template-columns:1.1fr 1fr; gap:22px">
+      <div class="card sh-panel" style="padding:0; overflow:hidden">
+        <div style="aspect-ratio:16/10; background:linear-gradient(135deg,#3C5A78,#7C93AC); display:grid; place-items:center; color:#fff"><span set:html={icon('map',40)} style="opacity:0.85"></span></div>
+        <div style="padding:16px"><b style="font-size:15px">Rebirth Auto — main yard (demo)</b><p style="font-size:13px; color:var(--ink-soft); margin-top:4px">123 Example Rd, Bundaberg QLD (placeholder). Multiple locations region-wide.</p></div>
+      </div>
+      <div class="card sh-panel">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('mail',18)}></span><b style="font-size:16px">General enquiry</b></div>
+        <div class="sh-field"><label>Name</label><input placeholder="Your name" /></div>
+        <div class="sh-field"><label>Email</label><input placeholder="you@email.com" /></div>
+        <div class="sh-field"><label>Which department?</label><select><option>Sales</option><option>Service</option><option>Parts</option><option>Not sure — route me</option></select></div>
+        <div class="sh-field"><label>Message</label><textarea rows="3" placeholder="How can we help?"></textarea></div>
+        <div class="sh-jumprow"><button class="btn btn-primary btn-sm"><span set:html={icon('send',15)}></span> Send</button><a href={base + '/rebi'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('spark',15)}></span> Ask Rebi instead</a></div>
+      </div>
+    </div>
+  </section>
+</Layout>

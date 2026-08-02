@@ -1,0 +1,194 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import { vehicles, money } from './_data';
+const rec = vehicles[3]; // IONIQ 5
+const history = [
+  { label: 'Family SUV under $45k', active: false },
+  { label: 'First EV — running costs', active: true },
+  { label: 'Trade-in on my Hilux', active: false },
+  { label: 'Finance for the RAV4', active: false },
+];
+const capabilities = [
+  { icon: '🔎', h: 'Find the right car', p: 'Describe your life, not a spec sheet.' },
+  { icon: '💬', h: 'Straight answers', p: 'Finance, trade-in, running costs — plainly.' },
+  { icon: '🤝', h: 'Hands to a human', p: 'A real local picks up when you want them.' },
+];
+---
+<Layout title="Chat with Rebi" active="rebi">
+  <section class="rt-wrap rt-rebi-page">
+    <!-- left: intro / capabilities -->
+    <aside class="rt-rebi-aside">
+      <div class="rt-rebi-hero">
+        <span class="rt-rebi-orb xl rt-rebi-hero-orb"></span>
+        <h1>G’day, I’m Rebi.</h1>
+        <p>Your local car guide at Riverbend. Ask me anything — I know every car on the lot, our finance,
+          and what it’s really like to own. Honest answers, any hour.</p>
+      </div>
+      <div class="rt-rebi-caps">
+        {capabilities.map((c) => (
+          <div class="rt-rebi-cap">
+            <span class="rt-rebi-cap-ic">{c.icon}</span>
+            <div><strong>{c.h}</strong><p>{c.p}</p></div>
+          </div>
+        ))}
+      </div>
+      <div class="rt-rebi-history">
+        <h4>Your recent chats</h4>
+        {history.map((h) => <button class={`rt-rebi-hist ${h.active ? 'is-active' : ''}`}>{h.label}</button>)}
+      </div>
+      <div class="rt-rebi-human rt-card">
+        <div class="rt-rebi-human-av"></div>
+        <div><strong>Prefer a person?</strong><p>Talk to Jo at the yard.</p></div>
+        <a href="/concepts/regional-trust/contact" class="rt-btn rt-btn-ghost rt-btn-sm">Call</a>
+      </div>
+    </aside>
+
+    <!-- right: chat -->
+    <div class="rt-chat rt-card">
+      <div class="rt-chat-head">
+        <span class="rt-rebi-orb lg"></span>
+        <div class="rt-chat-head-t"><strong>Rebi</strong><span><span class="rt-dot"></span> Online · knows 636 cars in stock</span></div>
+        <span class="rt-pill rt-pill-sand">AI guide · demo</span>
+      </div>
+
+      <div class="rt-chat-stream">
+        <div class="rt-chat-day">Today</div>
+
+        <div class="rt-msg user"><div class="rt-rebi-bubble user">Thinking about our first electric car but honestly a bit nervous about charging. We’re out near Childers.</div></div>
+
+        <div class="rt-msg bot">
+          <span class="rt-rebi-orb"></span>
+          <div class="rt-msg-col">
+            <div class="rt-rebi-bubble">Totally fair — that’s the number-one thing folks ask me, and it’s easier than it sounds.
+              Out your way most people charge at home overnight off a normal powerpoint, and top up faster when needed. Roughly:</div>
+            <div class="rt-rebi-bubble">
+              <ul class="rt-msg-list">
+                <li><strong>Home (overnight):</strong> ~$8–12 for a full “tank” of range</li>
+                <li><strong>Fast charger in town:</strong> 10→80% in about 20 min</li>
+                <li><strong>Your weekly cost:</strong> likely under $20 vs ~$70 in petrol</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="rt-msg user"><div class="rt-rebi-bubble user">That’s not bad at all. Got anything in stock that’d suit us?</div></div>
+
+        <div class="rt-msg bot">
+          <span class="rt-rebi-orb"></span>
+          <div class="rt-msg-col">
+            <div class="rt-rebi-bubble">Yes — and I’d start you here. It’s a demo, so near-new for a real saving, and the
+              range easily covers Childers–Bundaberg with plenty to spare:</div>
+            <!-- inline vehicle card in chat -->
+            <a href="/concepts/regional-trust/vehicle" class="rt-chat-card">
+              <div class={`rt-photo ${rec.tag} rt-chat-card-photo`}><span class="rt-pill rt-pill-gold">Demo · EV</span></div>
+              <div class="rt-chat-card-body">
+                <strong>{rec.year} {rec.make} {rec.model}</strong>
+                <span class="rt-chat-card-var">{rec.variant}</span>
+                <div class="rt-chat-card-specs"><span>{rec.odo.toLocaleString('en-AU')} km</span><span>451 km range</span><span>RWD</span></div>
+                <div class="rt-chat-card-foot"><span class="rt-chat-card-price">{money(rec.price)}</span><span class="rt-chat-card-cta">View →</span></div>
+              </div>
+            </a>
+            <div class="rt-msg-actions">
+              <span class="rt-chip">Book a test drive</span>
+              <span class="rt-chip">What’s it cost on finance?</span>
+              <span class="rt-chip">Compare with a hybrid</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rt-msg bot">
+          <span class="rt-rebi-orb"></span>
+          <div class="rt-msg-col">
+            <div class="rt-rebi-bubble rt-typing"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- lead capture inline -->
+      <div class="rt-chat-lead">
+        <span class="rt-rebi-orb"></span>
+        <p>Want me to hold this one and have Jo call you? Pop your number in below any time.</p>
+      </div>
+
+      <div class="rt-chat-input">
+        <div class="rt-chat-quick">
+          <span class="rt-chip">Trade-in value</span>
+          <span class="rt-chip">Test drive Saturday</span>
+          <span class="rt-chip">Home charging help</span>
+        </div>
+        <div class="rt-chat-bar">
+          <input class="rt-input" type="text" placeholder="Message Rebi…" />
+          <button class="rt-btn rt-btn-primary">Send</button>
+        </div>
+        <p class="rt-chat-disc">Rebi is an AI guide for this demo. It won’t share private dealer info, and a real person handles anything important.</p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-rebi-page { display: grid; grid-template-columns: 340px 1fr; gap: 32px; padding-block: 36px 60px; align-items: start; }
+  .rt-rebi-aside { display: flex; flex-direction: column; gap: 22px; position: sticky; top: 120px; }
+  .rt-rebi-hero-orb { margin-bottom: 14px; animation: rt-float 4s ease-in-out infinite; }
+  .rt-rebi-hero h1 { font-size: 34px; }
+  .rt-rebi-hero p { font-size: 15px; color: var(--ink-70); margin-top: 10px; }
+  .rt-rebi-caps { display: flex; flex-direction: column; gap: 12px; }
+  .rt-rebi-cap { display: flex; gap: 12px; align-items: center; background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; }
+  .rt-rebi-cap-ic { font-size: 22px; }
+  .rt-rebi-cap strong { font-size: 15px; }
+  .rt-rebi-cap p { font-size: 13px; color: var(--muted); }
+  .rt-rebi-history h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 10px; font-family: var(--ff-body); font-weight: 800; }
+  .rt-rebi-hist { display: block; width: 100%; text-align: left; padding: 11px 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--white); font-size: 14px; font-weight: 600; color: var(--ink-70); margin-bottom: 8px; cursor: pointer; }
+  .rt-rebi-hist.is-active { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); }
+  .rt-rebi-human { display: flex; align-items: center; gap: 12px; padding: 14px; }
+  .rt-rebi-human-av { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #d8b98a, #b98a4f); flex: 0 0 auto; }
+  .rt-rebi-human strong { font-size: 14px; display: block; }
+  .rt-rebi-human p { font-size: 13px; color: var(--muted); }
+
+  /* chat */
+  .rt-chat { display: flex; flex-direction: column; overflow: hidden; height: 820px; }
+  .rt-chat-head { display: flex; align-items: center; gap: 12px; padding: 16px 22px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, var(--green-soft), var(--white)); }
+  .rt-chat-head-t strong { font-family: var(--ff-display); font-size: 18px; display: block; }
+  .rt-chat-head-t span { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .rt-dot { width: 8px; height: 8px; border-radius: 50%; background: #4faa7d; }
+  .rt-chat-head .rt-pill { margin-left: auto; }
+  .rt-chat-stream { flex: 1; overflow: hidden; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px; background:
+    radial-gradient(120% 60% at 100% 0%, var(--green-soft), transparent 40%), var(--cream); }
+  .rt-chat-day { align-self: center; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--white); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; }
+  .rt-msg { display: flex; gap: 10px; max-width: 82%; }
+  .rt-msg.user { align-self: flex-end; }
+  .rt-msg.bot { align-self: flex-start; }
+  .rt-msg.bot .rt-rebi-orb { flex: 0 0 auto; margin-top: 4px; }
+  .rt-msg-col { display: flex; flex-direction: column; gap: 8px; }
+  .rt-msg-list { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink-70); display: flex; flex-direction: column; gap: 5px; }
+  .rt-msg-list strong { color: var(--green-deep); }
+  .rt-msg-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .rt-chat-card { display: flex; gap: 0; background: var(--white); border: 1px solid var(--green-line); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); max-width: 380px; }
+  .rt-chat-card-photo { width: 130px; flex: 0 0 auto; display: grid; place-items: start; padding: 10px; }
+  .rt-chat-card-body { padding: 12px 14px; flex: 1; }
+  .rt-chat-card-body strong { font-size: 15px; }
+  .rt-chat-card-var { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+  .rt-chat-card-specs { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 8px 0; font-size: 11.5px; color: var(--ink-70); font-weight: 600; }
+  .rt-chat-card-foot { display: flex; justify-content: space-between; align-items: center; }
+  .rt-chat-card-price { font-family: var(--ff-display); font-size: 18px; font-weight: 700; color: var(--green-deep); }
+  .rt-chat-card-cta { font-size: 13px; font-weight: 700; color: var(--clay); }
+
+  .rt-typing { display: inline-flex; gap: 5px; padding: 16px; }
+  .rt-typing span { width: 8px; height: 8px; border-radius: 50%; background: var(--green); opacity: .4; animation: rt-blink 1.2s infinite; }
+  .rt-typing span:nth-child(2) { animation-delay: .2s; }
+  .rt-typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes rt-blink { 0%,100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+
+  .rt-chat-lead { display: flex; align-items: center; gap: 10px; padding: 12px 26px; background: var(--clay-soft); border-top: 1px solid #eccbb9; }
+  .rt-chat-lead .rt-rebi-orb { flex: 0 0 auto; }
+  .rt-chat-lead p { font-size: 13.5px; color: var(--clay-deep); font-weight: 600; }
+
+  .rt-chat-input { padding: 16px 22px 18px; border-top: 1px solid var(--line); background: var(--white); }
+  .rt-chat-quick { display: flex; gap: 8px; margin-bottom: 12px; }
+  .rt-chat-bar { display: flex; gap: 10px; }
+  .rt-chat-bar .rt-input { flex: 1; }
+  .rt-chat-disc { font-size: 11.5px; color: var(--muted); margin-top: 10px; text-align: center; }
+</style>

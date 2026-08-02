@@ -1,0 +1,64 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import { vehicles, icon, fmt, fmtKm, base } from './_shell/data';
+export const prerender = false;
+const v = vehicles[0];
+const specs = [['gauge','Odometer',fmtKm(v.odo)],['fuel','Fuel',v.fuel],['gear','Transmission',v.trans],['drive','Drive',v.drive],['body','Body',v.body],['users','Seats',String(v.seats)]];
+---
+<Layout title={`${v.year} ${v.make} ${v.model} — Smart Hubs`} active="browse" dockPrompt={`Ask me anything about this ${v.model}.`}>
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Browse', base + '/browse'], [`${v.make} ${v.model}`]]} /></section>
+
+  <section class="sh-wrap" style="display:grid; grid-template-columns:1.4fr 1fr; gap:24px; padding-block:16px 40px; align-items:start">
+    <!-- gallery + detail -->
+    <div>
+      <div style={`aspect-ratio:16/10; background:${v.hue}; border-radius:var(--r-lg); position:relative`}>
+        {v.badge && <span class="chip chip-teal" style="position:absolute; top:16px; left:16px">{v.badge}</span>}
+      </div>
+      <div style="display:flex; gap:10px; margin-top:10px">
+        {[0,1,2,3].map((i) => <div style={`flex:1; aspect-ratio:16/10; border-radius:12px; background:${v.hue}; opacity:${i===0?1:0.5}`}></div>)}
+      </div>
+
+      <!-- Edmunds slot + Rebi's take (existing AI blocks, kept) -->
+      <div class="ai-summary scan sh-panel" style="margin-top:22px">
+        <div class="chip chip-ai" style="margin-bottom:10px"><span set:html={icon('spark',13)}></span> Rebi’s take</div>
+        <p style="font-size:15px; color:var(--ink); line-height:1.6">{v.aiLine} On the numbers, it lands near <b>$168/week</b> financed — want me to firm that up or line up a drive?</p>
+        <div class="sh-jumprow" style="margin-top:14px">
+          <a href={base + '/finance'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('calc',15)}></span> Work out repayments</a>
+          <a href={base + '/test-drive'} class="sh-jump"><span class="sh-jic" set:html={icon('key',15)}></span> Book a test drive</a>
+        </div>
+      </div>
+
+      <div class="card sh-panel" style="margin-top:18px">
+        <div class="eyebrow" style="margin-bottom:10px">Expert review (Edmunds slot)</div>
+        <p style="font-size:14px; color:var(--ink-soft); line-height:1.6">“A comfortable, capable all-rounder with genuine off-highway ability and a roomy, well-built cabin.” — placeholder review excerpt.</p>
+      </div>
+    </div>
+
+    <!-- sticky buy rail -->
+    <aside style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="card sh-panel">
+        <div style="font-size:13px; color:var(--ink-faint)">{v.condition} · {v.year}</div>
+        <h1 class="sh-h2" style="font-size:24px; margin-top:2px">{v.make} {v.model}</h1>
+        <div style="font-size:14px; color:var(--ink-soft)">{v.variant}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:14px 0"><b style="font-family:var(--font-display); font-size:30px">{fmt(v.price)}</b><span style="font-size:13px; color:var(--ink-faint)">drive away</span></div>
+        <!-- finance from the price (contextual) -->
+        <a href={base + '/finance'} class="sh-jump sh-jump-ai" style="width:100%; justify-content:center; margin-bottom:8px"><span class="sh-jic" set:html={icon('calc',15)}></span> From ~$168/wk — calculate</a>
+        <a href={base + '/test-drive'} class="btn btn-primary btn-sm" style="width:100%; justify-content:center; margin-bottom:8px"><span set:html={icon('key',15)}></span> Book a test drive</a>
+        <div class="sh-jumprow">
+          <a href={base + '/trade-in'} class="sh-jump" style="flex:1; justify-content:center; padding:9px"><span class="sh-jic" set:html={icon('swap',14)}></span> Trade-in</a>
+          <a href={base + '/rebi'} class="sh-jump" style="flex:1; justify-content:center; padding:9px"><span class="sh-jic" set:html={icon('chat',14)}></span> Ask Rebi</a>
+        </div>
+      </div>
+
+      <div class="card sh-panel">
+        <div class="eyebrow" style="margin-bottom:12px">Specs</div>
+        {specs.map(([ic,k,val]) => (
+          <div style="display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px">
+            <span style="display:flex; align-items:center; gap:9px; color:var(--ink-soft)"><span set:html={icon(ic,15)} style="color:var(--teal-deep)"></span> {k}</span><b>{val}</b>
+          </div>
+        ))}
+      </div>
+    </aside>
+  </section>
+</Layout>

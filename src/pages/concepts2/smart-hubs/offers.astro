@@ -1,0 +1,44 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { vehicles, brands, icon, fmt, base } from './_shell/data';
+export const prerender = false;
+const deals = [vehicles[1], vehicles[3], vehicles[5], vehicles[0], vehicles[7], vehicles[2]];
+---
+<Layout title="Offers & specials — Smart Hubs" active="buy-own" dockPrompt="Tell me your budget — I’ll find a deal that fits.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Buy & Own', base + '/buy-own'], ['Offers']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="buy-own" current={base + '/offers'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow">Offers &amp; specials</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Current drive-away deals.</h1>
+    <p class="sh-sub">Every offer links straight to the repayment calculator and pre-approval — no dead-end promos.</p>
+    <div class="sh-jumprow" style="margin-top:16px">
+      <span class="sh-jump" style="border-color:var(--teal); color:var(--teal-deep)">All offers</span>
+      {brands.slice(0,5).map((b) => <a href={base + '/brand'} class="sh-jump" style="padding:8px 13px; font-size:12.5px">{b}</a>)}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-3">
+      {deals.map((v, i) => (
+        <div class="card card-lift sh-panel" style="padding:0; overflow:hidden">
+          <div style={`aspect-ratio:16/9; background:${v.hue}; position:relative`}>
+            <span class="chip chip-amber" style="position:absolute; top:12px; left:12px">Save {fmt(1500 + i * 500)}</span>
+          </div>
+          <div style="padding:16px">
+            <div style="font-family:var(--font-display); font-weight:700; font-size:16px">{v.year} {v.make} {v.model}</div>
+            <div style="font-size:13px; color:var(--ink-faint)">{v.variant}</div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin:10px 0"><b style="font-family:var(--font-display); font-size:20px">{fmt(v.price)}</b><span style="font-size:12px; color:var(--ink-faint)">drive away</span></div>
+            <div class="sh-jumprow">
+              <a href={base + '/finance'} class="sh-jump" style="padding:7px 12px; font-size:12.5px"><span class="sh-jic" set:html={icon('calc',13)}></span> Repayments</a>
+              <a href={base + '/vehicle'} class="sh-jump" style="padding:7px 12px; font-size:12.5px">View →</a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <p class="sh-note" style="margin-top:18px">Fine print: drive-away pricing on demo stock, while stocks last. Placeholder figures — not a live offer.</p>
+  </section>
+</Layout>

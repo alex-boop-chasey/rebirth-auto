@@ -1,0 +1,65 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import FilterPanel from './_shell/FilterPanel.astro';
+import { vehicles, icon } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Browse vehicles — Rebirth Auto" active="listings" dockPrompt="Want me to narrow these 305 down to your top 3?">
+  <section class="nfy-wrap" style="padding-top:34px">
+    <span class="nfy-eyebrow">Inventory · 305 vehicles</span>
+    <h1 class="nfy-h2" style="margin-top:12px; font-size:34px">Find your next car</h1>
+
+    <!-- AI search across inventory -->
+    <div class="nfy-aisearch" style="margin-top:22px">
+      <span class="nfy-orb nfy-orb--halo" style="width:30px;height:30px"></span>
+      <input type="text" placeholder="Ask in plain English — “diesel 4x4, tows 3t, under $70k, low km”" readonly />
+      <button class="nfy-btn nfy-btn-primary" style="pointer-events:none"><span set:html={icon('spark',16)}></span> Search with Rebi</button>
+    </div>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:26px 70px; display:grid; grid-template-columns:288px 1fr; gap:32px; align-items:start">
+    <FilterPanel />
+
+    <div>
+      <!-- Rebi interpreted the query -->
+      <div class="nfy-ai-summary nfy-scan" style="margin-bottom:18px; display:flex; gap:14px; align-items:center">
+        <span class="nfy-orb nfy-orb--halo" style="width:34px;height:34px"></span>
+        <div style="flex:1">
+          <b style="font-size:13px; color:var(--indigo-deep)">Rebi read your search</b>
+          <p style="font-size:13.5px; color:var(--ink-soft); margin-top:3px">Showing <b style="color:var(--ink)">4x4 & AWD utes and SUVs, tow ≥ 3t, under $70k</b>. I sorted by best value for towing first — the D-MAX is my top match.</p>
+        </div>
+        <div class="nfy-pillrow">
+          <span class="nfy-chip nfy-chip--ai">4x4/AWD ✕</span>
+          <span class="nfy-chip nfy-chip--ai">Tow 3t ✕</span>
+          <span class="nfy-chip nfy-chip--ai">&lt; $70k ✕</span>
+        </div>
+      </div>
+
+      <!-- toolbar -->
+      <div class="nfy-row" style="justify-content:space-between; margin-bottom:20px">
+        <div class="nfy-row" style="gap:10px">
+          <span style="font-size:14px; color:var(--ink-soft)"><b style="color:var(--ink)">{vehicles.length}</b> of 305 shown</span>
+          <div class="nfy-seg" style="margin-left:6px">
+            <button class="is-on">All</button><button>New</button><button>Demo</button><button>Used</button>
+          </div>
+        </div>
+        <div class="nfy-row" style="gap:10px; font-size:14px; color:var(--ink-soft)">
+          <span>Sort</span>
+          <select class="nfy-select" style="width:auto; padding:8px 12px"><option>Rebi’s best match</option><option>Price low → high</option><option>Newest</option><option>Lowest km</option></select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px">
+        {vehicles.map(v => <VehicleCard v={v} />)}
+      </div>
+
+      <!-- load more -->
+      <div style="text-align:center; margin-top:38px">
+        <button class="nfy-btn nfy-btn-ghost nfy-btn-lg" style="pointer-events:none">Show more vehicles</button>
+        <p class="nfy-faint" style="font-size:13px; margin-top:10px">Viewing 9 of 305 · <span class="nfy-mono">page 1</span></p>
+      </div>
+    </div>
+  </section>
+</Layout>

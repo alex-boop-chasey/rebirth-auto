@@ -1,0 +1,125 @@
+---
+// SSR (not prerendered): honours the dealer feature flag at request time and
+// renders the config-driven offers list (default [] → graceful empty state).
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.offers;
+
+// Feature flag — a dealer can hide the offers page without a deploy.
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+// CONFIG AS DATA — the ONLY source of deals. Never fabricated. Empty → empty state.
+const offers = cfg.items;
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    tag: '<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.3"/>',
+    calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h6"/>',
+    car: '<path d="M5 11l1.5-4A2 2 0 018.4 6h7.2a2 2 0 011.9 1.3L19 11"/><path d="M4 11h16v5H4z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/>',
+    filter: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
+    spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active="buy-own" />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from the home offers strip · finance page · Rebi</div>
+        <span class="eyebrow"><span set:html={icon('tag', 13)} /> {copy.eyebrow}</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">{copy.heading}</h1>
+        <p class="lead mt-3 max-w-2xl">{copy.subheading}</p>
+      </section>
+
+      <section class="site-container section-tight">
+        {offers.length > 0 ? (
+          <>
+            <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))">
+              {offers.map((o) => (
+                <div class="card card-lift" style="padding:20px">
+                  <div style="display:flex; justify-content:space-between; align-items:start; gap:8px">
+                    <span class="chip chip-amber">{o.tag}</span>
+                    {o.brand && <span class="faint" style="font-size:11px">{o.brand}</span>}
+                  </div>
+                  <b style="display:block; font-family:var(--font-display); font-size:18px; margin:12px 0 4px">{o.title}</b>
+                  <p class="muted" style="font-size:14px">{o.description}</p>
+                  <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap">
+                    <a href={o.href ?? '/listings'} class="btn btn-primary btn-sm">View stock</a>
+                    <a href="/finance" class="btn btn-ghost btn-sm"><span set:html={icon('calc', 14)} /> Repayments</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p class="faint text-xs" style="margin-top:18px">{copy.disclaimer}</p>
+          </>
+        ) : (
+          <div class="card" style="padding:34px; text-align:center; max-width:34rem; margin:0 auto">
+            <span class="chip chip-teal" style="margin:0 auto"><span set:html={icon('tag', 13)} /> {copy.eyebrow}</span>
+            <h2 class="text-lg font-semibold text-ink" style="margin:16px 0 8px">{copy.emptyHeading}</h2>
+            <p class="muted" style="font-size:14px; max-width:26rem; margin:0 auto">{copy.emptyBody}</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:20px">
+              <a href="/listings" class="btn btn-primary btn-sm"><span set:html={icon('car', 14)} /> Browse the range</a>
+              <a href="/finance" class="btn btn-ghost btn-sm"><span set:html={icon('calc', 14)} /> Work out a repayment</a>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section class="site-container section">
+        <div class="entry-rail">
+          <a href="/finance" class="entry entry--ai">
+            <span class="entry-ic" set:html={icon('calc', 18)} />
+            <span class="entry-tx"><b>Match a deal to repayments</b><span>finance ↔ offers, folded</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+          <a href="/listings" class="entry">
+            <span class="entry-ic" set:html={icon('filter', 18)} />
+            <span class="entry-tx"><b>Browse all stock</b><span>filter the full range</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+          <button class="entry entry--ai" data-rebi-open data-rebi-kind="offers" style="cursor:pointer; text-align:left">
+            <span class="entry-ic" set:html={icon('spark', 18)} />
+            <span class="entry-tx"><b>Find me a deal that fits</b><span>ask Rebi</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+  </body>
+</html>

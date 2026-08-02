@@ -1,0 +1,75 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { icon, base } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Finance & repayments — Smart Hubs" active="buy-own" dockPrompt="Tell me your budget and I’ll pre-qualify you.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Buy & Own', base + '/buy-own'], ['Finance']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="buy-own" current={base + '/finance'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow">Finance</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Work out repayments in seconds.</h1>
+    <p class="sh-sub">Indicative only — move the sliders for a weekly and monthly estimate, then jump to
+      pre-approval. Every offer and vehicle price flows straight into this calculator.</p>
+  </section>
+
+  <!-- CALCULATOR (sliders → indicative figures; static demo values) -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid" style="grid-template-columns:1.3fr 1fr; gap:22px">
+      <div class="card sh-panel">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:20px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('calc',18)}></span><b style="font-size:16px">Repayment calculator</b></div>
+        {[['Vehicle price','$52,990','20000','80000','52990'],['Deposit','$5,000','0','30000','5000'],['Term','5 years','1','7','5'],['Rate (p.a.)','7.9%','3','15','8']].map(([label,val,min,max,v]) => (
+          <div style="margin-bottom:20px">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px"><span style="font-size:13.5px; font-weight:600; color:var(--ink-soft)">{label}</span><b style="font-family:var(--font-mono); color:var(--teal-deep)">{val}</b></div>
+            <input type="range" min={min} max={max} value={v} style="width:100%" />
+          </div>
+        ))}
+      </div>
+
+      <div class="ai-summary scan sh-panel" style="display:flex; flex-direction:column; justify-content:center">
+        <div class="chip chip-ai" style="align-self:flex-start; margin-bottom:14px"><span set:html={icon('spark',13)}></span> Rebi’s estimate</div>
+        <div style="font-size:13px; color:var(--ink-soft)">Indicative weekly</div>
+        <div style="font-family:var(--font-display); font-weight:700; font-size:44px; color:var(--ink); line-height:1">$168<span style="font-size:18px; color:var(--ink-faint)">/wk</span></div>
+        <div style="font-size:13px; color:var(--ink-soft); margin-top:14px">Or about <b style="color:var(--ink)">$728/month</b> over 5 years</div>
+        <p class="sh-note" style="margin-top:14px">Estimate only. Not a quote or credit offer. On approval, T&amp;Cs apply.</p>
+        <a href="#preapproval" class="btn btn-primary btn-sm" style="margin-top:18px; justify-content:center"><span set:html={icon('check',15)}></span> Get pre-approved</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- lender panel + contextual jumps -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="eyebrow" style="margin-bottom:12px">Our lending panel</div>
+    <div class="sh-grid sh-cols-4">
+      {['CommBank','NAB','Plenti','Now Finance'].map((l) => (
+        <div class="card sh-panel" style="text-align:center; padding:22px"><b style="font-size:15px">{l}</b><div class="sh-note" style="margin-top:4px">Comparison partner (demo)</div></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0" id="preapproval">
+    <div class="glass sh-panel">
+      <h2 class="sh-h2">Related — reach it from here, not the menu</h2>
+      <p style="font-size:14px; color:var(--ink-soft); margin:4px 0 16px">Finance overlaps offers and trade-ins. Jump across without leaving the flow.</p>
+      <div class="sh-jumprow">
+        <a href={base + '/offers'} class="sh-jump"><span class="sh-jic" set:html={icon('tag',15)}></span> See drive-away offers</a>
+        <a href={base + '/trade-in'} class="sh-jump"><span class="sh-jic" set:html={icon('swap',15)}></span> Add my trade-in value</a>
+        <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('grid',15)}></span> Browse cars in budget</a>
+        <a href={base + '/rebi'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('spark',15)}></span> Ask Rebi to pre-qualify me</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- short FAQ -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="eyebrow" style="margin-bottom:12px">Quick answers</div>
+    <div class="sh-grid sh-cols-2">
+      {[['Does a quote affect my credit score?','A calculator estimate does not. A formal pre-approval is a soft check first (demo copy).'],['Can I finance a used car?','Yes — most cars in the yard, subject to age and approval.'],['Balloon payments?','Optional — Rebi can model one into the weekly figure.'],['Trade-in as deposit?','Absolutely — value it first, then it drops your financed amount.']].map(([q,a]) => (
+        <div class="card sh-panel"><b style="font-size:14.5px; color:var(--ink)">{q}</b><p style="font-size:13.5px; color:var(--ink-soft); margin-top:6px">{a}</p></div>
+      ))}
+    </div>
+  </section>
+</Layout>

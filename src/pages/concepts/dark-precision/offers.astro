@@ -1,0 +1,58 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+const brands = ["Chery","Honda","Hyundai","Isuzu","Jaecoo","Jeep","Kia","Leapmotor","LDV","Nissan","Ram","Subaru"];
+const offers = [
+  ["Isuzu","D-MAX SX 4x4","Drive-away deal","$48,990","Save $4,100 · limited demo units"],
+  ["Kia","Sportage S","0% comparison rate*","$36,690","On selected 2024 build stock"],
+  ["Hyundai","Tucson Hybrid","Free 5yr servicing","$45,500","Plus premium paint at no cost"],
+  ["Subaru","Forester AWD","Bonus tow pack","$41,880","While pre-facelift stock lasts"],
+  ["Nissan","X-TRAIL ST-L","Factory bonus","$43,200","$2,000 finance deposit contribution"],
+  ["Ram","1500 Big Horn","Fleet pricing unlocked","$99,950","ABN buyers · ask Rebi to qualify"],
+];
+---
+<Layout title="Offers — Dark Precision" current="offers" dockHint="Ask me which deal actually saves you the most">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow" style="color:var(--amber)">Current offers</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px">This month's specials</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">Live factory and dealer deals across all 13 franchises. Rebi ranks them against your budget so you see the real saving, not the headline.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap" style="padding-top:26px">
+    <div class="dp-pillrow">
+      <span class="dp-chip dp-chip--active">All brands</span>
+      {brands.map((b) => <span class="dp-chip">{b}</span>)}
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-grid dp-cols-3">
+      {offers.map(([brand,model,deal,price,note]) => (
+        <div class="dp-panel dp-tick" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+          <div style="aspect-ratio:16/9;background:radial-gradient(120% 90% at 50% 10%, #262f3b, #0d1117 78%);display:grid;place-items:center;position:relative;border-bottom:1px solid var(--line)">
+            <span style="font-size:52px;opacity:0.5">🚗</span>
+            <span class="dp-chip dp-chip--amber" style="position:absolute;top:12px;left:12px;background:rgba(8,9,12,0.75)">{deal}</span>
+          </div>
+          <div style="padding:20px;display:grid;gap:10px;flex:1">
+            <span class="dp-mono dp-mute" style="font-size:11px;letter-spacing:0.14em">{brand.toUpperCase()}</span>
+            <h3 class="dp-h3" style="font-size:20px">{model}</h3>
+            <p class="dp-mute" style="font-size:13px;line-height:1.5">{note}</p>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+              <span class="dp-mono" style="font-size:26px;font-weight:600">{price}</span>
+              <span class="dp-chip dp-chip--amber">drive-away</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:auto;padding-top:10px">
+              <a class="dp-btn dp-btn--primary dp-btn--sm" href={`${base}/listings`} style="flex:1;justify-content:center">View stock</a>
+              <a class="dp-btn dp-btn--ghost dp-btn--sm" href={`${base}/rebi`}>Ask Rebi</a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <p class="dp-mono dp-mute" style="font-size:11px;margin-top:22px">*All prices and offers are placeholders for demonstration. Terms & conditions apply. Not a real sale.</p>
+  </section>
+</Layout>

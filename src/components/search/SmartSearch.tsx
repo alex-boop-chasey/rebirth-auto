@@ -1,35 +1,34 @@
 /**
- * SmartSearch — the Rebi-fronted plain-English homepage search dock, as a React
- * island. A straight PARITY port of SearchDock.astro's former inline `<script>`:
- * same control flow, same constants, same order of side-effects. Behaviour is
- * identical to the vanilla version — this is a migration, not a redesign.
+ * SmartSearch — the Rebi-fronted plain-English `/listings` search dock, as a React
+ * island. The composer (input + submit) is the entry affordance; the CONVERSATION
+ * now lives in the Rebi drawer, not in a bespoke focus-stage carousel.
  *
- * A JS-ONLY enhancement on the hero: SSR renders the dock `hidden`; hydration
- * (`client:idle`) flips it visible (mirrors the vanilla `dock.hidden = false`).
- * With no JS it stays hidden and the classic Filters drawer is the fallback.
+ * A JS-ONLY enhancement on the page: SSR renders the dock `hidden`; hydration
+ * (`client:idle`) flips it visible. With no JS it stays hidden and the classic
+ * Filters drawer is the fallback.
+ *
  * On submit it POSTs /api/search, drives the ONE filter URL via the shared
- * `applyFilterUrl` (URL = single source of truth, Decision 5) exclusively through
- * the `useFilterUrl` hook, and speaks back on the cinematic Focus Stage.
+ * `applyFilterUrl` (URL = single source of truth, DECISION 5) exclusively through
+ * the `useFilterUrl` hook — the grid still filters IN PLACE, unchanged. Then it
+ * dispatches the decoupled `reb:search` DOM event with the raw query, the
+ * serialized filter state (`ref`), and `autoSend:true`, so the Rebi drawer opens,
+ * renders the query as a user turn, and streams a grounded reply with tiles/actions
+ * in-thread. The homepage `?q=` handoff (listings/index.astro fills the input and
+ * calls `form.requestSubmit()`) flows through this SAME onSubmit, so a landed
+ * `/listings?q=…` also drives the grid AND opens the drawer.
  *
- * State is imperative (refs), matching the vanilla host: the ONLY React render
- * state is `mounted` (reveal) and `muted` (the sound toggle, owned by useRebiSounds).
- * The card column is mutated by the framework-free stage engine OUTSIDE React's
- * vdom — React renders it empty and never reconciles its children.
+ * State is imperative (refs): the ONLY React render state is `mounted` (reveal).
+ * The island holds NO filter state — the URL is the single source of truth via
+ * `useFilterUrl`. `ref` for the drawer is built with the filter-url serializer
+ * (`fu.serialize`), never a hand-assembled query string (filter-state rule).
  *
- * Hard constraints honoured: no filter store (URL-only via useFilterUrl); no
- * `cloudflare:workers` / `~/ai` / `src/ai/*` imports; all copy/timings/sounds come
- * from the typed `config` prop (dealerConfig.chat.search); light-theme; no
- * `Math.random` / module-top-level `new Date()`. It does NOT dispatch `reb:search`
- * and does NOT open the corner Rebi widget (preserving today's behaviour).
+ * Hard constraints honoured: no filter store; no `cloudflare:workers` / `~/ai` /
+ * `src/ai/*` imports; all copy/timings come from the typed `config` prop
+ * (dealerConfig.chat.search); light-theme; no `Math.random` / module-top-level
+ * `new Date()`. No provider call is added — the drawer runs the existing /api/chat.
  */
 import { useCallback, useEffect, useRef, useState, type FormEventHandler } from 'react';
-import {
-  useReducedMotion,
-  useRebiSounds,
-  useFocusStage,
-  useFilterUrl,
-} from '~/components/ai/hooks';
-import type { FocusStage, Descriptor } from '~/components/search/stage-engine';
+import { useReducedMotion, useFilterUrl } from '~/components/ai/hooks';
 import type { FilterState } from '~/lib/listings-query';
 import { useTypewriter } from './useTypewriter';
 import {
@@ -42,7 +41,6 @@ import {
   flipHeading,
 } from './search-choreography';
 import './search-dock.css';
-import './stage.css';
 
 /** Mirrors today's `dockConfig` — the slice of `dealerConfig.chat.search` the dock uses. */
 export interface SmartSearchConfig {
@@ -74,29 +72,21 @@ interface Props {
 }
 
 export default function SmartSearch({ config }: Props) {
-  // ---- render state (the only two) ----
+  // ---- render state (the only one) ----
   const [mounted, setMounted] = useState(false);
 
   // ---- imperative refs (the island holds NO filter state) ----
-  const columnRef = useRef<HTMLDivElement | null>(null);
   const liveRef = useRef<HTMLParagraphElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const formRef = useRef<HTMLFormElement | null>(null);
 
   const seqRef = useRef(0); // island guard — distinct from the shared module `seq` in filter-url.ts
-  const busyRef = useRef(false); // guards overlapping animations only
+  const busyRef = useRef(false); // guards overlapping submits/animations only
   const abortRef = useRef<AbortController | null>(null); // aborts the previous /api/search
 
   // ---- hooks ----
   const reduced = useReducedMotion();
   const reducedRef = useRef(reduced); // live value read inside imperative handlers
   reducedRef.current = reduced;
-
-  const { soundSend, soundRebi, muted, toggleMute } = useRebiSounds({
-    muteKey: 'rebi:search:muted',
-    enabled: config.sounds.enabled,
-    defaultMuted: config.sounds.defaultMuted,
-  });
 
   const fu = useFilterUrl();
 
@@ -110,38 +100,11 @@ export default function SmartSearch({ config }: Props) {
   });
   twRestartRef.current = tw.restart;
 
-  // Seat Rebi's opening greeting exactly as the vanilla host does (on load + on reset).
-  const seatGreeting = useCallback(
-    (stage: FocusStage) => {
-      if (config.greeting.showOnLoad && config.greeting.text) {
-        stage.appendRebi({ kind: 'greeting', text: config.greeting.text, count: 0 });
-      }
-    },
-    [config.greeting.showOnLoad, config.greeting.text],
-  );
-
-  // "New search": full reset to idle → base inventory, heading + stack + input.
-  // Stored on a ref so useFocusStage's `onNewSearch` wrapper always calls the live one.
-  const resetSearchRef = useRef<() => void>(() => {});
-
-  const stageRef = useFocusStage(
-    { columnRef, liveRef },
-    {
-      reducedMotion: reduced,
-      newSearchLabel: config.messages.newSearchLabel,
-      onNewSearch: () => resetSearchRef.current(),
-      onReply: soundRebi,
-      retire: true,
-      onCreate: seatGreeting,
-    },
-  );
-
-  // Runs the search, builds a reply descriptor from config.messages.* + the server
-  // interpretation/clarifyingQuestion, then lands the reply. Ported verbatim.
+  // Runs the planner search, drives the grid EXACTLY as before (confidence/empty
+  // guards + applyFilterUrl + heading/grid fade choreography), announces the outcome
+  // to the polite live region, then hands the conversation to the Rebi drawer.
   const runSearch = useCallback(
-    async (query: string, typing: HTMLElement) => {
-      const stage = stageRef.current;
-      if (!stage) return;
+    async (query: string) => {
       const my = ++seqRef.current;
       const started = performance.now();
 
@@ -165,18 +128,12 @@ export default function SmartSearch({ config }: Props) {
       } catch {
         /* network error or abort — fall through to the unclear message below */
       }
-      if (my !== seqRef.current) {
-        stage.retire(typing);
-        return;
-      } // superseded by a newer submit / reset
+      if (my !== seqRef.current) return; // superseded by a newer submit
 
-      // Guarantee a minimum "thinking" beat so the fade-out + dots always read.
+      // Guarantee a minimum "thinking" beat so the grid fade-out always reads.
       const elapsed = performance.now() - started;
       if (elapsed < MIN_BEAT_MS) await delay(MIN_BEAT_MS - elapsed);
-      if (my !== seqRef.current) {
-        stage.retire(typing);
-        return;
-      } // superseded during the beat
+      if (my !== seqRef.current) return; // superseded during the beat
 
       const gridPresent = !!document.getElementById('inventory-results');
       const filters: FilterState | null = data && data.filters ? (data.filters as FilterState) : null;
@@ -192,34 +149,27 @@ export default function SmartSearch({ config }: Props) {
 
       if (applied && gridPresent && filters) {
         await fu.apply({ ...filters, page: 1 });
-        if (my !== seqRef.current) {
-          stage.retire(typing);
-          return;
-        } // superseded during the grid swap
+        if (my !== seqRef.current) return; // superseded during the grid swap
         // Keep the freshly-swapped results hidden (synchronously, pre-paint) so their
-        // fade-in lands AFTER the message — not the instant the grid swaps.
+        // fade-in lands after the announcement — not the instant the grid swaps.
         primeGridHidden(reducedRef.current);
         flipHeading(true);
       }
 
-      let descriptor: Descriptor;
-      if (applied) {
-        const total = fu.readGridTotal();
-        descriptor =
-          total > 0
-            ? { kind: 'results', text: config.messages.resultsRefine, count: total }
-            : { kind: 'nomatch', text: config.messages.noMatch, count: 0 };
-      } else {
-        const unclear =
-          [interpretation, clarifying].filter(Boolean).join(' ') || config.messages.unclear;
-        descriptor = { kind: 'unclear', text: unclear, count: 0 };
+      // Announce the outcome to the polite live region (a11y for the grid change —
+      // the conversational reply itself now lands in the Rebi drawer thread).
+      if (liveRef.current) {
+        if (applied) {
+          const total = fu.readGridTotal();
+          liveRef.current.textContent =
+            total > 0 ? config.messages.resultsRefine : config.messages.noMatch;
+        } else {
+          liveRef.current.textContent =
+            [interpretation, clarifying].filter(Boolean).join(' ') || config.messages.unclear;
+        }
       }
 
-      // Step 3 — the reply message lands in the chat (replacing the dots).
-      stage.landReply(typing, descriptor);
-
-      // Step 4 — a beat later, the new (or restored) grid fades back in, so the
-      // message registers before the results appear.
+      // A beat later, the new (or restored) grid fades back in.
       if (reducedRef.current) {
         fadeGridIn(reducedRef.current);
       } else {
@@ -227,69 +177,48 @@ export default function SmartSearch({ config }: Props) {
           if (my === seqRef.current) fadeGridIn(reducedRef.current);
         }, 180);
       }
-    },
-    [
-      stageRef,
-      fu,
-      config.messages.resultsRefine,
-      config.messages.noMatch,
-      config.messages.unclear,
-    ],
-  );
 
-  // "New search": full reset to idle. Since greeting-on-load is on, re-seat it.
-  const resetSearch = useCallback(async () => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    seqRef.current++; // invalidate any in-flight search so it can't re-message
-    abortRef.current?.abort();
-    await fu.apply(fu.emptyState()); // base "/" → full inventory
-    flipHeading(false);
-    setSubheadActive(false, reducedRef.current);
-    stage.clearStack();
-    seatGreeting(stage);
-    if (inputRef.current) inputRef.current.value = '';
-    twRestartRef.current();
-    inputRef.current?.focus();
-  }, [stageRef, fu, seatGreeting]);
-  resetSearchRef.current = resetSearch;
+      // Hand the conversation to the Rebi drawer: it opens, renders the query as a
+      // user turn, and streams a grounded reply (with the new cards/actions tiles).
+      // `ref` is the CANONICAL serialized filter state read back from the URL after
+      // the apply — built via the filter-url serializer, never hand-assembled.
+      const ref = fu.serialize(fu.readState());
+      document.dispatchEvent(
+        new CustomEvent('reb:search', { detail: { query, ref, opening: '', autoSend: true } }),
+      );
+    },
+    [fu, config.messages.resultsRefine, config.messages.noMatch, config.messages.unclear],
+  );
 
   const onSubmit = useCallback<FormEventHandler<HTMLFormElement>>(
     (e) => {
       e.preventDefault();
       const input = inputRef.current;
-      const stage = stageRef.current;
-      if (!input || !stage) return;
+      if (!input) return;
       const query = input.value.trim();
       if (!query) {
         input.focus();
         return;
       }
-      if (busyRef.current) return; // guard overlapping animations only
+      if (busyRef.current) return; // guard overlapping submits only
       busyRef.current = true;
 
-      // 1) your message rises into focus + the "sent" blip
-      stage.addUserTurn(query);
-      soundSend();
-
-      // wipe the input (ready for the next prompt) and restart the placeholder
+      // Wipe the input (ready for the next prompt) and restart the placeholder.
       input.value = '';
       twRestartRef.current();
       setSubheadActive(true, reducedRef.current);
 
-      // 2) the current list recedes AND Rebi's typing beat begins together — the
-      //    live region announces "finding" now
+      // The current list recedes and the live region announces "finding" now; the
+      // real search then drives the grid and opens the drawer.
       fadeGridOut(reducedRef.current);
-      const typing = stage.showTyping();
       if (liveRef.current) liveRef.current.textContent = config.messages.finding;
 
-      // 3) the real search resolves → the reply lands
-      runSearch(query, typing).finally(() => {
+      runSearch(query).finally(() => {
         busyRef.current = false;
         input.focus();
       });
     },
-    [stageRef, soundSend, config.messages.finding, runSearch],
+    [config.messages.finding, runSearch],
   );
 
   // "Refine manually" opens the classic drawer (its trigger stays the fallback).
@@ -302,131 +231,76 @@ export default function SmartSearch({ config }: Props) {
     setMounted(true);
   }, []);
 
-  // Cleanup: abort any in-flight fetch on unmount. (useFocusStage / useRebiSounds /
-  // useTypewriter own their own teardown.)
+  // Cleanup: abort any in-flight fetch on unmount.
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
     };
   }, []);
 
-  const soundLabel = muted ? config.stage.unmuteLabel : config.stage.muteLabel;
-
   return (
     <div id="search-dock" className="search-dock" hidden={!mounted}>
-      <section className="rebi-stage" aria-label={config.stage.askLabel}>
-        {/* Sound toggle sits on the glass shelf, top-right. */}
-        <button
-          type="button"
-          className={`sound-toggle${muted ? ' muted' : ''}`}
-          id="search-dock-sound"
-          aria-pressed={muted}
-          aria-label={soundLabel}
-          title={soundLabel}
-          onClick={toggleMute}
-        >
+      <form
+        id="search-dock-form"
+        className="entry"
+        role="search"
+        autoComplete="off"
+        onSubmit={onSubmit}
+      >
+        <span className="mag" aria-hidden="true">
           <svg
-            className="ic-on"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            aria-hidden="true"
           >
-            <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
-            <path d="M16.5 8.5a5 5 0 0 1 0 7"></path>
-            <path d="M19 6a8 8 0 0 1 0 12"></path>
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.2-3.2"></path>
           </svg>
+        </span>
+        <input
+          id="search-dock-input"
+          className="search-dock-input"
+          type="text"
+          name="q"
+          aria-label={config.stage.inputAriaLabel}
+          maxLength={config.maxQueryLength}
+          ref={inputRef}
+        />
+        <button id="search-dock-submit" className="search-dock-submit" type="submit">
+          <span>{config.stage.askLabel}</span>
           <svg
-            className="ic-off"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
           >
-            <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
-            <path d="M17 9l4 6M21 9l-4 6"></path>
+            <path d="M5 12h13"></path>
+            <path d="m12 5 7 7-7 7"></path>
           </svg>
         </button>
+      </form>
 
-        {/* The 3D theatre. The card column is built entirely at runtime by the stage
-            engine (outside React's vdom); it carries NO aria-live. */}
-        <div className="stage-viewport">
-          <div className="glass-shelf" aria-hidden="true"></div>
-          <div className="shelf-label" aria-hidden="true">
-            <span className="dotmark"></span>
-            {config.stage.shelfLabel}
-          </div>
-          <div className="card-column focus-stage" id="search-dock-column" ref={columnRef}></div>
-        </div>
-
-        <form
-          id="search-dock-form"
-          className="entry"
-          role="search"
-          autoComplete="off"
-          ref={formRef}
-          onSubmit={onSubmit}
+      <p className="hint">
+        {config.stage.hint}{' '}
+        <button
+          type="button"
+          id="search-dock-manual"
+          className="search-dock-manual"
+          onClick={onManualRefine}
         >
-          <span className="mag" aria-hidden="true">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="m20 20-3.2-3.2"></path>
-            </svg>
-          </span>
-          <input
-            id="search-dock-input"
-            className="search-dock-input"
-            type="text"
-            name="q"
-            aria-label={config.stage.inputAriaLabel}
-            maxLength={config.maxQueryLength}
-            ref={inputRef}
-          />
-          <button id="search-dock-submit" className="search-dock-submit" type="submit">
-            <span>{config.stage.askLabel}</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M5 12h13"></path>
-              <path d="m12 5 7 7-7 7"></path>
-            </svg>
-          </button>
-        </form>
+          {config.stage.refineManualLabel}
+        </button>
+      </p>
 
-        <p className="hint">
-          {config.stage.hint}{' '}
-          <button
-            type="button"
-            id="search-dock-manual"
-            className="search-dock-manual"
-            onClick={onManualRefine}
-          >
-            {config.stage.refineManualLabel}
-          </button>
-        </p>
-
-        {/* One polite region: the COMPLETE reply text, set once per landed card. */}
-        <p id="search-dock-live" className="sd-sr-only" aria-live="polite" ref={liveRef}></p>
-      </section>
+      {/* One polite region: announces the grid outcome (the conversational reply
+          itself now lands in the Rebi drawer thread). */}
+      <p id="search-dock-live" className="sd-sr-only" aria-live="polite" ref={liveRef}></p>
     </div>
   );
 }

@@ -1,0 +1,70 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+---
+<Layout title="Fleet & business — Rebirth Auto" active="fleet" dockPrompt="Tell me your fleet size — I’ll suggest a mix.">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 30px; display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:center">
+      <div>
+        <span class="nfy-eyebrow"><span set:html={icon('truck',14)}></span> Fleet & business</span>
+        <h1 class="nfy-h1" style="font-size:46px; margin-top:14px">Keep the business<br/>moving.</h1>
+        <p class="nfy-lead" style="margin-top:16px">From a two-ute trade to a regional council fleet, we handle procurement, finance and servicing under one local roof. Rebi models total-cost-of-ownership so you buy on the real number, not the sticker.</p>
+        <div class="nfy-row" style="gap:12px; margin-top:24px">
+          <a href="#fleet-enquiry" class="nfy-btn nfy-btn-primary nfy-btn-lg">Talk fleet</a>
+          <a href={`${base}/electric`} class="nfy-btn nfy-btn-ghost nfy-btn-lg">Electrify your fleet</a>
+        </div>
+      </div>
+      <div class="nfy-glass nfy-scan" style="padding:24px">
+        <div class="nfy-row" style="gap:10px; margin-bottom:14px"><span class="nfy-orb nfy-orb--halo" style="width:34px;height:34px"></span><b style="font-family:var(--font-display); font-size:16px">Rebi TCO snapshot</b></div>
+        <div class="nfy-row" style="justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px"><span class="nfy-muted">Fleet size</span><b>12 utes</b></div>
+        <div class="nfy-row" style="justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px"><span class="nfy-muted">Est. annual km</span><b>28,000 each</b></div>
+        <div class="nfy-row" style="justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px"><span class="nfy-muted">Diesel vs EV split</span><b>8 / 4 suggested</b></div>
+        <div class="nfy-ai-summary" style="margin-top:14px; padding:14px 16px"><p style="font-size:13px; color:var(--ink-soft)"><b style="color:var(--indigo-deep)">Rebi:</b> a 4-unit EV pilot on your metro routes could cut fuel ~$34k/yr — I’ve flagged the eDeliver 7 as the fit.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px">
+      {[
+        ['truck','One point of contact','A dedicated fleet manager across every brand and department.'],
+        ['calc','Sharper pricing','Volume pricing and structured finance — chattel, lease or novated.'],
+        ['wrench','Priority servicing','Booked-ahead maintenance and loan vehicles to cut downtime.'],
+        ['leaf','EV transition','Data-led electrification planning with charging advice.'],
+      ].map(([ic,h,p]) => (
+        <div class="nfy-card nfy-card--lift" style="padding:22px">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,18)} style="color:#fff; margin-bottom:12px"></span>
+          <h3 style="font-family:var(--font-display); font-size:16px; font-weight:600">{h}</h3>
+          <p class="nfy-muted" style="font-size:13.5px; margin-top:6px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section id="fleet-enquiry" class="nfy-wrap" style="padding-block:10px 70px">
+    <div class="nfy-card" style="padding:30px 32px; display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:center">
+      <div>
+        <h2 class="nfy-h3">Tell us about your fleet</h2>
+        <p class="nfy-muted" style="font-size:14.5px; margin-top:8px">Share a few details and our fleet manager — with Rebi’s TCO workings attached — will come back with a tailored proposal.</p>
+        <div class="nfy-row" style="gap:22px; margin-top:20px">
+          <div class="nfy-stat"><b>ABN</b><span>business buyers</span></div>
+          <div class="nfy-stat"><b>1–500+</b><span>vehicles</span></div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <input class="nfy-input" placeholder="Business name" readonly />
+        <input class="nfy-input" placeholder="ABN (demo)" readonly />
+        <input class="nfy-input" placeholder="Contact name" readonly />
+        <input class="nfy-input" placeholder="Email / phone (demo)" readonly />
+        <select class="nfy-select" style="grid-column:1/-1"><option>Fleet size</option><option>1–5</option><option>6–20</option><option>21–100</option><option>100+</option></select>
+        <textarea class="nfy-textarea" style="grid-column:1/-1" placeholder="What are you running now, and what do you need?" readonly></textarea>
+        <button class="nfy-btn nfy-btn-primary" style="grid-column:1/-1; justify-content:center; pointer-events:none"><span set:html={icon('send',15)}></span> Request a fleet proposal</button>
+      </div>
+    </div>
+    <p class="nfy-faint" style="font-size:11.5px; margin-top:12px">Demo form — nothing is submitted. Figures illustrative.</p>
+  </section>
+</Layout>

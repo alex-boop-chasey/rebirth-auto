@@ -26,8 +26,32 @@ import { CAR_MAKES, extractPriceValues, findKnownMakes, type GroundingFacts } fr
 import type { KVNamespaceLike } from '../core';
 import type { ConversationContext } from '../context';
 import type { D1Like } from '../state';
+import type { FilterState } from '../../lib/listings-query';
 
 export type { GroundingFacts } from './verify';
+
+/**
+ * A single resolved in-stock record, in PUBLIC-PROJECTION fields only, carried
+ * out of grounding so core.ts can build clickable listing tiles (`RebiCard[]`)
+ * deterministically — never `dealerNotes`, cost, or floor price. All fields are
+ * optional; `FocusRow` (context.ts) and `MatchRow` (lookup.ts) are structurally
+ * assignable to this. Fields beyond a tile's needs are ignored.
+ */
+export interface CardRow {
+  slug?: { current?: string };
+  title?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  price?: number;
+  currency?: string;
+  images?: unknown[];
+  bodyType?: string;
+  fuelType?: string;
+  driveType?: string;
+  seatCount?: number;
+  condition?: string;
+}
 
 /** A string/boolean env value is "truthy" unless it's empty / "false" / "0". */
 function truthy(v: unknown): boolean {
@@ -62,6 +86,19 @@ export interface GroundedPrompt {
    * (which is never in the prompt).
    */
   facts: GroundingFacts;
+  /**
+   * The raw resolved in-stock rows (PUBLIC projection only) the reply was
+   * grounded on — the primed focus rows when a listing/compare/search context was
+   * present, otherwise the live-lookup matches. core.ts maps these → `RebiCard[]`
+   * tiles. Additive: empty when nothing resolved. Never carries a private field.
+   */
+  cardRows: CardRow[];
+  /**
+   * The filter state on screen for a `search` context (from the primed grid), so
+   * core.ts can emit a "See all …" action via `hrefFor`. `null` for
+   * listing/compare/no-context turns — there, actions derive from the message.
+   */
+  filterState: FilterState | null;
 }
 
 /** Build the firewall allow-list from the composed public prompt + whether a specific-vehicle block ran. */
@@ -141,8 +178,15 @@ export async function buildGroundedSystemPrompt(
   // primed from a listing should still be grounded on that vehicle even if the
   // dealer has broad inventory grounding turned off. Fail-open (null on miss).
   let focus: string | null = null;
+  let focusRows: CardRow[] = [];
+  let searchFilterState: FilterState | null = null;
   if (cfg.context.enabled && context) {
-    focus = await resolveFocus(kv, context);
+    const resolved = await resolveFocus(kv, context);
+    if (resolved) {
+      focus = resolved.text;
+      focusRows = resolved.rows;
+      searchFilterState = resolved.filterState;
+    }
   }
 
   // Inventory grounding off: fall through to the static prompt, UNLESS a focus
@@ -159,7 +203,13 @@ export async function buildGroundedSystemPrompt(
     const prompt = buildSystemPrompt({ ...base, manufacturer, reviews, webSearch });
     // A resolved focus is a specific-vehicle block → inventory-bearing; a journey
     // or external reference alone carries no prices/specs, so NOT inventory-bearing.
-    return { prompt, facts: buildFacts(buildSystemPrompt(base), focus !== null) };
+    // With inventory grounding off, only the focus rows can feed tiles.
+    return {
+      prompt,
+      facts: buildFacts(buildSystemPrompt(base), focus !== null),
+      cardRows: focusRows,
+      filterState: searchFilterState,
+    };
   }
 
   const g = cfg.grounding;
@@ -171,12 +221,17 @@ export async function buildGroundedSystemPrompt(
   // whether we have live inventory at all. The lookup is best-effort on top.
   let overview: string | null = null;
   let matches: string | null = null;
+  let matchRows: CardRow[] = [];
 
   if (g.overview.enabled) {
     overview = await getInventoryOverview(kv);
   }
   if (g.lookup.enabled) {
-    matches = await getLiveMatches(kv, userMessage);
+    const resolved = await getLiveMatches(kv, userMessage);
+    if (resolved) {
+      matches = resolved.text;
+      matchRows = resolved.rows;
+    }
   }
 
   // "available" = we have at least one live inventory signal to trust. If both
@@ -202,9 +257,18 @@ export async function buildGroundedSystemPrompt(
   const listsVehicles = (s: string | null): boolean => !!s && /(^|\n)\s*\d+\.\s/.test(s);
   const hasInventory = focus !== null || listsVehicles(matches);
 
+  // Prefer the primed focus rows (a specific listing/compare/search the visitor is
+  // looking at) for tiles; otherwise the live-lookup matches for their query.
+  const cardRows = focusRows.length ? focusRows : matchRows;
+
   // Firewall allow-list from `base` (no external references) so a manufacturer,
   // review, or web reference can NEVER add a price or a make to the allow-list.
   // When all optional flags are off, `base` === the composed prompt, so this is
   // identical to today.
-  return { prompt, facts: buildFacts(buildSystemPrompt(base), hasInventory) };
+  return {
+    prompt,
+    facts: buildFacts(buildSystemPrompt(base), hasInventory),
+    cardRows,
+    filterState: searchFilterState,
+  };
 }

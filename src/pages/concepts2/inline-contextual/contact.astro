@@ -1,0 +1,51 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+const depts = [
+  { ic:'car', name:'Sales', hours:'Mon–Fri 8:30–5:30 · Sat 9–4', href:`${BASE}/listings`, cta:'Browse stock' },
+  { ic:'wrench', name:'Service', hours:'Mon–Fri 7:30–5:00', href:`${BASE}/service`, cta:'Book a service' },
+  { ic:'gear', name:'Parts', hours:'Mon–Fri 8:00–5:00', href:`${BASE}/parts`, cta:'Parts enquiry' },
+];
+---
+<Layout title="Contact & hours — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from footer · department cards route onward · Rebi</div>
+    <span class="eyebrow"><span set:html={icon('pin',13)}></span> Contact</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Talk to the right person, faster</h1>
+    <p class="lead">Pick a department — or ask Rebi "who do I talk to about X" and it routes you.</p>
+  </section>
+
+  <!-- department cards: each is a contextual entry to that department's surface -->
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))">
+      {depts.map((d) => (
+        <div class="card" style="padding:20px">
+          <span style="color:var(--teal-deep)" set:html={icon(d.ic,22)}></span>
+          <b style="display:block; font-family:var(--font-display); font-size:17px; margin:10px 0 3px">{d.name}</b>
+          <div class="faint" style="font-size:12.5px; display:flex; gap:6px; align-items:center"><span set:html={icon('clock',13)}></span> {d.hours}</div>
+          <div class="muted" style="font-size:12.5px; margin-top:8px">☎ (07) 4XXX XXXX · demo</div>
+          <div style="display:flex; gap:8px; margin-top:14px">
+            <a href={d.href} class="btn btn-primary btn-sm">{d.cta}</a>
+            <button class="btn btn-ghost btn-sm" data-rebi-open><span set:html={icon('spark',13)}></span></button>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1fr 1fr; gap:26px; padding-bottom:44px; align-items:start">
+    <div class="card" style="padding:0; overflow:hidden">
+      <div style="height:220px; background:linear-gradient(135deg,#3C5A78,#7C93AC); display:grid; place-items:center; color:#fff"><span set:html={icon('map',40)}></span></div>
+      <div style="padding:18px"><b style="font-size:14.5px">Rebirth Auto (demo)</b><p class="muted" style="font-size:13px; margin-top:4px">123 Example Rd, Bundaberg QLD — placeholder address, not a real location.</p></div>
+    </div>
+    <div class="card" style="padding:24px">
+      <h2 style="font-family:var(--font-display); font-size:18px; margin-bottom:14px">General enquiry</h2>
+      {[['Name','Your name'],['Contact','Email or phone']].map(([l,ph]) => (
+        <label style="display:block; margin-bottom:12px"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+      ))}
+      <label style="display:block"><span class="faint" style="font-size:12px">Message</span><textarea class="field" style="margin-top:5px; min-height:90px" placeholder="How can we help?" readonly></textarea></label>
+      <button class="btn btn-primary" style="margin-top:14px"><span set:html={icon('send',15)}></span> Send</button>
+    </div>
+  </section>
+</Layout>

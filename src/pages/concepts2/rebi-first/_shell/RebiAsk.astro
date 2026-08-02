@@ -1,0 +1,46 @@
+---
+/**
+ * RebiAsk — the per-page Rebi touchpoint (REQUIRED on every parity page).
+ *
+ * A compact mock of Rebi answering a page-relevant question, ending in a row of
+ * action buttons that NAVIGATE. This is the "Rebi as navigator" seam surfaced
+ * inline on every page; the full conversation lives at /rebi.
+ *
+ * Props:
+ *   ask      — the user's question (page-relevant)
+ *   reply    — Rebi's one-paragraph answer
+ *   actions  — navigating action buttons [{ label, href, icon? }]
+ */
+import { BASE, icon } from './data';
+interface Action { label: string; href: string; icon?: string; }
+interface Props { ask: string; reply: string; actions: Action[]; }
+const { ask, reply, actions } = Astro.props as Props;
+---
+<div class="glass" style="padding:22px 24px">
+  <div class="rf-row" style="gap:9px; margin-bottom:14px">
+    <span class="orb orb-halo" style="width:34px;height:34px"></span>
+    <div>
+      <b style="font-family:var(--font-display); font-size:16px">Ask Rebi about this</b>
+      <div style="font-size:12px; color:var(--teal-deep); display:flex; gap:6px; align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:var(--teal)"></span> Online · grounded on public listings</div>
+    </div>
+  </div>
+  <div class="rf-thread" style="margin-bottom:14px">
+    <div class="rf-user">{ask}</div>
+    <div class="rf-rebi">
+      <div class="rf-rebi-head"><span class="orb" style="width:24px;height:24px"></span><b style="font-size:12.5px; color:var(--indigo-deep)">Rebi</b></div>
+      <div class="ai-summary scan" style="padding:16px 18px">
+        <p style="font-size:14px; color:var(--ink); line-height:1.55; margin:0">{reply}</p>
+      </div>
+    </div>
+  </div>
+  <div class="rf-quick">
+    {actions.map((a) => (
+      <a class="rf-action" href={a.href}>
+        <span class="spark" set:html={icon(a.icon ?? 'arrow', 13)}></span> {a.label}
+      </a>
+    ))}
+    <a class="rf-action" href={`${BASE}/rebi`} style="background:var(--indigo-glow)">
+      <span class="spark" set:html={icon('chat',13)}></span> Open full chat
+    </a>
+  </div>
+</div>

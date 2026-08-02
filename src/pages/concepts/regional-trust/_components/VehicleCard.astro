@@ -1,0 +1,64 @@
+---
+import { money, type Vehicle } from '../_data';
+interface Props { v: Vehicle; }
+const { v } = Astro.props;
+const base = '/concepts/regional-trust';
+const condClass = v.condition === 'New' ? 'rt-pill-green' : v.condition === 'Demo' ? 'rt-pill-gold' : 'rt-pill-sand';
+---
+<a href={`${base}/vehicle`} class="rt-vcard rt-card">
+  <div class={`rt-vcard-photo rt-photo ${v.tag}`}>
+    <span class={`rt-pill ${condClass} rt-vcard-cond`}>{v.condition}</span>
+    {v.badge && <span class="rt-pill rt-pill-clay rt-vcard-badge">{v.badge}</span>}
+    <span class="rt-vcard-shot">Photo</span>
+  </div>
+  <div class="rt-vcard-body">
+    <div class="rt-vcard-head">
+      <h3>{v.year} {v.make} {v.model}</h3>
+      <p class="rt-vcard-variant">{v.variant}</p>
+    </div>
+    <ul class="rt-vcard-specs">
+      <li>{v.odo === 0 ? 'Brand new' : v.odo.toLocaleString('en-AU') + ' km'}</li>
+      <li>{v.fuel}</li>
+      <li>{v.trans}</li>
+      <li>{v.drive}</li>
+    </ul>
+    <div class="rt-vcard-ai">
+      <span class="rt-rebi-orb"></span>
+      <p><strong>Rebi says —</strong> {v.aiSummary}</p>
+    </div>
+    <div class="rt-vcard-foot">
+      <div>
+        <span class="rt-vcard-price-label">Drive-away</span>
+        <span class="rt-vcard-price">{money(v.price)}</span>
+      </div>
+      <span class="rt-btn rt-btn-ghost rt-btn-sm">View details →</span>
+    </div>
+  </div>
+</a>
+
+<style>
+  .rt-vcard { display: flex; flex-direction: column; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+  .rt-vcard:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .rt-vcard-photo { height: 180px; position: relative; display: grid; place-items: center; }
+  .rt-vcard-shot { color: rgba(255,255,255,.55); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; font-size: 12px; z-index: 1; }
+  .rt-vcard-cond { position: absolute; top: 12px; left: 12px; z-index: 2; }
+  .rt-vcard-badge { position: absolute; top: 12px; right: 12px; z-index: 2; }
+  .rt-vcard-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .rt-vcard-head h3 { font-size: 19px; }
+  .rt-vcard-variant { font-size: 14px; color: var(--muted); margin-top: 3px; }
+  .rt-vcard-specs { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 8px; }
+  .rt-vcard-specs li {
+    font-size: 12.5px; font-weight: 600; color: var(--ink-70);
+    background: var(--paper); border: 1px solid var(--line-soft); border-radius: 8px; padding: 4px 9px;
+  }
+  .rt-vcard-ai {
+    display: flex; gap: 10px; background: var(--green-soft); border: 1px solid var(--green-line);
+    border-radius: 12px; padding: 12px; margin-top: auto;
+  }
+  .rt-vcard-ai .rt-rebi-orb { flex: 0 0 auto; margin-top: 2px; }
+  .rt-vcard-ai p { font-size: 13px; line-height: 1.5; color: var(--ink-70); }
+  .rt-vcard-ai strong { color: var(--green-deep); }
+  .rt-vcard-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 4px; }
+  .rt-vcard-price-label { display: block; font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+  .rt-vcard-price { font-family: var(--ff-display); font-size: 23px; font-weight: 700; color: var(--green-deep); }
+</style>

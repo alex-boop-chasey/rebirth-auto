@@ -9,6 +9,85 @@ Legend: 🟢 quick · 🟡 medium · 🔴 larger · 👤 needs you (owner) · �
 
 ---
 
+## /auto run 8 — Rebi chat: side-drawer redesign + in-thread tiles/actions (2026-08-02)
+
+**STATUS: SHIPPED locally on `feat/rebi-drawer` (off `redesign/inline-contextual`), commit `b69c2c1`.**
+`astro check` 0 errors (308 files); routes 200; `/api/chat` returns a real in-thread tile + action;
+old carousel/dreaming-backdrop markup removed. Awaiting owner visual sign-off before merge into
+`redesign/inline-contextual`. (Owner to eyeball the open drawer in the running dev server.)
+
+Scope = the one piece the remodel left out: **the Rebi chat window's design/presentation.** Port the
+`/concepts2/inline-contextual/` demo's chat — a **bottom-right side drawer** with a normal scrolling
+thread, **clickable listing tiles (real image → `/listings/<slug>`)**, and **auto-generated action
+buttons (best-guess nav links)** — replacing the centred Focus-Stage carousel. Every "Ask Rebi"
+button opens this one drawer with a **preloaded per-button context** (`data-rebi-kind`); chat refines
+from there. Remove the old carousel + dreaming-backdrop leftovers. All mechanics + `#reb-*` /
+`data-rebi-*` seams + `/api/chat` request shape preserved; response gains additive `cards`/`actions`.
+
+**Definitive spec:** `docs/briefs/rebi-drawer-redesign.md` (build to it; check the product against §7).
+
+**Contest designation (§6): NONE** — the design is fixed by an owner-approved demo (a faithful port,
+not open-ended UI). Built directly, no owner-judging step; the owner asked for an autonomous run.
+
+Directional decisions taken (owner-authorised by the explicit instruction; see spec §7a): reverse the
+deliberate centred Focus-Stage + greyed "dreaming" backdrop in favour of the demo's corner-docked
+panel; keep the shared `createFocusStage` engine's default cinematic mode intact for search by adding
+an opt-in `thread` layout mode; derive tiles/actions deterministically server-side (no new LLM call).
+
+Tasks: (1) backend `cards`/`actions` data seam; (2) widget drawer rewrite + remove carousel/backdrop;
+(3) unify every "Ask Rebi" trigger with a purposeful `kind`. Verify: `astro check` green + drawer
+rendered in a running dev server (screenshot) + checked against spec §7.
+
+---
+
+## /auto run 7 — Site remodel to inline-contextual (build) (2026-08-01)
+
+Scope = **remodel the ENTIRE site onto the `inline-contextual` design**, with the **top nav from
+`smart-hubs`** (mega-menu), preserving every AI tool's mechanics and the docs' hard constraints.
+Definitive spec: `docs/briefs/REMODEL-BRIEF.md`. Branch: `redesign/inline-contextual` (off `main` — has
+the query planner + free tiers — merged with the NFY visual foundation + both `concepts2` mockups).
+
+**Contest designation (§6): NONE** — design fully chosen (inline-contextual + smart-hubs nav); every
+page is a built mockup template to port. Directed execution, not an open design question.
+
+**Wave plan** (each: port from the matching `concepts2/inline-contextual` mockup → real inventory/AI/
+forms; `astro check` + drive-the-flow + commit; preserve all seams):
+- **Wave 0 — Foundation:** port the inline-contextual design layer (`.entry`/`.entry-rail`/`.entry-origin`
+  + page helpers) into the real styling; rebuild `SiteNav` as the **Smart Hubs mega-menu** (productionised
+  + config-driven) and `SiteFooter` as the inline-contextual full-directory footer; `data-rebi-open`
+  opens the real ChatWidget. No page reskin yet.
+- **Wave 1 — Home + `/listings` + vehicle:** home = front-door (AI search + facet chips + featured);
+  move the grid/filters/SearchDock to `/listings` (PRESERVE the grid/filter/searchdock contract);
+  vehicle detail gets inline `.entry` contextual jumps. HIGHEST RISK.
+- **Wave 2 — Buy & Own:** finance (calculator), offers, trade-in (exists), sell, test-drive (forms → stubs).
+- **Wave 3 — Service & Parts + Shop:** service (exists), parts, fleet, electric (EV hub), brand (`/brand/[slug]`).
+- **Wave 4 — Dealership + Rebi:** about, contact, careers (config facts only — no fabricated data),
+  account (exists), `/rebi` full navigator.
+
+**Status: SHIPPED ✅** — all waves complete on `redesign/inline-contextual` (`astro check` 0 errors,
+315 files; whole-site route sweep all 200; filter contract verified intact after the grid move). Commits
+`b93cdd5` (W0) → `790db85` (W1) → `7c1f8c6` (W2) → `2c6c09c` (W3) → `593934b` (W4).
+- ✅ **Wave 0** — Smart Hubs mega-menu nav (productionised: mobile menu + a11y) + full-directory footer +
+  inline-contextual `.entry` design layer. Config-as-data (`src/config/nav.ts`). Live site-wide.
+- ✅ **Wave 1** — home = front-door (AI search → `/listings`); grid moved to `/listings` (single
+  `LISTINGS_PATH` lever; full grid/filter/SearchDock contract preserved); vehicle detail inline `.entry` jumps.
+- ✅ **Wave 2** — Buy & Own: `/finance` (real calculator), `/offers` (config-driven, empty by default),
+  `/sell` + `/test-drive` (stub endpoints).
+- ✅ **Wave 3** — Service & Parts + Shop: `/parts`, `/fleet` (stubs), `/electric` (real EV stock),
+  `/brand` + `/brand/[slug]` (real makes only).
+- ✅ **Wave 4** — Dealership + Rebi: `/about`, `/contact`, `/careers` (config/businessInfo facts,
+  placeholder-gated), `/rebi` (hosts the REAL ChatWidget, no mock).
+- **Preserved throughout:** every AI mechanic (Rebi chat, hero search + query planner, compare,
+  generate-description, tiers), the filter/grid/compare DOM seams, config-as-data, determinism (no
+  fabricated data), light-theme.
+- **New stub integrations** (add credential + flip flag to go live): sell, test-drive, parts, fleet,
+  contact, careers — all rows in `TODO_KEYS.md`.
+- **Owner follow-ups:** real business facts (opening hours, team, brands) via `dealerConfig`/businessInfo;
+  populate `dealerConfig.offers`/`careers.roles` when there's content; SEO canonical/redirect for the
+  `/` → `/listings` inventory move; decide if `/brand` should feed a `make` facet on `/listings`.
+
+---
+
 ## /auto run 6 — LLM search query planner (design contest, Phase 1) (2026-08-01)
 
 Scope = one two-phase ticket: **replace the regex search extractor with an LLM query planner** on the

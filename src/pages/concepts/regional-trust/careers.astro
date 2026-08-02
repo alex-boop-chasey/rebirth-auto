@@ -1,0 +1,72 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+const roles = [
+  { title: 'Vehicle Sales Consultant', type: 'Full-time · Sales', loc: 'Riverbend yard', tag: 'New' },
+  { title: 'Qualified Automotive Technician', type: 'Full-time · Service', loc: 'Service centre', tag: 'Urgent' },
+  { title: 'Apprentice Mechanic', type: 'Apprenticeship · Service', loc: 'Service centre', tag: '' },
+  { title: 'Parts Interpreter', type: 'Full-time · Parts', loc: 'Parts department', tag: '' },
+  { title: 'Business Manager (F&I)', type: 'Full-time · Finance', loc: 'Riverbend yard', tag: '' },
+  { title: 'Detailer / Yard Hand', type: 'Casual · Operations', loc: 'Riverbend yard', tag: '' },
+];
+const perks = ['Family-owned, not corporate', 'Genuine local career path', 'Ongoing manufacturer training', 'Staff vehicle program', 'Team that sticks around', 'Community & footy sponsor'];
+---
+<Layout title="Careers" active="careers">
+  <section class="rt-careers-hero">
+    <div class="rt-wrap rt-careers-grid">
+      <div>
+        <span class="rt-eyebrow">Careers at Riverbend</span>
+        <h1>Build a career close to home.</h1>
+        <p>We’re a family business that grows its own people. If you like straight talk, real workmates and looking
+          after locals, we’d love to hear from you.</p>
+      </div>
+      <div class="rt-photo g-sage rt-careers-photo"><span>Our team on the lot</span></div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-careers-perks">{perks.map((p) => <span class="rt-pill rt-pill-green">✓ {p}</span>)}</div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">Now hiring</span><h2>Open roles</h2></div>
+      <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-ghost"><span class="rt-rebi-orb"></span> Ask Rebi about a role</a></div>
+    <div class="rt-careers-list">
+      {roles.map((r) => (
+        <div class="rt-career rt-card">
+          <div class="rt-career-l">
+            <h3>{r.title} {r.tag && <span class="rt-pill rt-pill-clay">{r.tag}</span>}</h3>
+            <p>{r.type} · {r.loc}</p>
+          </div>
+          <a href="#" class="rt-btn rt-btn-ghost rt-btn-sm">Apply →</a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-rebi-panel rt-careers-rebi">
+      <span class="rt-rebi-orb xl"></span>
+      <div><h2>Not sure which role fits you?</h2><p>Tell Rebi about your experience and what you enjoy — it’ll point you to the right team and how to apply.</p></div>
+      <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-primary">Chat with Rebi</a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-careers-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-careers-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; padding-block: 56px; align-items: center; }
+  .rt-careers-hero h1 { font-size: 46px; margin: 16px 0; }
+  .rt-careers-hero p { font-size: 17px; color: var(--ink-70); }
+  .rt-careers-photo { height: 280px; display: grid; place-items: center; color: rgba(255,255,255,.55); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; box-shadow: var(--shadow-lg); }
+  .rt-careers-perks { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .rt-careers-list { display: flex; flex-direction: column; gap: 14px; }
+  .rt-career { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; }
+  .rt-career-l h3 { font-size: 19px; display: flex; align-items: center; gap: 10px; }
+  .rt-career-l p { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .rt-careers-rebi { display: flex; align-items: center; gap: 22px; padding: 30px 32px; }
+  .rt-careers-rebi h2 { font-size: 26px; }
+  .rt-careers-rebi p { font-size: 15px; color: var(--ink-70); margin-top: 6px; max-width: 560px; }
+  .rt-careers-rebi .rt-btn { margin-left: auto; flex: 0 0 auto; }
+</style>

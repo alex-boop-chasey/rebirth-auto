@@ -1,76 +1,28 @@
-/* ================= Focus Stage — static structural styles =================
-   Moved verbatim out of SearchDock.astro's scoped <style> when the dock became a
-   React island (SmartSearch.tsx). Every selector is namespaced under
-   `.search-dock` / `.rebi-stage` / `#search-dock` chrome, so it is safe as a plain
-   GLOBAL stylesheet imported from the island. Runtime-built card nodes
-   (.turn/.card/.bubble/…) get their styles from `stage.css`, namespaced under the
-   `.focus-stage` class carried by the card-column container. */
+/* ================= SmartSearch dock — static structural styles =================
+   Moved out of SearchDock.astro's scoped <style> when the dock became a React
+   island (SmartSearch.tsx). Every selector is namespaced under `.search-dock` /
+   `#search-dock` chrome, so it is safe as a plain GLOBAL stylesheet imported from
+   the island. The old focus-stage carousel chrome (stage viewport / glass shelf /
+   receding card column / sound toggle) was retired when the AI search moved its
+   CONVERSATION into the Rebi drawer — only the composer + hint remain here. */
 
-.search-dock { margin: 1.75rem auto 0; max-width: 40rem; }
-.search-dock[hidden] { display: none; }
-
-/* Brand tokens live LOCALLY on the stage (not :root) so nothing leaks and the
-   runtime cards inherit them down the cascade. */
-.rebi-stage {
+/* Brand tokens live LOCALLY on the dock (not :root) so nothing leaks; the composer
+   inherits them down the cascade. */
+.search-dock {
   --rebi-blue: rgb(1 97 239);
   --rebi-blue-hover: rgb(1 84 207);
   --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
   --ink: rgb(15 23 42);
   --muted: rgb(100 116 139);
 
-  position: relative;
-  width: 100%;
+  margin: 1.75rem auto 0;
+  max-width: 40rem;
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   color: var(--ink);
 }
+.search-dock[hidden] { display: none; }
 
-/* the 3D theatre where cards recede */
-.stage-viewport {
-  position: relative;
-  height: 20rem;
-  perspective: 1200px;
-  perspective-origin: 50% 120%;
-  overflow: hidden;
-  /* fade the very top so receding cards dissolve into nothing above the shelf */
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 8%, #000 26%);
-  mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 8%, #000 26%);
-}
-
-/* the frosted "glass shelf" — cards physically tuck behind this strip */
-.glass-shelf {
-  position: absolute; inset: 0 0 auto 0;
-  height: 4.75rem;
-  pointer-events: none;
-  z-index: 5;
-  background: linear-gradient(180deg,
-    rgb(248 250 252 / 0.92) 0%,
-    rgb(248 250 252 / 0.74) 42%,
-    rgb(248 250 252 / 0) 100%);
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
-  -webkit-mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 45%, transparent 100%);
-}
-.glass-shelf::after {
-  content: "";
-  position: absolute; left: 8%; right: 8%; bottom: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgb(1 97 239 / 0.35), rgb(109 40 217 / 0.3), transparent);
-}
-.shelf-label {
-  position: absolute; top: 0.55rem; left: 50%; transform: translateX(-50%);
-  z-index: 6; pointer-events: none;
-  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgb(100 116 139 / 0.8);
-  display: flex; align-items: center; gap: 0.4rem;
-}
-.shelf-label .dotmark {
-  width: 0.4rem; height: 0.4rem; border-radius: 9999px; background: var(--rebi-grad);
-}
-
-/* the moving column of cards, absolutely anchored to the bottom of the viewport */
-.card-column { position: absolute; inset: 0; }
-
-/* ---------- minimal underline entry (the bottom slot) ---------- */
+/* ---------- minimal underline entry (the composer) ---------- */
 .entry {
   margin-top: 1rem;
   display: flex; align-items: center; gap: 0.6rem;
@@ -108,26 +60,6 @@
 .search-dock-submit:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
 .search-dock-submit svg { width: 0.95rem; height: 0.95rem; }
 
-/* ---------- sound toggle (sits on the glass shelf, top-right) ---------- */
-.sound-toggle {
-  position: absolute; top: 0.5rem; right: 0.5rem; z-index: 7;
-  width: 1.95rem; height: 1.95rem; border-radius: 9999px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid rgb(1 97 239 / 0.18);
-  background: rgb(255 255 255 / 0.7);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  color: var(--muted); cursor: pointer;
-  box-shadow: 0 4px 12px -6px rgb(15 23 42 / 0.25);
-  transition: color 160ms ease, background 160ms ease, transform 120ms ease;
-}
-.sound-toggle:hover { color: var(--rebi-blue); background: rgb(255 255 255 / 0.92); }
-.sound-toggle:active { transform: scale(0.92); }
-.sound-toggle:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
-.sound-toggle svg { width: 1.05rem; height: 1.05rem; }
-.sound-toggle .ic-off { display: none; }
-.sound-toggle.muted .ic-on { display: none; }
-.sound-toggle.muted .ic-off { display: inline; }
-
 .hint {
   margin: 0.65rem 0 0; text-align: center;
   font-size: 0.78rem; color: var(--muted);
@@ -146,11 +78,10 @@
 }
 
 @media (max-width: 420px) {
-  .stage-viewport { height: 17rem; }
   .search-dock-submit span { display: none; }
   .search-dock-submit { padding: 0.5rem 0.6rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entry, .search-dock-submit, .sound-toggle { transition: none; }
+  .entry, .search-dock-submit { transition: none; }
 }

@@ -1,0 +1,51 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, fmt, BASE } from './_shell/data';
+export const prerender = false;
+const id = Astro.url.searchParams.get('id');
+const v = id ? vehicles.find((x) => x.id === id) : null;
+---
+<Layout title="Book a test drive — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from a vehicle page (prefilled) · listing card · Rebi</div>
+    <span class="eyebrow"><span set:html={icon('play',13)}></span> Test drive</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Book a test drive</h1>
+    <p class="lead">{v ? 'Your chosen car is already selected — just pick a time.' : 'Pick a car and a time that suits. We\'ll have it ready.'}</p>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.3fr 1fr; gap:26px; padding-bottom:44px; align-items:start">
+    <div class="card" style="padding:26px">
+      <!-- prefilled vehicle chip when arriving from a listing -->
+      <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Vehicle</div>
+      {v ? (
+        <a href={`${BASE}/vehicle?id=${v.id}`} class="card" style="display:flex; gap:12px; padding:10px; align-items:center; text-decoration:none; color:inherit; margin-bottom:20px">
+          <span style={`width:70px;height:48px;border-radius:9px;flex:none;background:${v.hue}`}></span>
+          <span style="flex:1"><b style="font-size:14px">{v.year} {v.make} {v.model}</b><span class="muted" style="display:block;font-size:12px">{v.variant}</span></span>
+          <b style="font-size:13.5px">{fmt(v.price)}</b>
+        </a>
+      ) : (
+        <a href={`${BASE}/listings`} class="entry" style="width:100%; margin-bottom:20px"><span class="entry-ic" set:html={icon('car',16)}></span><span class="entry-tx"><b>Choose a vehicle</b><span>from stock</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      )}
+
+      <div class="grid-auto" style="grid-template-columns:1fr 1fr; gap:14px">
+        {[['Name','Your name'],['Contact','Email or phone'],['Preferred date','Sat 3 Aug'],['Preferred time','10:00am']].map(([l,ph]) => (
+          <label style="display:block"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+        ))}
+      </div>
+      <button class="btn btn-primary" style="margin-top:18px; width:100%; justify-content:center"><span set:html={icon('check',15)}></span> Request this time</button>
+      <p class="faint" style="font-size:11.5px; margin-top:10px">We'll confirm by phone. Bring your licence. Demo form.</p>
+    </div>
+
+    <aside class="stack" style="gap:14px">
+      <div class="card" style="padding:20px">
+        <h3 style="font-family:var(--font-display); font-size:16px; margin-bottom:10px">What to bring</h3>
+        {[['doc','Your licence','Full, current'],['tag','Trade-in (optional)','We can value it while you drive'],['calc','Budget in mind','Rebi can pre-figure repayments']].map(([ic,t,d]) => (
+          <div style="display:flex; gap:11px; padding:9px 0; border-bottom:1px solid var(--line)"><span style="color:var(--teal-deep)" set:html={icon(ic as string,17)}></span><div><b style="font-size:13.5px">{t}</b><div class="muted" style="font-size:12px">{d}</div></div></div>
+        ))}
+      </div>
+      <!-- task chain onward: finance -->
+      <a href={`${BASE}/finance${v ? `?price=${v.price}` : ''}`} class="entry entry--ai"><span class="entry-ic" set:html={icon('calc',18)}></span><span class="entry-tx"><b>Work out repayments first</b><span>so you drive with a budget</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <button class="entry entry--ai" data-rebi-open style="cursor:pointer; text-align:left"><span class="entry-ic" set:html={icon('spark',18)}></span><span class="entry-tx"><b>Book it via Rebi</b><span>"test drive the EV5 Saturday"</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></button>
+    </aside>
+  </section>
+</Layout>

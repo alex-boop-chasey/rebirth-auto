@@ -1,0 +1,77 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+---
+<Layout title="About — Rebirth Auto" active="about" dockPrompt="Curious how we work? Ask me anything.">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:52px 32px; max-width:60%">
+      <span class="nfy-eyebrow">Our story</span>
+      <h1 class="nfy-h1" style="font-size:48px; margin-top:14px">A country car yard,<br/>with tomorrow’s tools.</h1>
+      <p class="nfy-lead" style="margin-top:16px">We grew up buying cars the regional way — over a handshake, from people who’d see you at the footy. We kept that, and added an assistant that never sleeps. The result is Rebirth Auto: honest local service, backed by AI that does the tedious bits so our people can do the human bits.</p>
+    </div>
+  </section>
+
+  <section class="nfy-wrap nfy-section--tight">
+    <div class="nfy-row" style="gap:34px; flex-wrap:wrap">
+      <div class="nfy-stat"><b>30+</b><span>years serving the region</span></div>
+      <div class="nfy-stat"><b>12</b><span>franchise brands</span></div>
+      <div class="nfy-stat"><b>60+</b><span>local team members</span></div>
+      <div class="nfy-stat"><b>4.8★</b><span>from 1,200+ reviews</span></div>
+    </div>
+  </section>
+
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px">
+      {[
+        ['users','People first','Rebi handles the 2am research. Our team handles the questions that matter — and never works you for commission.'],
+        ['shield','Straight answers','If a car isn’t right for you, we (and Rebi) will say so. Trust is the only thing that keeps a regional dealer alive.'],
+        ['leaf','Ready for what’s next','EVs, hybrids, online buying — we help the region move forward without leaving anyone behind.'],
+      ].map(([ic,h,p]) => (
+        <div class="nfy-card nfy-card--lift" style="padding:26px">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,19)} style="color:#fff; margin-bottom:14px"></span>
+          <h3 class="nfy-h3">{h}</h3><p class="nfy-muted" style="font-size:14.5px; margin-top:10px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- how Rebi fits -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div class="nfy-hero nfy-grid-lines" style="background:var(--ink); color:#fff; border-radius:var(--r-xl); overflow:hidden; padding:44px 48px">
+      <div class="nfy-hero-mesh" style="opacity:.5"></div>
+      <div style="position:relative; z-index:1; display:grid; grid-template-columns:.9fr 1.1fr; gap:40px; align-items:center">
+        <div>
+          <span class="nfy-eyebrow" style="color:#7FE6DA">Meet Rebi</span>
+          <h2 class="nfy-h2" style="color:#fff; margin-top:12px">The assistant, not the salesperson.</h2>
+          <p style="color:#C4D0E0; font-size:16px; margin-top:12px">Rebi reads every listing and expert review so you don’t have to. It’s grounded only on public data, never sees private information, and always hands you to a real person to close. Technology that earns trust, not replaces it.</p>
+          <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary nfy-btn-lg" style="margin-top:20px"><span set:html={icon('spark',17)}></span> Meet Rebi</a>
+        </div>
+        <div class="nfy-glass nfy-scan" style="padding:22px">
+          {[['spark','Reads 305 listings + expert reviews'],['shield','Never touches your private data'],['calc','Estimates repayments honestly'],['users','Books you with a real local when ready']].map(([ic,t]) => (
+            <div class="nfy-row" style="gap:12px; padding:12px 0; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--ink)"><span set:html={icon(ic as string,18)} style="color:var(--teal-deep)"></span> {t}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- team -->
+  <section class="nfy-wrap" style="padding-block:10px 70px">
+    <span class="nfy-eyebrow">The people</span>
+    <h2 class="nfy-h2" style="margin-top:10px; font-size:28px">Faces you’ll actually see</h2>
+    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-top:22px">
+      {[['Bianca T.','Dealer Principal'],['Mark R.','Sales Manager'],['Priya S.','Finance'],['Danny O.','EV Specialist'],['Kel W.','Service']].map(([n,r]) => (
+        <div class="nfy-card" style="padding:20px; text-align:center">
+          <span class="nfy-avatar" style="width:64px; height:64px; margin-inline:auto; font-size:20px">{(n as string).split(' ')[0][0]}{(n as string).split(' ')[1][0]}</span>
+          <div style="font-family:var(--font-display); font-weight:600; margin-top:12px">{n}</div>
+          <div style="font-size:12.5px; color:var(--ink-faint)">{r}</div>
+        </div>
+      ))}
+    </div>
+    <p class="nfy-faint" style="font-size:12px; margin-top:18px">Demo profiles — placeholder people for this concept.</p>
+  </section>
+</Layout>

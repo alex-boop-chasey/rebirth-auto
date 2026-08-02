@@ -1,0 +1,44 @@
+---
+import { icon } from './data';
+const base = '/concepts/near-future-yard';
+const cols = [
+  { h: 'Shop', links: [['New vehicles',`${base}/listings`],['Demo & used',`${base}/listings`],['Electric',`${base}/electric`],['Offers & specials',`${base}/offers`],['Per-brand hubs',`${base}/brand`]] },
+  { h: 'Services', links: [['Finance',`${base}/finance`],['Sell your car',`${base}/sell`],['Genuine parts',`${base}/parts`],['Fleet & business',`${base}/fleet`],['Book a test drive',`${base}/test-drive`]] },
+  { h: 'Dealership', links: [['About us',`${base}/about`],['Contact & locations',`${base}/contact`],['Careers',`${base}/careers`],['Meet Rebi',`${base}/rebi`]] },
+];
+---
+<footer class="nfy-footer">
+  <div class="nfy-wrap nfy-foot-grid">
+    <div>
+      <a class="nfy-logo" href={`${base}/`} style="color:#fff">
+        <span class="nfy-logo-mark" set:html={icon('spark', 20)} style="color:#fff"></span>
+        <span style="color:#fff">Rebirth Auto<small style="color:#7A8AA0">Near-Future Yard</small></span>
+      </a>
+      <p style="margin-top:16px; font-size:14px; color:#9AA8BC; max-width:34ch">
+        A modern, AI-native car yard built for regional Queensland. Local people, smarter tools —
+        Rebi helps you find the right vehicle without the pressure.
+      </p>
+      <div class="nfy-row" style="gap:10px; margin-top:18px; font-size:13px; color:#9AA8BC">
+        <span set:html={icon('pin', 15)}></span> Demo location · Bundaberg region, QLD
+      </div>
+    </div>
+    {cols.map(c => (
+      <div>
+        <div class="nfy-foot-h">{c.h}</div>
+        <ul>{c.links.map(([t,h]) => <li><a href={h}>{t}</a></li>)}</ul>
+      </div>
+    ))}
+    <div>
+      <div class="nfy-foot-h">Talk to us</div>
+      <p style="font-size:14px; color:#C4D0E0; margin-bottom:14px">Rebi is online now, or leave a message and a real person will call back.</p>
+      <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary nfy-btn-sm" style="margin-bottom:10px">
+        <span class="nfy-spark" set:html={icon('spark',14)}></span> Chat with Rebi
+      </a>
+      <div style="font-size:13px; color:#9AA8BC; margin-top:8px">Sales · 7 days<br/>Placeholder demo — no real number</div>
+    </div>
+  </div>
+  <div class="nfy-wrap nfy-foot-bar">
+    <span>© 2026 Rebirth Auto (demo concept). Dummy content — not a real dealership.</span>
+    <span class="nfy-mono">Near-Future Yard · concept build</span>
+  </div>
+</footer>

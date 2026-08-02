@@ -56,7 +56,7 @@ const payload = JSON.stringify({ vehicles, dealerName });
   <noscript>
     <div class="xp-noscript">
       Experience Mode is an interactive preview that needs JavaScript.
-      <a href="/">Browse the classic inventory instead →</a>
+      <a href="/listings">Browse the classic inventory instead →</a>
     </div>
   </noscript>
 </div>
@@ -116,6 +116,9 @@ const payload = JSON.stringify({ vehicles, dealerName });
   .xp-orb-ring--2 { animation-delay: 1.4s; border-color: rgb(109 40 217 / 0.18); }
 
   /* Orb states set by the engine. */
+  /* Onboarding: the orb sits ABOVE the headline (not over it) so the hero reads
+     as a vertical stack — orb, then eyebrow/headline/CTA — optically centred. */
+  .xp-orb.is-idle { top: 8.5rem; width: 7.5rem; height: 7.5rem; }
   .xp-orb.is-standby { width: 13rem; height: 13rem; }
   .xp-orb.is-question {
     /* Recedes to the top so it presides over, but doesn't block, the questions. */
@@ -177,7 +180,9 @@ const payload = JSON.stringify({ vehicles, dealerName });
   .xp-eyebrow .xp-dotmark { width: 0.45rem; height: 0.45rem; border-radius: 9999px; background: var(--xp-grad); }
 
   /* ---------------- Onboarding ---------------- */
-  .xp-onboard { margin-top: 9rem; }
+  /* Small top offset only — clears the orb above without dropping the block far
+     below the optical centre (the orb + this content read as one centred stack). */
+  .xp-onboard { margin-top: 4rem; }
   .xp-headline {
     margin: 1.4rem 0 0; font-size: clamp(2.2rem, 6vw, 3.6rem);
     line-height: 1.05; font-weight: 800; letter-spacing: -0.03em;
@@ -411,7 +416,7 @@ const payload = JSON.stringify({ vehicles, dealerName });
           <button type="button" class="xp-cta" id="xp-opt-in">
             Hand me the wheel ${svg('arrow', 18)}
           </button>
-          <span class="xp-secondary">Prefer to browse yourself? <a href="/">Open the classic inventory →</a></span>
+          <span class="xp-secondary">Prefer to browse yourself? <a href="/listings">Open the classic inventory →</a></span>
           <div class="xp-affordances">
             <span class="xp-chip">I read your whole search</span>
             <span class="xp-chip">I know every car in stock</span>
@@ -525,7 +530,7 @@ const payload = JSON.stringify({ vehicles, dealerName });
             <p class="xp-reveal-sub">${escapeHtml(summarise(answers))}</p>
             <div class="xp-cards" id="xp-cards"></div>
             <div class="xp-reveal-actions">
-              <a class="xp-cta" href="/">See the full lot ${svg('arrow', 18)}</a>
+              <a class="xp-cta" href="/listings">See the full lot ${svg('arrow', 18)}</a>
               <button type="button" class="xp-ghost" id="xp-again">Start again</button>
             </div>
           </div>`;
@@ -534,7 +539,7 @@ const payload = JSON.stringify({ vehicles, dealerName });
 
         const cardsWrap = el.querySelector<HTMLElement>('#xp-cards')!;
         if (!picks.length) {
-          cardsWrap.innerHTML = `<p class="xp-lead">I couldn't find a strong match in stock right now — but the team can hunt one down. <a href="/">Browse everything →</a></p>`;
+          cardsWrap.innerHTML = `<p class="xp-lead">I couldn't find a strong match in stock right now — but the team can hunt one down. <a href="/listings">Browse everything →</a></p>`;
         } else {
           cardsWrap.innerHTML = picks.map((p, i) => cardHtml(p, i)).join('');
           const cards = cardsWrap.querySelectorAll<HTMLElement>('.xp-card');

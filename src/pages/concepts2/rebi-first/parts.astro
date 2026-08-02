@@ -1,0 +1,68 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="Genuine parts — Rebirth Auto" active="Genuine parts">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Genuine parts</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:16ch">The right part, checked to fit — first time.</h1>
+    <p class="lead" style="margin-top:16px">Tell Rebi your rego or VIN and it confirms fitment before you order. No guessing, no wrong boxes.</p>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-4">
+      {[
+        ['gear','Service & wear','Filters, brakes, belts, fluids'],
+        ['drive','Tyres & wheels','Fitment-matched sizing'],
+        ['shield','Accessories','Tow bars, liners, roof racks'],
+        ['wrench','Body & trim','Panels, mirrors, lamps'],
+      ].map(([ic, h, p]) => (
+        <div class="card card-lift" style="padding:22px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px; font-size:16px">{h}</h3>
+          <p class="muted" style="margin-top:7px; font-size:13.5px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- FITMENT + ENQUIRY -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-2" style="grid-template-columns:.9fr 1.1fr; align-items:start">
+      <div class="ai-summary" style="padding:26px 28px">
+        <div class="rf-row" style="gap:7px; margin-bottom:10px"><span class="spark" set:html={icon('spark',14)} style="color:var(--indigo)"></span><b style="font-size:13px; color:var(--indigo-deep)">Fitment check</b></div>
+        <p class="muted" style="font-size:14px; line-height:1.6">Give Rebi your rego, VIN or exact build and it confirms the part suits your vehicle before the team quotes — so you never pay for the wrong one.</p>
+        <a href={`${BASE}/rebi`} class="btn btn-primary btn-sm" style="margin-top:14px"><span class="spark" set:html={icon('spark',14)}></span> Check a part with Rebi</a>
+      </div>
+      <div class="card" style="padding:28px 30px">
+        <div class="rf-row" style="gap:9px; margin-bottom:20px"><span class="brand-mark" set:html={icon('wrench',18)}></span><b class="rf-h3">Parts enquiry</b></div>
+        <div class="rf-grid-2" style="gap:16px">
+          <div><label class="rf-lab">Your vehicle</label><input class="rf-field" placeholder="Make / model / year" /></div>
+          <div><label class="rf-lab">Rego or VIN</label><input class="rf-field" placeholder="For fitment" /></div>
+          <div style="grid-column:1 / -1"><label class="rf-lab">Part you need</label><input class="rf-field" placeholder="e.g. front brake pads" /></div>
+          <div style="grid-column:1 / -1"><label class="rf-lab">Contact</label><input class="rf-field" placeholder="Email or phone (demo)" /></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:20px; justify-content:center; width:100%; pointer-events:none">Send enquiry</button>
+      </div>
+    </div>
+    <div class="rf-quick" style="margin-top:20px">
+      <a class="rf-action" href={`${BASE}/contact`}><span class="spark" set:html={icon('phone',13)}></span> Talk to Parts</a>
+      <a class="rf-action" href={`${BASE}/test-drive`}><span class="spark" set:html={icon('play',13)}></span> Book a service instead</a>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Do you have brake pads for a 2021 Hyundai Tucson?"
+      reply="Yes — genuine front and rear pads are available for the 2021 Tucson. If you drop your rego in, I'll confirm the exact caliper variant so the team quotes the right set the first time."
+      actions={[
+        { label: 'Talk to Parts', href: `${BASE}/contact`, icon: 'phone' },
+        { label: 'Book a service', href: `${BASE}/test-drive`, icon: 'wrench' },
+      ]}
+    />
+  </section>
+</Shell>

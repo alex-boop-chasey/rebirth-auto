@@ -1,0 +1,47 @@
+---
+const base = "/concepts/dark-precision";
+const cols = [
+  { h: "Inventory", links: [["New vehicles","/listings"],["Demo vehicles","/listings"],["Used vehicles","/listings"],["Electric","/electric"],["Offers","/offers"]] },
+  { h: "Buy & own", links: [["Finance","/finance"],["Test drive","/test-drive"],["Sell your car","/sell"],["Parts","/parts"],["Fleet","/fleet"]] },
+  { h: "Company", links: [["About","/about"],["Contact","/contact"],["Careers","/careers"],["Brand hub","/brand"],["Ask Rebi","/rebi"]] },
+];
+---
+<footer class="dp-footer">
+  <div class="dp-wrap">
+    <div class="dp-footer__top">
+      <div>
+        <a class="dp-brand" href={base} style="margin-bottom:18px">
+          <span class="dp-brand__mark">R</span>
+          <span>Rebirth Auto<small>Dark Precision · demo</small></span>
+        </a>
+        <p class="dp-dim" style="font-size:13.5px;line-height:1.6;max-width:34ch">
+          An AI-native dealership platform. Every listing, price and match reasoned by Rebi —
+          the expert co-pilot built into the showroom.
+        </p>
+        <div class="dp-ai" style="margin-top:22px;padding:12px 14px;display:flex;align-items:center;gap:12px">
+          <span class="dp-rebi-avatar" style="width:28px;height:28px"></span>
+          <span class="dp-mono" style="font-size:11.5px;color:var(--ink-dim)">Rebi online · avg reply 0.4s</span>
+        </div>
+      </div>
+      {cols.map((c) => (
+        <div>
+          <h5>{c.h}</h5>
+          <ul>{c.links.map(([label, href]) => (<li><a href={`${base}${href}`}>{label}</a></li>))}</ul>
+        </div>
+      ))}
+      <div>
+        <h5>Visit</h5>
+        <p class="dp-mono dp-dim" style="font-size:12.5px;line-height:1.8">
+          [ Demo yard ]<br/>00 Example Drive<br/>Bundaberg region, QLD<br/><br/>
+          <span class="dp-mute">Phone</span> (00) 0000 0000<br/>
+          <span class="dp-mute">Hours</span> Mon–Sat 08:30–17:30
+        </p>
+      </div>
+    </div>
+    <div class="dp-footer__bar">
+      <span>© 2026 Rebirth Auto — concept mockup</span>
+      <span class="dp-mute">Placeholder content · not a live business</span>
+      <span style="margin-left:auto" class="dp-mute">Privacy · Terms · Dealer licence 0000000</span>
+    </div>
+  </div>
+</footer>

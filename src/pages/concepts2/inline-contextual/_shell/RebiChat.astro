@@ -1,0 +1,136 @@
+---
+/**
+ * RebiChat — the Rebi-as-navigator mock. A docked slide-in panel that appears
+ * on every page. Demonstrates the two required navigator affordances:
+ *   1. clickable listing cards rendered inside the thread (tap → vehicle page)
+ *   2. in-response ACTION BUTTONS that go somewhere ("See all 7-seaters",
+ *      "Work out repayments", "Book a test drive", "Talk to Service").
+ * Static mock — the composer is inert. Reuses NFY primitives (.orb / .ai-summary
+ * / .card / .chip / .aisearch) and the shared data-rebi-* seam for opening.
+ */
+import { icon, vehicles, fmt, BASE } from './data';
+const picks = [vehicles[4], vehicles[7]]; // CR-V 7-seat, EV9 7-seat
+---
+<!-- launcher orb (bottom-right) -->
+<label class="rebi-launcher" for="rebi-toggle" aria-label="Open Rebi chat">
+  <span class="orb orb-halo" style="width:34px;height:34px"></span>
+  <span class="rebi-launcher-txt">Ask Rebi</span>
+</label>
+<input type="checkbox" id="rebi-toggle" class="rebi-toggle" hidden />
+
+<aside class="rebi-dock" aria-label="Rebi chat">
+  <header class="rebi-dock-head">
+    <span class="orb orb-halo" style="width:30px;height:30px"></span>
+    <div style="flex:1">
+      <b style="font-size:14.5px">Rebi</b>
+      <div style="font-size:11.5px; color:var(--teal-deep); display:flex; align-items:center; gap:5px">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--teal)"></span>
+        Online · your AI navigator
+      </div>
+    </div>
+    <a href={`${BASE}/rebi`} class="chip" style="cursor:pointer">Full view</a>
+    <label for="rebi-toggle" class="rebi-x" aria-label="Close">✕</label>
+  </header>
+
+  <div class="rebi-thread">
+    <!-- user -->
+    <div class="rb-user">Take me to a 7-seater we could actually afford, and show repayments.</div>
+
+    <!-- rebi -->
+    <div class="rb-rebi">
+      <div class="rb-rebi-name"><span class="orb" style="width:20px;height:20px"></span> Rebi</div>
+      <div class="ai-summary scan" style="padding:14px 16px; font-size:14px; line-height:1.55">
+        Two seven-seaters in stock right now — one sharp-value petrol, one electric flagship. Tap either to open it, or jump straight to the tools underneath.
+      </div>
+    </div>
+
+    <!-- clickable listing cards INSIDE the thread -->
+    {picks.map((p, i) => (
+      <a href={`${BASE}/vehicle?id=${p.id}`} class="rb-card card card-lift">
+        <span class="rb-thumb" style={`background:${p.hue}`}></span>
+        <span class="rb-card-body">
+          <span class="rb-card-top">
+            <span class="chip chip-ai" style="padding:2px 8px">{i === 0 ? 'Value pick' : 'Top spec'}</span>
+            <span class="faint" style="font-size:11px">{p.condition}</span>
+          </span>
+          <b style="font-size:14px">{p.year} {p.make} {p.model}</b>
+          <span class="muted" style="font-size:12px; display:block">{p.seats} seats · {p.fuel} · {p.drive}</span>
+        </span>
+        <span class="rb-card-price">
+          <b style="font-size:15px">{fmt(p.price)}</b>
+          <span class="faint" style="font-size:10.5px; display:block">drive away</span>
+        </span>
+      </a>
+    ))}
+
+    <!-- in-response ACTION BUTTONS (go somewhere / do something) -->
+    <div class="rb-actions">
+      <a href={`${BASE}/finance?price=39990`} class="rb-act"><span set:html={icon('calc', 14)}></span> Work out repayments</a>
+      <a href={`${BASE}/test-drive?id=ry-05`} class="rb-act"><span set:html={icon('play', 14)}></span> Book a test drive</a>
+      <a href={`${BASE}/listings?seats=7`} class="rb-act"><span set:html={icon('filter', 14)}></span> See all 7-seaters</a>
+      <a href={`${BASE}/electric`} class="rb-act"><span set:html={icon('bolt', 14)}></span> Is an EV right for me?</a>
+      <a href={`${BASE}/contact`} class="rb-act"><span set:html={icon('phone', 14)}></span> Talk to Service</a>
+    </div>
+
+    <p class="faint" style="font-size:11px; text-align:center">
+      Rebi navigates you with taps, not typing. Grounded on public listing data only.
+    </p>
+  </div>
+
+  <div class="rebi-composer">
+    <div class="aisearch" style="box-shadow:none; padding:6px 6px 6px 16px">
+      <span set:html={icon('chat', 16)} style="color:var(--ink-faint)"></span>
+      <input type="text" placeholder="Ask Rebi, or say “take me to finance”…" readonly />
+      <button class="btn btn-primary btn-sm" style="pointer-events:none"><span set:html={icon('send', 14)}></span></button>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .rebi-launcher {
+    position: fixed; right: 22px; bottom: 22px; z-index: 60;
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--line);
+    box-shadow: var(--sh-2); border-radius: var(--r-pill);
+    padding: 7px 16px 7px 8px; font-weight: 600; font-size: 14px; color: var(--ink);
+  }
+  .rebi-launcher-txt { line-height: 1; }
+  .rebi-dock {
+    position: fixed; right: 22px; bottom: 22px; z-index: 61;
+    width: 392px; max-width: calc(100vw - 44px); max-height: min(78vh, 720px);
+    display: none; flex-direction: column; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg); box-shadow: var(--sh-3);
+  }
+  .rebi-toggle:checked ~ .rebi-dock { display: flex; }
+  .rebi-toggle:checked ~ .rebi-launcher { display: none; }
+  .rebi-dock-head {
+    display: flex; align-items: center; gap: 10px; padding: 13px 16px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(120deg, rgba(15,181,166,.06), rgba(85,102,240,.06));
+  }
+  .rebi-x { cursor: pointer; color: var(--ink-faint); font-size: 15px; padding: 4px 8px; }
+  .rebi-thread { flex: 1; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .rb-user {
+    align-self: flex-end; max-width: 82%; background: var(--ink); color: #fff;
+    padding: 11px 15px; border-radius: 15px 15px 4px 15px; font-size: 13.5px; line-height: 1.45;
+  }
+  .rb-rebi { max-width: 92%; }
+  .rb-rebi-name { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--indigo-deep); margin-bottom: 7px; }
+  .rb-card {
+    display: flex; align-items: center; gap: 12px; padding: 10px; text-decoration: none; color: inherit;
+  }
+  .rb-thumb { width: 78px; height: 54px; border-radius: 10px; flex: none; }
+  .rb-card-body { flex: 1; min-width: 0; }
+  .rb-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+  .rb-card-price { text-align: right; flex: none; }
+  .rb-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+  .rb-act {
+    display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+    font-size: 12.5px; font-weight: 600; color: var(--indigo-deep);
+    background: var(--indigo-glow); border: 1px solid rgba(85,102,240,.22);
+    padding: 7px 12px; border-radius: var(--r-pill); transition: background .15s, transform .15s;
+  }
+  .rb-act:hover { background: rgba(85,102,240,.16); transform: translateY(-1px); }
+  .rebi-composer { padding: 12px 14px; border-top: 1px solid var(--line); }
+</style>

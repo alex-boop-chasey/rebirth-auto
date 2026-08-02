@@ -1,0 +1,37 @@
+---
+const { current = "" } = Astro.props;
+const base = "/concepts/dark-precision";
+const links = [
+  { href: "", label: "Home", key: "index" },
+  { href: "/listings", label: "Inventory", key: "listings" },
+  { href: "/electric", label: "Electric", key: "electric" },
+  { href: "/finance", label: "Finance", key: "finance" },
+  { href: "/offers", label: "Offers", key: "offers" },
+  { href: "/fleet", label: "Fleet", key: "fleet" },
+  { href: "/about", label: "About", key: "about" },
+  { href: "/contact", label: "Contact", key: "contact" },
+];
+---
+<header class="dp-nav">
+  <div class="dp-wrap dp-nav__row">
+    <a class="dp-brand" href={base}>
+      <span class="dp-brand__mark">R</span>
+      <span>Rebirth Auto<small>Dark Precision · demo</small></span>
+    </a>
+    <nav class="dp-navlinks">
+      {links.map((l) => (
+        <a href={`${base}${l.href}`} aria-current={current === l.key ? "page" : undefined}>{l.label}</a>
+      ))}
+    </nav>
+    <div class="dp-nav__end">
+      <div class="dp-navsearch">
+        <span style="color:var(--signal)">◈</span>
+        <span>Ask Rebi or search inventory…</span>
+        <span class="dp-kbd">⌘K</span>
+      </div>
+      <a class="dp-btn dp-btn--sm" href={`${base}/rebi`}>
+        <span class="dp-dot dp-dot--live"></span> Rebi
+      </a>
+    </div>
+  </div>
+</header>

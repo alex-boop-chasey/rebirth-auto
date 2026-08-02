@@ -1,0 +1,76 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+---
+<Layout title="Sell your car — Rebirth Auto" active="sell" dockPrompt="Just tell me the rego and I’ll start your valuation.">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 30px; display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center">
+      <div>
+        <span class="nfy-eyebrow"><span set:html={icon('tag',14)}></span> Sell outright</span>
+        <h1 class="nfy-h1" style="font-size:48px; margin-top:14px">Sell us your car —<br/>no trade-in required.</h1>
+        <p class="nfy-lead" style="margin-top:16px">Want cash rather than a trade? We buy quality vehicles outright. Rebi values yours in about a minute, then our team confirms with a physical appraisal. No obligation to buy anything.</p>
+        <div class="nfy-row" style="gap:28px; margin-top:26px">
+          <div class="nfy-stat"><b>~60s</b><span>instant estimate</span></div>
+          <div class="nfy-stat"><b>Same day</b><span>firm offer</span></div>
+          <div class="nfy-stat"><b>$0</b><span>obligation</span></div>
+        </div>
+      </div>
+
+      <!-- valuation form -->
+      <div class="nfy-card" style="padding:28px">
+        <div class="nfy-steps" style="margin-bottom:20px">
+          <div class="nfy-step is-on"><span class="nfy-step-n">1</span> Your car</div><div class="nfy-step-line"></div>
+          <div class="nfy-step"><span class="nfy-step-n">2</span> Condition</div><div class="nfy-step-line"></div>
+          <div class="nfy-step"><span class="nfy-step-n">3</span> Offer</div>
+        </div>
+        <div class="nfy-field" style="margin-bottom:14px">
+          <span class="nfy-label">Rego + state</span>
+          <div class="nfy-aisearch" style="box-shadow:var(--sh-1); padding:6px 6px 6px 16px">
+            <span class="nfy-spark" set:html={icon('spark',15)} style="color:var(--indigo)"></span>
+            <input type="text" placeholder="e.g. 123 ABC · QLD — Rebi finds the rest" readonly />
+            <button class="nfy-btn nfy-btn-primary nfy-btn-sm" style="pointer-events:none">Look up</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+          <div class="nfy-field"><span class="nfy-label">Odometer (km)</span><div class="nfy-input" style="pointer-events:none; color:var(--ink-faint)">e.g. 78,400</div></div>
+          <div class="nfy-field"><span class="nfy-label">Variant</span><div class="nfy-input" style="pointer-events:none; color:var(--ink-faint)">Auto-detected</div></div>
+        </div>
+        <div class="nfy-ai-summary" style="margin-top:16px; padding:16px">
+          <div class="nfy-row" style="gap:8px; margin-bottom:6px"><span class="nfy-orb nfy-orb--halo" style="width:26px;height:26px"></span><b style="font-size:13px; color:var(--indigo-deep)">Rebi’s instant estimate</b></div>
+          <div class="nfy-row" style="align-items:baseline; gap:8px"><span style="font-family:var(--font-display); font-size:30px; font-weight:700">$21,500 – $23,800</span></div>
+          <p style="font-size:12.5px; color:var(--ink-soft); margin-top:4px">Based on live market data for your model. Confirmed after a quick physical check.</p>
+        </div>
+        <button class="nfy-btn nfy-btn-primary nfy-btn-lg" style="width:100%; justify-content:center; margin-top:16px; pointer-events:none">Get my firm offer <span set:html={icon('arrow',16)}></span></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px">
+      {[
+        ['spark','1 · Describe it','Enter your rego — Rebi pulls the make, model and variant automatically.'],
+        ['gauge','2 · Add condition','A few honest details about km and condition sharpen the number.'],
+        ['tag','3 · Get an offer','A same-day written offer, valid for 7 days. No pressure to buy from us.'],
+        ['check','4 · Get paid','Bring it in, we verify, and pay you fast. Settle any finance owing for you.'],
+      ].map(([ic,h,p]) => (
+        <div class="nfy-card" style="padding:22px">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,18)} style="color:#fff; margin-bottom:12px"></span>
+          <h3 style="font-family:var(--font-display); font-size:16px; font-weight:600">{h}</h3>
+          <p class="nfy-muted" style="font-size:13.5px; margin-top:8px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:10px 70px">
+    <div class="nfy-glass" style="padding:26px 30px; display:flex; gap:20px; align-items:center">
+      <span class="nfy-orb nfy-orb--halo" style="width:44px;height:44px"></span>
+      <div style="flex:1"><h3 class="nfy-h3">Selling to fund an upgrade?</h3><p class="nfy-muted" style="font-size:14.5px; margin-top:6px">Rebi can subtract your sale price from any car in stock and show the real weekly difference.</p></div>
+      <a href={`${base}/finance`} class="nfy-btn nfy-btn-primary nfy-btn-lg">Run the numbers</a>
+    </div>
+  </section>
+</Layout>

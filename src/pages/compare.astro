@@ -6,6 +6,8 @@ import { client } from '../sanity/lib/client';
 import { urlFor } from '../sanity/lib/image';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
 import AskRebiButton from '../components/AskRebiButton.astro';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
 import { dealerConfig } from '../config/dealer';
 import {
   type Listing,
@@ -24,8 +26,6 @@ import {
   buildVerdict,
   LENSES,
 } from '../lib/compare-verdict';
-
-const year = new Date().getFullYear();
 
 // Parse ?ids=a,b,c — trim, drop blanks, dedupe, cap at 3 (the Verdict Board is
 // designed for a 2–3 car head-to-head; more columns dilute a decisive verdict).
@@ -297,16 +297,9 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
          Rebi surface. See the matching fix on /compare-tools (commit e14398d). -->
     <div class="page-bg" aria-hidden="true"></div>
 
-    <div class="wrap">
-      <!-- Header -->
-      <div class="topbar">
-        <a class="brand" href="/">Rebirth<span> Auto</span></a>
-        <a class="back" href="/">
-          <Fragment set:html={iconSvg('arrowLeft', 'ic')} />
-          Back to inventory
-        </a>
-      </div>
+    <SiteNav active="inventory" />
 
+    <div class="wrap">
       <main id="main-content">
         {
           canCompare ? (
@@ -514,11 +507,12 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
         }
       </main>
 
-      <footer>
-        © {year} {dealerConfig.identity.name} · All vehicles subject to availability. Comparison is
-        indicative only.
-      </footer>
+      <p class="compare-fineprint">
+        All vehicles subject to availability. Comparison is indicative only.
+      </p>
     </div>
+
+    <SiteFooter />
 
     {canCompare && (
       <script type="application/json" id="vboard-data" is:inline set:html={JSON.stringify(cars).replace(/</g, '\\u003c')} />
@@ -576,10 +570,10 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
          ========================================================================== */
       .vboard {
         /* paper & surfaces — native slate, never re-tinted */
-        --bg: #f8fafc; /* slate-50 — exact site page colour */
+        --bg: #F5F8FC; /* slate-50 — exact site page colour */
         --paper: #ffffff; /* white card body */
-        --board: #fcfdff; /* board surface — a hair off-white so board ≠ card */
-        --band: #f1f5f9; /* slate-100 — section index band */
+        --board: #FFFFFF; /* board surface — a hair off-white so board ≠ card */
+        --band: #EBF1F8; /* slate-100 — section index band */
         --band-2: #eef2f7;
 
         /* ring / hairline system — the site's ring-slate-900/xx signature */
@@ -588,19 +582,19 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
         --ring-3: rgba(15, 23, 42, 0.14); /* stronger divider (section rules) */
 
         /* ink ramp — exact site slate values */
-        --ink: #0f172a; /* slate-900 — headings */
+        --ink: #0D1626; /* slate-900 — headings */
         --ink-body: #1e293b; /* slate-800 — values / body (~13:1) */
         --ink-mut: #64748b; /* slate-500 — muted labels (~4.9:1) */
         --ink-dim: #94a3b8; /* slate-400 — placeholders / dim */
 
         /* brand blue — confidence */
-        --rebi: rgb(1 97 239); /* fills */
-        --rebi-2: rgb(1 84 207); /* text on white (~5.4:1) */
-        --rebi-3: rgb(1 66 168); /* deep, strong text / shadow tint */
-        --rebi-soft: rgba(1, 97, 239, 0.08);
-        --rebi-wash: rgba(1, 97, 239, 0.055);
-        --rebi-line: rgba(1, 97, 239, 0.32);
-        --rebi-glow: rgba(1, 66, 168, 0.22);
+        --rebi: #5566F0; /* fills */
+        --rebi-2: #3A46C8; /* text on white (~5.4:1) */
+        --rebi-3: #2E3AA8; /* deep, strong text / shadow tint */
+        --rebi-soft: rgba(85, 102, 240, 0.08);
+        --rebi-wash: rgba(85, 102, 240, 0.055);
+        --rebi-line: rgba(85, 102, 240, 0.32);
+        --rebi-glow: rgba(46, 58, 168, 0.22);
 
         /* gold — THE PICK thread (ribbon, column cap, beam) */
         --gold: #f5b942;
@@ -736,10 +730,11 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
 
       .vboard .cell { padding: 13px 18px; border-left: 1px solid var(--ring-2); display: flex; flex-direction: column; justify-content: center; min-width: 0; transition: opacity 0.25s var(--ease), background 0.25s var(--ease); }
 
-      /* header row: verdict corner + car headers */
-      .vboard .hrow { position: sticky; top: 0; z-index: 5; }
+      /* header row: verdict corner + car headers — offset below the sticky SiteNav */
+      .vboard .hrow { position: sticky; top: 74px; z-index: 5; }
+      .vboard .compare-fineprint { color: var(--ink-dim); font-size: 12.5px; text-align: center; padding: 40px 0 8px; }
       /* the answer corner — an elevated white certificate with a blue top hairline */
-      .vboard .verdict-corner { position: sticky; left: 0; z-index: 7; grid-column: 1; background: linear-gradient(180deg, rgba(1, 97, 239, 0.05), rgba(1, 97, 239, 0) 42%), #fff; border-right: 1px solid var(--ring); border-bottom: 1px solid var(--ring); box-shadow: 8px 0 24px -18px rgba(15, 23, 42, 0.35); padding: 18px 15px 16px; display: flex; flex-direction: column; gap: 10px; }
+      .vboard .verdict-corner { position: sticky; left: 0; z-index: 7; grid-column: 1; background: linear-gradient(180deg, rgba(85, 102, 240, 0.05), rgba(85, 102, 240, 0) 42%), #fff; border-right: 1px solid var(--ring); border-bottom: 1px solid var(--ring); box-shadow: 8px 0 24px -18px rgba(15, 23, 42, 0.35); padding: 18px 15px 16px; display: flex; flex-direction: column; gap: 10px; }
       .vboard .verdict-corner::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--rebi-2), var(--rebi) 62%, var(--rebi-line)); }
       .vboard .vc-top { display: flex; align-items: center; gap: 10px; }
       .vboard .rebi-orb { width: 34px; height: 34px; border-radius: 11px; flex: none; display: grid; place-items: center; position: relative; background: radial-gradient(circle at 32% 26%, var(--rebi-2), var(--rebi) 72%); box-shadow: 0 8px 18px -6px var(--rebi-glow), inset 0 1px 0 rgba(255, 255, 255, 0.4); color: #fff; }
@@ -768,7 +763,7 @@ const description = 'Compare listings side by side — with Rebi’s verdict.';
       /* GOLD top-cap marks the recommended column; animates on lens change */
       .vboard .chead::before { content: ""; position: absolute; top: -1px; left: 0; right: 0; height: 3px; opacity: 0; background: linear-gradient(90deg, var(--gold-deep), var(--gold)); transition: opacity 0.3s var(--ease); }
       .vboard .chead.pick::before { opacity: 1; }
-      .vboard .photo { position: relative; aspect-ratio: 16/9; border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--ring); background: #f1f5f9; }
+      .vboard .photo { position: relative; aspect-ratio: 16/9; border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--ring); background: #EBF1F8; }
       .vboard .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .vboard .photo-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-dim); }
       .vboard .remove { position: absolute; top: 8px; right: 8px; z-index: 3; width: 26px; height: 26px; border-radius: 8px; cursor: pointer; border: 0; box-shadow: inset 0 0 0 1px var(--ring), var(--shadow-sm); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(6px); color: var(--ink-mut); display: grid; place-items: center; transition: color 0.18s, background 0.18s, transform 0.18s var(--ease); }

@@ -1,0 +1,30 @@
+---
+// Ambient Rebi presence — a calm floating assistant pinned to every page.
+// Visual only. Shows a peeked mini-card so Rebi feels present but never modal.
+import { icon } from './data';
+const { prompt = 'Looking for a 7-seat family SUV under $45k?' } = Astro.props;
+const base = '/concepts/near-future-yard';
+---
+<div class="nfy-dock">
+  <a href={`${base}/rebi`} class="nfy-dock-card" style="text-decoration:none">
+    <div class="nfy-dock-head">
+      <span class="nfy-orb nfy-orb--halo" style="width:30px;height:30px"></span>
+      <div style="line-height:1.2">
+        <b style="font-family:var(--font-display); font-size:14px">Rebi</b>
+        <div style="font-size:11px; color:var(--teal-deep); display:flex; align-items:center; gap:5px">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block"></span> Online now
+        </div>
+      </div>
+    </div>
+    <div style="padding:13px 15px">
+      <p style="font-size:13px; color:var(--ink-soft); line-height:1.45">“{prompt}”</p>
+      <div class="nfy-row" style="gap:7px; margin-top:11px; font-size:12px; color:var(--indigo-deep); font-weight:600">
+        <span class="nfy-spark" set:html={icon('spark',13)}></span> Tap to ask Rebi anything
+      </div>
+    </div>
+  </a>
+  <a href={`${base}/rebi`} class="nfy-dock-launch" style="text-decoration:none; color:var(--ink)">
+    <span class="nfy-orb nfy-orb--halo" style="width:38px;height:38px"></span>
+    <span style="font-family:var(--font-display); font-weight:600; font-size:15px">Chat with Rebi</span>
+  </a>
+</div>

@@ -1,0 +1,25 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="My account — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from the footer (utility) · Rebi ("show my saved cars")</div>
+    <span class="eyebrow"><span set:html={icon('users',13)}></span> Account</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Your saved cars &amp; searches</h1>
+    <p class="lead">Sign in to pick up where you left off. Rebi remembers your shortlist across visits.</p>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+      {[['heart','Saved cars','3 vehicles shortlisted'],['filter','Saved searches','“7-seater under $45k”'],['calc','Finance drafts','1 repayment estimate'],['play','Bookings','No upcoming test drives']].map(([ic,t,d]) => (
+        <div class="card" style="padding:18px"><span style="color:var(--teal-deep)" set:html={icon(ic as string,20)}></span><b style="display:block; font-size:14.5px; margin:9px 0 3px">{t}</b><span class="muted" style="font-size:12.5px">{d}</span></div>
+      ))}
+    </div>
+    <div style="display:flex; gap:10px; margin-top:20px">
+      <button class="btn btn-primary" data-rebi-open><span set:html={icon('spark',15)}></span> Sign in</button>
+      <a href={`${BASE}/listings`} class="btn btn-ghost">Keep browsing</a>
+    </div>
+  </section>
+</Layout>

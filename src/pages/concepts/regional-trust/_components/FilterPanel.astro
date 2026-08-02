@@ -1,0 +1,87 @@
+---
+// Static filter panel (visual only) — condition facets front and centre.
+const conditions = [
+  { label: 'New', count: 274, active: false },
+  { label: 'Demo', count: 57, active: true },
+  { label: 'Used', count: 305, active: false },
+];
+const groups = [
+  { h: 'Body type', opts: ['SUV', 'Ute', 'Hatch', 'Sedan', 'Wagon', 'Van'] },
+  { h: 'Make', opts: ['Toyota', 'Mazda', 'Hyundai', 'Isuzu Ute', 'Ford', 'Subaru'] },
+  { h: 'Fuel', opts: ['Petrol', 'Diesel', 'Hybrid', 'Electric'] },
+];
+---
+<aside class="rt-filter rt-card">
+  <div class="rt-filter-ai">
+    <span class="rt-rebi-orb lg"></span>
+    <div>
+      <strong>Not sure where to start?</strong>
+      <p>Tell Rebi what you need — “7 seats, under $45k, good for towing” — and I’ll set these filters for you.</p>
+    </div>
+  </div>
+  <div class="rt-filter-search">
+    <input class="rt-input" type="text" placeholder="e.g. family SUV under $50k" />
+    <button class="rt-btn rt-btn-primary rt-btn-sm">Ask</button>
+  </div>
+
+  <div class="rt-filter-block">
+    <h4>Condition</h4>
+    <div class="rt-cond-row">
+      {conditions.map((c) => (
+        <button class={`rt-cond ${c.active ? 'is-active' : ''}`}>
+          <span>{c.label}</span><em>{c.count}</em>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="rt-filter-block">
+    <h4>Price</h4>
+    <div class="rt-range">
+      <span>$0</span>
+      <div class="rt-range-track"><div class="rt-range-fill"></div><span class="rt-range-knob a"></span><span class="rt-range-knob b"></span></div>
+      <span>$90k+</span>
+    </div>
+  </div>
+
+  {groups.map((g) => (
+    <div class="rt-filter-block">
+      <h4>{g.h}</h4>
+      <div class="rt-check-list">
+        {g.opts.map((o, i) => (
+          <label class="rt-check">
+            <span class={`rt-box ${i === 0 ? 'on' : ''}`}></span>{o}
+          </label>
+        ))}
+      </div>
+    </div>
+  ))}
+
+  <button class="rt-btn rt-btn-ghost rt-filter-clear">Clear all filters</button>
+</aside>
+
+<style>
+  .rt-filter { padding: 22px; display: flex; flex-direction: column; gap: 22px; align-self: start; position: sticky; top: 120px; }
+  .rt-filter-ai { display: flex; gap: 12px; background: var(--green-soft); border: 1px solid var(--green-line); border-radius: var(--r); padding: 14px; }
+  .rt-filter-ai strong { color: var(--green-deep); font-size: 15px; }
+  .rt-filter-ai p { font-size: 13px; color: var(--ink-70); margin-top: 4px; }
+  .rt-filter-ai .rt-rebi-orb { flex: 0 0 auto; }
+  .rt-filter-search { display: flex; gap: 8px; }
+  .rt-filter-block h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: var(--ff-body); font-weight: 800; margin-bottom: 12px; }
+  .rt-cond-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .rt-cond { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 12px 6px; border-radius: var(--r-sm); border: 1.5px solid var(--line); background: var(--white); cursor: pointer; font-weight: 700; font-size: 14px; color: var(--ink-70); }
+  .rt-cond em { font-style: normal; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .rt-cond.is-active { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); }
+  .rt-cond.is-active em { color: var(--green); }
+  .rt-range { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .rt-range-track { position: relative; flex: 1; height: 5px; border-radius: 3px; background: var(--sand-deep); }
+  .rt-range-fill { position: absolute; left: 18%; right: 26%; top: 0; bottom: 0; background: var(--green); border-radius: 3px; }
+  .rt-range-knob { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--white); border: 3px solid var(--green); transform: translate(-50%,-50%); }
+  .rt-range-knob.a { left: 18%; } .rt-range-knob.b { left: 74%; }
+  .rt-check-list { display: flex; flex-direction: column; gap: 10px; }
+  .rt-check { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--ink-70); cursor: pointer; }
+  .rt-box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line); background: var(--white); flex: 0 0 auto; }
+  .rt-box.on { background: var(--green); border-color: var(--green); position: relative; }
+  .rt-box.on::after { content: '✓'; position: absolute; inset: 0; color: #eef4f0; font-size: 12px; display: grid; place-items: center; font-weight: 800; }
+  .rt-filter-clear { width: 100%; }
+</style>
