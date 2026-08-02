@@ -210,6 +210,57 @@ the system today.
 
 ---
 
+## Decision 8 — "What's it good for" shopper attributes are AI-derived from public data, and stay behind the scenes
+
+**The call (2026-08-02):** Every listing carries a small set of soft, plain-English attributes —
+`runningCost` (cheap / medium / expensive to run), `sizeClass` (small / medium / large), and
+`usageFit` (city, family, highway, towing, tradie, first-car — a car can be several). They are
+**derived once per listing** and stored on the car, so that lifestyle-shaped searches like "a cheap
+little first car for the city" or "something for towing" actually match real inventory. The dealer can
+**edit any value to override the AI** — nothing is locked.
+
+**They are not shown to shoppers as filters.** These attributes exist to power search and Rebi's
+matching behind the scenes; they are deliberately **not** rendered as visible tick-box facets. Coverage
+is partial (many cars won't have every attribute), so visible half-empty filters would read as broken.
+The soft query is understood from the shopper's own words and matched against the stored attributes;
+removable "what you searched for" chips disclose what was applied. Visible facets can be revisited once
+coverage is broad.
+
+**How each attribute is derived — real data first, judgement only where needed:**
+- **`sizeClass` is a pure rule** — body type (plus seat count) maps deterministically to a size. No AI.
+- **`runningCost` is rule-first, with an AI fallback.** If the car is electric/hybrid, or has a real
+  measured fuel-economy figure, that decides it — a measured fact always wins. **Only when there is no
+  measured figure** does a model judge cheap/medium/expensive from the public make, model, engine and
+  body — the same knowledge a good salesperson has. The model must **abstain** (leave it blank) when it
+  genuinely can't tell; it is never allowed to invent a value. This judgement is folded into the same
+  single AI call that handles `usageFit`, so there is no extra round-trip.
+- **`usageFit` is rule leans plus AI judgement** — confident deterministic leans (a 4wd ute → towing +
+  tradie; 7 seats → family; a cheap compact → city + first car), refined by the model for the genuine
+  judgement calls (e.g. "highway"), constrained to the six codes and dropped if off-list.
+- **Determinism guard:** anything that can't be confidently derived — including a running cost the model
+  abstains on — is left **blank with a logged warning**, never guessed. The dealer sees a blank they can
+  fill, not a fabricated label.
+
+**Ties to Decision 6 (private data never reaches a shopper surface — including as a ranking input):**
+Because these attributes feed shopper-facing search, the AI that derives them is fed the **public data
+only**. A single choke point assembles a public-only input; `dealerNotes`, cost, and floor price are
+never in scope, and a test fails loudly if a private field ever appears in that input. The dealer-facing
+description generator may still use private notes — but the two AI calls never share an object that holds
+a private field.
+
+**Models:** all of this runs through the shared AI layer on the current free models. When the platform
+moves to the Anthropic API, that is a configuration change in the model layer (which already assigns a
+model per task), not a rewrite of this feature.
+
+**Backfill:** a dry-run-by-default, `--commit`-gated data script fills these attributes across existing
+inventory using the exact same derivation module, so the script and the live "Generate description"
+button always agree. It patches explicit document IDs, only fills blanks, and never writes a value the
+rules or model left unset.
+
+**Status:** Decided and built. Backfill is dry-run-verified and awaiting an owner-approved `--commit`.
+
+---
+
 ## How we keep pointing at true north
 
 - **This document** records the decisions and reasoning so intent survives across time and across
