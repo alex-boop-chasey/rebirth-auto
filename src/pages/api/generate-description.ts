@@ -31,6 +31,7 @@ import { configureAI, generate, TIERS, getModelCapabilities } from '~/ai';
 import type { AIContentPart, AIMessage } from '~/ai';
 import { APP_URL, APP_TITLE, REQUEST_TIMEOUT_MS } from '~/chatbot/config';
 import { dealerConfig } from '~/config/dealer';
+import { isAllowedStudioOrigin } from '~/lib/studio-origin';
 import { getDescriptionEnv } from '~/lib/generate-description/env';
 import { fetchDraftListing, type DraftDetail } from '~/lib/generate-description/sanity-draft';
 import {
@@ -105,10 +106,12 @@ export const POST: APIRoute = async ({ request }) => {
   // Feature flag — a dealer can disable the button without a deploy.
   if (!cfg.enabled) return json({ error: 'Description generation is disabled.' }, 503);
 
-  // Origin allowlist — this endpoint is only for the dealer's Studio.
+  // Origin gate — this endpoint is only for the dealer's Studio. Allow same-origin
+  // (the Studio is embedded in this same app) OR a configured cross-origin studio.
+  // Still reject a missing Origin header.
   // TODO(multi-tenant): replace origin check with Studio session validation before real dealer data flows
   const origin = request.headers.get('Origin');
-  if (!origin || !dealerConfig.ai.studioOrigins.includes(origin)) {
+  if (!origin || !isAllowedStudioOrigin(request, origin, dealerConfig.ai.studioOrigins)) {
     return json({ error: 'Forbidden.' }, 403);
   }
 

@@ -27,6 +27,7 @@
 import type { APIRoute } from 'astro';
 import { env as cfEnv } from 'cloudflare:workers';
 import { dealerConfig } from '~/config/dealer';
+import { isAllowedStudioOrigin } from '~/lib/studio-origin';
 import { client } from '~/sanity/lib/client';
 import { LISTING_FIELDS, type Listing } from '~/lib/listing';
 import { checkRateLimit } from '~/lib/rate-limit';
@@ -76,10 +77,12 @@ export const POST: APIRoute = async ({ request }) => {
   // Feature flag — a dealer opts into carsales syndication; hidden without a deploy.
   if (!cfg.enabled) return json({ error: 'carsales upload is not available.' }, 404);
 
-  // Origin allowlist — this endpoint is only for the dealer's Studio, never public.
+  // Origin gate — this endpoint is only for the dealer's Studio, never public.
+  // Allow same-origin (the Studio is embedded in this same app) OR a configured
+  // cross-origin studio. Still reject a missing Origin header.
   // TODO(multi-tenant): replace origin check with Studio session validation before real dealer data flows
   const origin = request.headers.get('Origin');
-  if (!origin || !dealerConfig.ai.studioOrigins.includes(origin)) {
+  if (!origin || !isAllowedStudioOrigin(request, origin, dealerConfig.ai.studioOrigins)) {
     return json({ error: 'Forbidden.' }, 403);
   }
 
