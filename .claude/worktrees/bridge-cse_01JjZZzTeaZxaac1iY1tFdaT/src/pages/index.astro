@@ -1,0 +1,254 @@
+---
+// SSR (not prerendered): the homepage reads filter/pagination params from the
+// URL and filters server-side, so it can't be baked at build time. Mirrors
+// compare.astro, which opts into SSR the same way.
+export const prerender = false;
+
+import '../styles/global.css';
+import { client } from '../sanity/lib/client';
+import CompareTray from '../components/CompareTray.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import SearchDock from '../components/search/SearchDock.astro';
+import FilterDrawer from '../components/filters/FilterDrawer.astro';
+import InventoryResults from '../components/filters/InventoryResults.astro';
+import { dealerConfig } from '../config/dealer';
+import { iconSvg } from '../lib/listing';
+import {
+  parseFilters,
+  buildListingsQuery,
+  activeChips,
+  type InventoryResult,
+} from '../lib/listings-query';
+import { priceDropsFor } from '../lib/price-history-data';
+
+// Edge caching (DECISION.md Decision 5): anonymous/unfiltered hits get served
+// from Cloudflare's cache and feel static; each unique filter URL caches
+// separately. Recovers most of the TTFB we'd otherwise lose by dropping
+// prerender.
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
+// URL is the single source of truth. Parse the filter state, then filter +
+// paginate server-side via the shared query builder (reused by the partial).
+const filterState = parseFilters(Astro.url.searchParams);
+const { query, params } = buildListingsQuery(filterState);
+const { items: listings, total } = await client.fetch<InventoryResult>(query, params);
+
+// Resolve each card's honest price drop once (the STUB_PRICE_HISTORY demo flag is
+// read inside priceDropsFor, at this data layer — never in the card). Request-time
+// clock passed in (no module-level new Date()).
+const priceDrops = priceDropsFor(listings, Date.now());
+
+const activeCount = activeChips(filterState).length;
+const year = new Date().getFullYear();
+
+const title = 'Rebirth Auto — quality vehicles, ready to drive away';
+const description =
+  'Browse the current range at Rebirth Auto. Every vehicle in our inventory, kept up to date — find your next car and talk to our team.';
+const canonicalURL = new URL(
+  Astro.url.pathname,
+  Astro.site ?? 'https://rebirth-listings-auto.pages.dev',
+).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <!-- TODO: add <meta property="og:image"> once the demo is deployed and an OG image is hosted.
+         Required for social previews — summary_large_image cards render blank without it. -->
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <div class="site-container">
+      <!-- Header -->
+      <header class="flex items-center justify-between py-6">
+        <a href="/" class="text-base font-semibold tracking-tight text-slate-900">
+          Rebirth<span class="text-slate-400"> Auto</span>
+        </a>
+        <nav class="flex items-center gap-6 text-sm">
+          <a href="#inventory" class="text-slate-500 transition hover:text-slate-900">
+            Inventory
+          </a>
+          {dealerConfig.tradeIn.enabled && (
+            <a href="/trade-in" class="text-slate-500 transition hover:text-slate-900">
+              {dealerConfig.tradeIn.copy.navLabel}
+            </a>
+          )}
+          {dealerConfig.service.enabled && (
+            <a href="/service" class="text-slate-500 transition hover:text-slate-900">
+              {dealerConfig.service.copy.navLabel}
+            </a>
+          )}
+          {dealerConfig.accounts.enabled && (
+            <a href="/account" class="text-slate-500 transition hover:text-slate-900">
+              {dealerConfig.accounts.copy.navLabel}
+            </a>
+          )}
+          <a
+            href="#"
+            id="nav-contact"
+            class="text-slate-500 transition hover:text-slate-900"
+          >
+            Contact
+          </a>
+        </nav>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <!-- Hero -->
+        <section class="mx-auto max-w-3xl pt-16 pb-8 text-center md:pt-24 md:pb-10">
+          {/* On ≥sm the heading rides ON TOP of the Focus Stage (the "carousel"
+              space where Rebi's cards recede) as a higher stacking layer, so the
+              AI search bar sits a comfortable distance below the heading rather
+              than being pushed down by a full-height heading band above the
+              stage. On small screens the two stack normally — a tall mobile
+              heading has no room to overlay the stage. */}
+          <div class="hero-stack">
+            <div class="hero-copy">
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse motion-reduce:animate-none"></span>
+                In stock now
+              </span>
+              <h1 class="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
+                Your next car is waiting.
+              </h1>
+              <p id="hero-subhead" class="mx-auto mt-5 max-w-2xl text-lg text-slate-600">
+                Browse the current range at Rebirth Auto — quality vehicles, full specs,
+                and a team ready to help you drive away happy.
+              </p>
+              <div class="mt-8 flex flex-col items-center gap-2">
+                <a
+                  href="/labs/experience"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
+                >
+                  Let Rebi find your car →
+                </a>
+                <span class="text-xs font-medium text-slate-500">
+                  Experience Mode — answer 3 questions, skip the filters
+                </span>
+              </div>
+            </div>
+
+            {/* Rebi-fronted plain-English search (JS-only enhancement; the Filters
+                drawer below stays the no-JS fallback). */}
+            <SearchDock />
+          </div>
+        </section>
+
+        {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
+        <div id="inventory" class="mt-8 flex items-end justify-between border-b border-slate-200 pb-4">
+          <h2 id="inventory-heading" class="text-xl font-semibold tracking-tight text-slate-900">Current inventory</h2>
+          <button
+            type="button"
+            id="filters-trigger"
+            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            <Fragment set:html={iconSvg('filter', 'h-4 w-4')} />
+            Filters
+            <span
+              data-filter-count
+              hidden={activeCount === 0}
+              class="inline-flex min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 py-0.5 text-xs font-semibold text-white"
+            >
+              {activeCount}
+            </span>
+          </button>
+        </div>
+
+        <!-- Filter drawer (persistent; lives outside the swappable results) -->
+        <FilterDrawer state={filterState} triggerId="filters-trigger" />
+
+        <!-- Swappable inventory results (chips + grid + pagination) -->
+        <InventoryResults listings={listings} total={total} state={filterState} priceDrops={priceDrops} />
+      </main>
+
+      <!-- Footer -->
+      <footer class="mt-24 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
+        © {year} Rebirth Auto · All vehicles subject to availability.
+        {dealerConfig.capture.enabled && (
+          <span class="mt-2 block text-xs text-slate-400">
+            <a href="/capture" class="underline underline-offset-2 hover:text-slate-600">Dealer: add a vehicle</a>
+          </span>
+        )}
+      </footer>
+    </div>
+
+    <!-- Floating comparison tray (self-contained, appears when ≥1 selected) -->
+    <CompareTray />
+
+    <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
+    <ChatWidget />
+
+    <script>
+      // "Contact" in the nav opens the floating chat assistant.
+      document.getElementById('nav-contact')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('reb-launcher')?.click();
+      });
+    </script>
+
+    <style>
+      /* Hero layering: put the heading on a layer ON TOP of the Focus Stage (the
+         "carousel" space where Rebi's message cards recede). The heading block
+         (.hero-copy) and the SearchDock (#search-dock) share one grid cell; the
+         heading rides the top as the upper layer while the cards animate in the
+         space behind and below it, and the AI search bar — anchored to the bottom
+         of the stage — ends up a comfortable distance below the heading instead
+         of being shoved down by a full-height heading band stacked above.
+
+         #search-dock is given its own stacking context so its internal z-indexed
+         cards (z-index ~100) stay BEHIND the heading. Below the sm breakpoint the
+         two fall back to a normal vertical stack — a full-height mobile heading
+         would collide with the shorter stage if overlaid. */
+      @media (min-width: 640px) {
+        .hero-stack {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .hero-stack > .hero-copy {
+          grid-column: 1;
+          grid-row: 1;
+          position: relative;
+          z-index: 2;
+          align-self: start;      /* heading rides the top of the stage */
+          pointer-events: none;   /* clicks fall through to the stage/cards behind */
+        }
+        .hero-stack > .hero-copy a,
+        .hero-stack > .hero-copy button {
+          pointer-events: auto;   /* future-proof: keep any heading control clickable */
+        }
+        .hero-stack > :global(#search-dock) {
+          grid-column: 1;
+          grid-row: 1;
+          position: relative;
+          z-index: 1;             /* own stacking context: cards stay behind the heading */
+          align-self: stretch;
+          margin: 0 auto;         /* drop the stack-mode top margin; keep it centred */
+        }
+      }
+    </style>
+  </body>
+</html>

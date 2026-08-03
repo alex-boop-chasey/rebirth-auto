@@ -1,0 +1,145 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+import { vehicles } from './_data';
+const evs = vehicles.filter((v) => v.fuel === 'Electric' || v.fuel === 'Hybrid');
+const myths = [
+  { q: '“There’s nowhere to charge out here.”', a: 'Most locals charge at home overnight — no different to plugging in a phone. Public fast-chargers are growing across the Wide Bay too.' },
+  { q: '“The range won’t cut it.”', a: 'A modern EV does 400–500km on a charge. That’s Bundaberg to Hervey Bay and back with plenty spare.' },
+  { q: '“They’re too expensive to run.”', a: 'Charging at home costs a fraction of petrol, and there are far fewer moving parts to service. Rebi can show your real numbers.' },
+];
+const costs = [
+  { l: 'Weekly “fuel”', ev: '~$18', petrol: '~$70' },
+  { l: 'Annual servicing', ev: '~$250', petrol: '~$550' },
+  { l: 'Moving parts', ev: 'Far fewer', petrol: 'Many' },
+];
+---
+<Layout title="Electric & hybrid" active="electric">
+  <section class="rt-ev-hero">
+    <div class="rt-wrap rt-ev-hero-grid">
+      <div>
+        <span class="rt-eyebrow rt-eyebrow-light">Electric &amp; hybrid, explained</span>
+        <h1>Thinking of going electric?<br />Let’s talk it through — no hype.</h1>
+        <p>Going electric is a big call, especially out here. We’ll give you the honest picture on charging, range and
+          running costs for how <em>you</em> actually drive — then you decide.</p>
+        <div class="rt-ev-hero-btns">
+          <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-clay"><span class="rt-rebi-orb"></span> Ask Rebi if an EV suits me</a>
+          <a href="#stock" class="rt-btn rt-btn-ghost rt-btn-light">See EV &amp; hybrid stock</a>
+        </div>
+      </div>
+      <div class="rt-photo g-teal rt-ev-hero-photo"><span class="rt-ev-hero-tag">EV charging photo</span></div>
+    </div>
+  </section>
+
+  <!-- Rebi personalised calculator teaser -->
+  <section class="rt-wrap rt-ev-calc-wrap">
+    <div class="rt-ev-calc rt-rebi-panel">
+      <div class="rt-ev-calc-l">
+        <span class="rt-rebi-orb lg"></span>
+        <div>
+          <strong>“Tell me your weekly drive and I’ll show you the real savings.”</strong>
+          <p>Rebi compares an EV against your current car using local electricity and fuel prices.</p>
+        </div>
+      </div>
+      <div class="rt-ev-calc-r">
+        <input class="rt-input" type="text" placeholder="e.g. 250 km/week, mostly around town" />
+        <button class="rt-btn rt-btn-primary">Show my savings</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- cost comparison -->
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">The honest numbers</span><h2>Electric vs petrol, side by side</h2></div></div>
+    <div class="rt-ev-compare rt-card">
+      <div class="rt-ev-compare-head"><span></span><span class="rt-ev-col-ev">⚡ Electric</span><span>⛽ Petrol</span></div>
+      {costs.map((c) => (
+        <div class="rt-ev-compare-row"><span>{c.l}</span><span class="rt-ev-col-ev"><strong>{c.ev}</strong></span><span>{c.petrol}</span></div>
+      ))}
+      <p class="rt-ev-compare-note">Indicative figures for a typical Wide Bay commute. Rebi personalises these to your drive.</p>
+    </div>
+  </section>
+
+  <!-- myths -->
+  <section class="rt-wrap rt-section rt-ev-myths">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">Straight answers</span><h2>The three things everyone asks us</h2></div></div>
+    <div class="rt-ev-myth-grid">
+      {myths.map((m) => (
+        <div class="rt-ev-myth rt-card">
+          <h3>{m.q}</h3>
+          <div class="rt-ev-myth-a"><span class="rt-rebi-orb"></span><p>{m.a}</p></div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- charging how-to -->
+  <section class="rt-wrap rt-section">
+    <div class="rt-ev-charge rt-card">
+      <div class="rt-ev-charge-copy">
+        <span class="rt-eyebrow">Charging, made simple</span>
+        <h2>Three ways to charge — and when you’d use each</h2>
+      </div>
+      <div class="rt-ev-charge-steps">
+        <div><span class="rt-ev-charge-ic">🏠</span><strong>At home</strong><p>Overnight off a normal powerpoint or a wallbox. Wake up full. This is 90% of charging.</p></div>
+        <div><span class="rt-ev-charge-ic">🛒</span><strong>Around town</strong><p>Top up while you shop at growing public chargers across the region.</p></div>
+        <div><span class="rt-ev-charge-ic">🛣️</span><strong>On a road trip</strong><p>Fast-chargers on the highway take you 10→80% in about 20 minutes.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- stock -->
+  <section id="stock" class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">In stock now</span><h2>Electric &amp; hybrid on the lot</h2></div>
+      <a href="/concepts/regional-trust/listings" class="rt-btn rt-btn-ghost">See all electrified →</a></div>
+    <div class="rt-ev-grid">{evs.map((v) => <VehicleCard v={v} />)}</div>
+  </section>
+</Layout>
+
+<style>
+  .rt-ev-hero { background: var(--green-deep); color: #dbe5df; }
+  .rt-ev-hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; padding-block: 64px; align-items: center; }
+  .rt-ev-hero h1 { color: #f4f0e6; font-size: 46px; margin: 16px 0; }
+  .rt-ev-hero p { font-size: 17px; color: #b8c7bf; max-width: 480px; }
+  .rt-eyebrow-light { color: #a9cbbc; } .rt-eyebrow-light::before { background: var(--clay); }
+  .rt-ev-hero-btns { display: flex; gap: 12px; margin-top: 28px; }
+  .rt-btn-light { background: transparent; color: #f4f0e6; border-color: rgba(255,255,255,.28); }
+  .rt-btn-light:hover { border-color: #fff; color: #fff; }
+  .rt-ev-hero-photo { height: 340px; display: grid; place-items: center; box-shadow: var(--shadow-lg); }
+  .rt-ev-hero-tag { color: rgba(255,255,255,.55); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; font-size: 13px; z-index: 1; }
+
+  .rt-ev-calc-wrap { margin-top: -34px; position: relative; z-index: 5; }
+  .rt-ev-calc { display: flex; justify-content: space-between; align-items: center; gap: 28px; padding: 22px 26px; }
+  .rt-ev-calc-l { display: flex; gap: 14px; align-items: center; }
+  .rt-ev-calc-l strong { display: block; font-size: 17px; color: var(--green-deep); font-family: var(--ff-display); }
+  .rt-ev-calc-l p { font-size: 14px; color: var(--ink-70); margin-top: 4px; }
+  .rt-ev-calc-r { display: flex; gap: 10px; flex: 0 0 auto; }
+  .rt-ev-calc-r .rt-input { width: 280px; }
+
+  .rt-ev-compare { padding: 8px 28px 24px; }
+  .rt-ev-compare-head, .rt-ev-compare-row { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; padding: 16px 0; }
+  .rt-ev-compare-head { font-size: 15px; font-weight: 800; color: var(--ink); border-bottom: 2px solid var(--line); }
+  .rt-ev-compare-row { border-bottom: 1px solid var(--line-soft); font-size: 15px; color: var(--ink-70); }
+  .rt-ev-compare-row span:first-child { font-weight: 700; color: var(--ink); }
+  .rt-ev-col-ev { background: var(--green-soft); padding: 8px 14px; border-radius: 8px; }
+  .rt-ev-col-ev strong { color: var(--green-deep); font-size: 18px; }
+  .rt-ev-compare-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+  .rt-ev-myth-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-ev-myth { padding: 24px; }
+  .rt-ev-myth h3 { font-size: 18px; color: var(--clay-deep); margin-bottom: 14px; }
+  .rt-ev-myth-a { display: flex; gap: 10px; align-items: flex-start; background: var(--green-soft); border-radius: 12px; padding: 14px; }
+  .rt-ev-myth-a .rt-rebi-orb { flex: 0 0 auto; margin-top: 2px; }
+  .rt-ev-myth-a p { font-size: 14px; color: var(--ink-70); }
+
+  .rt-ev-charge { display: grid; grid-template-columns: .8fr 2fr; gap: 40px; padding: 36px; align-items: center; background: linear-gradient(180deg, var(--cream), var(--white)); }
+  .rt-ev-charge-copy h2 { font-size: 28px; margin-top: 12px; }
+  .rt-ev-charge-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .rt-ev-charge-ic { font-size: 28px; }
+  .rt-ev-charge-steps strong { display: block; font-family: var(--ff-display); font-size: 18px; margin: 8px 0 6px; }
+  .rt-ev-charge-steps p { font-size: 13.5px; color: var(--ink-70); }
+
+  .rt-ev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+</style>

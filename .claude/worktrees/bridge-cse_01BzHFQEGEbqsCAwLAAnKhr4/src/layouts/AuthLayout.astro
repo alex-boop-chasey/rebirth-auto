@@ -1,0 +1,58 @@
+---
+/**
+ * AuthLayout — Near-Future Yard (NFY) shell for the auth surface (login /
+ * signup / account / check-email / reset-password).
+ *
+ * Reskinned to the NFY light-glass system: the ambient `.page-surface` mesh,
+ * the shared sticky-glass `SiteNav` and dark `SiteFooter`, and the token layer
+ * from src/styles/theme.css. There is deliberately NO `prefers-color-scheme:
+ * dark` block — this is a light-only site.
+ *
+ * Chrome (nav/footer) content comes from `dealerConfig` via the shared
+ * components — no hardcoded dealer literal here.
+ */
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Set noindex on transient/auth pages we don't want in search results. */
+  noindex?: boolean;
+  /** Key of the SiteNav link to highlight (e.g. 'account'). */
+  navActive?: string;
+}
+
+const { title, description = '', noindex = false, navActive = '' } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex" />}
+  </head>
+
+  <body class="page-surface flex min-h-screen flex-col text-ink antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active={navActive} />
+
+    <main id="main-content" tabindex="-1" class="site-container flex-1">
+      <slot />
+    </main>
+
+    <SiteFooter />
+
+    <slot name="after" />
+  </body>
+</html>

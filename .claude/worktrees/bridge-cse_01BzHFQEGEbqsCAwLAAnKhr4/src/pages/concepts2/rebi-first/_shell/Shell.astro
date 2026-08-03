@@ -1,0 +1,182 @@
+---
+/**
+ * Shell — the "Rebi-First" IA concept frame (Contest 2, isolated demo).
+ *
+ * Philosophy: Rebi (the AI) is the PRIMARY way to get anywhere. The top nav is
+ * ultra-minimal — logo + a prominent "Ask Rebi" + ONE browse CTA. The footer is
+ * the full-directory safety net. Everything else is reached by asking Rebi or by
+ * contextual buttons on related pages.
+ *
+ * Uses the shipped, un-namespaced NFY primitives from global.css (btn/card/chip/
+ * orb/ai-summary/aisearch/site-nav/site-footer). Demo-only helpers live in the
+ * global style block below.
+ */
+import '../../../../styles/global.css';
+import { BASE, icon } from './data';
+
+interface Props {
+  title?: string;
+  active?: string; // footer/section highlight key (optional)
+}
+const { title = 'Rebirth Auto — ask Rebi anything', active = '' } = Astro.props as Props;
+
+const spark = icon('spark', 16);
+
+// Full directory — the safety net. Every page in the site is reachable here.
+const footCols: { h: string; links: [string, string][] }[] = [
+  { h: 'Shop', links: [
+    ['Browse inventory', `${BASE}/#inventory`],
+    ['Offers & specials', `${BASE}/offers`],
+    ['Electric & hybrid', `${BASE}/electric`],
+    ['Brands', `${BASE}/brand`],
+  ]},
+  { h: 'Finance & selling', links: [
+    ['Finance & repayments', `${BASE}/finance`],
+    ['Sell your car', `${BASE}/sell`],
+    ['Trade-in valuation', `${BASE}/sell#trade`],
+  ]},
+  { h: 'Service & parts', links: [
+    ['Genuine parts', `${BASE}/parts`],
+    ['Book a test drive', `${BASE}/test-drive`],
+    ['Fleet & business', `${BASE}/fleet`],
+  ]},
+  { h: 'Company', links: [
+    ['About us', `${BASE}/about`],
+    ['Careers', `${BASE}/careers`],
+    ['Contact & locations', `${BASE}/contact`],
+  ]},
+];
+---
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="robots" content="noindex" />
+  <style is:global>
+    /* Demo-only helpers (token-driven; nav-serving). Everything visual reuses
+       the shipped NFY primitives — these just lay out the mock chat + calculator. */
+    body { margin: 0; }
+    .rf-mono-eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing:.14em; text-transform:uppercase; color: var(--ink-faint); }
+
+    /* Rebi-first minimal nav: only Ask Rebi + one CTA */
+    .rf-nav-cta { display:flex; align-items:center; gap:12px; margin-left:auto; }
+    .rf-askpill {
+      display:inline-flex; align-items:center; gap:9px; cursor:pointer; text-decoration:none;
+      font-weight:600; font-size:14.5px; padding:9px 16px 9px 12px; border-radius:var(--r-pill);
+      color:#fff; background:var(--aurora); background-size:160% 160%;
+      box-shadow:0 8px 24px -10px rgba(85,102,240,.6); border:1px solid transparent;
+      transition:transform .18s ease, box-shadow .22s ease;
+    }
+    .rf-askpill:hover { transform:translateY(-2px); box-shadow:0 14px 34px -12px rgba(85,102,240,.7); }
+
+    /* Chat thread bubbles */
+    .rf-thread { display:flex; flex-direction:column; gap:18px; }
+    .rf-user { align-self:flex-end; max-width:74%; background:var(--ink); color:#fff; padding:12px 16px; border-radius:16px 16px 4px 16px; font-size:14.5px; line-height:1.5; }
+    .rf-rebi { max-width:88%; }
+    .rf-rebi-head { display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+    .rf-quick { display:flex; flex-wrap:wrap; gap:9px; }
+    /* quick-reply / action chips Rebi surfaces — these NAVIGATE */
+    .rf-action {
+      display:inline-flex; align-items:center; gap:7px; cursor:pointer; text-decoration:none;
+      font-size:13px; font-weight:600; padding:8px 14px; border-radius:var(--r-pill);
+      background:var(--surface); border:1px solid rgba(85,102,240,.28); color:var(--indigo-deep);
+      transition:transform .16s ease, box-shadow .18s ease, border-color .18s;
+    }
+    .rf-action:hover { transform:translateY(-2px); box-shadow:var(--sh-1); border-color:var(--indigo); }
+    .rf-action .spark path { fill: var(--indigo); }
+
+    /* in-chat listing card */
+    .rf-listing { display:flex; gap:14px; padding:12px; align-items:center; text-decoration:none; color:inherit; }
+    .rf-listing-img { width:104px; height:70px; border-radius:12px; flex:none; }
+
+    /* generic layout helpers */
+    .rf-row { display:flex; align-items:center; gap:12px; }
+    .rf-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .rf-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+    .rf-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+    .rf-slider { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px; background:var(--bg-2); outline:none; }
+    .rf-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--aurora); box-shadow:var(--sh-1); cursor:pointer; }
+    .rf-slider::-moz-range-thumb { width:20px; height:20px; border:0; border-radius:50%; background:#5566F0; cursor:pointer; }
+    .rf-field { width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--surface); font-size:14.5px; font-family:var(--font-ui); color:var(--ink); }
+    label.rf-lab { display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:7px; }
+    .rf-h1 { font-family:var(--font-display); font-weight:700; letter-spacing:-.02em; font-size:44px; line-height:1.05; }
+    .rf-h2 { font-family:var(--font-display); font-weight:700; letter-spacing:-.02em; font-size:30px; }
+    .rf-h3 { font-family:var(--font-display); font-weight:600; font-size:18px; }
+
+    /* floating Rebi launcher — always present, the primary wayfinder */
+    .rf-dock {
+      position:fixed; right:22px; bottom:22px; z-index:60; display:flex; align-items:center; gap:10px;
+      padding:10px 18px 10px 12px; border-radius:var(--r-pill); text-decoration:none; color:#fff;
+      background:var(--aurora); background-size:160% 160%; box-shadow:0 14px 40px -12px rgba(85,102,240,.7);
+      font-weight:600; font-size:14.5px; transition:transform .18s ease;
+    }
+    .rf-dock:hover { transform:translateY(-2px); }
+
+    @media (max-width: 980px) {
+      .rf-grid-2, .rf-grid-3, .rf-grid-4 { grid-template-columns:1fr; }
+      .rf-h1 { font-size:34px; }
+    }
+  </style>
+</head>
+<body class="page-surface">
+  <!-- ULTRA-MINIMAL NAV: logo + Ask Rebi + one CTA. No marketing links. -->
+  <header class="site-nav">
+    <div class="site-container site-nav-inner">
+      <a class="site-brand" href={`${BASE}/`} aria-label="Rebirth Auto home">
+        <span class="brand-mark" set:html={spark}></span>
+        <span>Rebirth Auto<small>Ask · don't scroll</small></span>
+      </a>
+      <div class="rf-nav-cta">
+        <a class="rf-askpill" href={`${BASE}/rebi`} data-rebi-open>
+          <span class="spark" set:html={spark}></span> Ask Rebi
+        </a>
+        <a href={`${BASE}/#inventory`} class="btn btn-ghost btn-sm">Browse inventory</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <!-- FULL-DIRECTORY FOOTER: the safety net that holds every page. -->
+  <footer class="site-footer">
+    <div class="site-container site-foot-grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr 1.3fr">
+      <div>
+        <a class="site-brand site-brand-footer" href={`${BASE}/`}>
+          <span class="brand-mark" set:html={spark}></span>
+          <span>Rebirth Auto<small>AI-native car yard</small></span>
+        </a>
+        <p style="margin-top:16px; font-size:14px; color:#9AA8BC; max-width:34ch">
+          Rebi takes you anywhere on the site — just ask. This footer is the full map if you'd rather browse it yourself.
+        </p>
+        <a href={`${BASE}/rebi`} class="btn btn-primary btn-sm" style="margin-top:16px" data-rebi-open>
+          <span class="spark" set:html={spark}></span> Chat with Rebi
+        </a>
+      </div>
+      {footCols.map((c) => (
+        <div>
+          <div class="site-foot-h">{c.h}</div>
+          <ul>
+            {c.links.map(([label, href]) => (
+              <li><a href={href} class={active === label ? 'is-active' : ''}>{label}</a></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+    <div class="site-container site-foot-bar">
+      <span>© {new Date().getFullYear()} Rebirth Auto (demo). Placeholder content — not a live dealership.</span>
+      <span class="mono">Rebi-First IA concept</span>
+    </div>
+  </footer>
+
+  <!-- Floating Rebi launcher — present on every page, the primary wayfinder. -->
+  <a href={`${BASE}/rebi`} class="rf-dock" data-rebi-open aria-label="Ask Rebi">
+    <span class="orb orb-halo" style="width:30px;height:30px"></span>
+    Ask Rebi
+  </a>
+</body>
+</html>

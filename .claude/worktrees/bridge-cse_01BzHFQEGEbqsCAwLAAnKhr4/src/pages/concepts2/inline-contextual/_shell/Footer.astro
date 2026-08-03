@@ -1,0 +1,72 @@
+---
+/**
+ * Inline-Contextual Footer — the FULL site directory. Because the top nav is
+ * near-zero, the footer carries the complete map of the site: every page is
+ * reachable here in one click. This is the "long tail" surface of the IA.
+ * Uses the shipped NFY .site-footer chrome from theme.css.
+ */
+import { icon, BASE } from './data';
+
+type Link = [label: string, href: string];
+const columns: { h: string; links: Link[] }[] = [
+  { h: 'Shop', links: [
+    ['Browse all stock', `${BASE}/listings`],
+    ['New', `${BASE}/listings?condition=new`],
+    ['Demo', `${BASE}/listings?condition=demo`],
+    ['Used', `${BASE}/listings?condition=used`],
+    ['Electric & hybrid', `${BASE}/electric`],
+    ['Offers & specials', `${BASE}/offers`],
+    ['Brands', `${BASE}/brand`],
+  ]},
+  { h: 'Buy & own', links: [
+    ['Finance & repayments', `${BASE}/finance`],
+    ['Book a test drive', `${BASE}/test-drive`],
+    ['Trade-in valuation', `${BASE}/trade-in`],
+    ['Sell your car', `${BASE}/sell`],
+  ]},
+  { h: 'Service & parts', links: [
+    ['Book a service', `${BASE}/service`],
+    ['Genuine parts', `${BASE}/parts`],
+    ['Fleet & business', `${BASE}/fleet`],
+  ]},
+  { h: 'Dealership', links: [
+    ['About us', `${BASE}/about`],
+    ['Contact & hours', `${BASE}/contact`],
+    ['Careers', `${BASE}/careers`],
+    ['My account', `${BASE}/account`],
+  ]},
+];
+---
+<footer class="site-footer">
+  <div class="site-container site-foot-grid" style="grid-template-columns:1.5fr 1fr 1fr 1fr 1fr">
+    <div>
+      <a class="site-brand site-brand-footer" href={`${BASE}/`} aria-label="Rebirth Auto home">
+        <span class="brand-mark" set:html={icon('spark', 18)}></span>
+        <span>Rebirth Auto<small>Near-Future Yard</small></span>
+      </a>
+      <p style="margin-top:16px; font-size:14px; color:#9AA8BC; max-width:32ch">
+        A modern, AI-native car yard. The top nav stays out of your way — Rebi and
+        in-context buttons take you straight to what you need.
+      </p>
+      <button type="button" class="btn btn-primary btn-sm" data-rebi-open style="margin-top:16px">
+        <span set:html={icon('spark', 14)}></span> Ask Rebi anything
+      </button>
+    </div>
+
+    {columns.map((c) => (
+      <div>
+        <div class="site-foot-h">{c.h}</div>
+        <ul>
+          {c.links.map(([label, href]) => (
+            <li><a href={href}>{label}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  <div class="site-container site-foot-bar">
+    <span>© {new Date().getFullYear()} Rebirth Auto (demo). Placeholder content — not a live dealership.</span>
+    <span class="mono">Inline-Contextual IA · AI-native car yard</span>
+  </div>
+</footer>

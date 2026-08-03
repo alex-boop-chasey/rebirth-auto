@@ -1,0 +1,77 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import { brands } from './_data';
+const offers = [
+  { brand: 'Toyota', title: 'RAV4 Hybrid drive-away deal', sub: 'Selected demo Cruiser AWD', price: '$52,990', tag: 'g-sage', badge: 'Demo saving' },
+  { brand: 'Isuzu Ute', title: '5-year warranty + free tub liner', sub: 'Across the D-MAX range', price: 'From $46,900', tag: 'g-clay', badge: 'This month' },
+  { brand: 'Hyundai', title: 'IONIQ 5 with free home charger', sub: 'Limited demo stock', price: '$62,990', tag: 'g-teal', badge: 'EV offer' },
+  { brand: 'Mazda', title: 'CX-5 GT with 3 years free servicing', sub: 'New MY25 stock', price: '$49,990', tag: 'g-navy', badge: 'New' },
+  { brand: 'Ford', title: 'Ranger XLT — $2,000 accessory credit', sub: 'Selected 4x4 utes', price: '$61,490', tag: 'g-clay', badge: 'Popular' },
+  { brand: 'Subaru', title: 'Forester AWD low-rate finance', sub: 'From 5.9% p.a. comparison', price: '$41,990', tag: 'g-sage', badge: 'Finance' },
+];
+---
+<Layout title="Offers & specials" active="offers">
+  <section class="rt-wrap rt-off-head">
+    <span class="rt-eyebrow">Current specials</span>
+    <h1>This month’s local deals</h1>
+    <p>Genuine, no-catch offers across our franchise brands. Rebi can tell you which one actually saves <em>you</em> the most.</p>
+  </section>
+
+  <section class="rt-wrap rt-off-filter">
+    <span class="rt-chip" style="background:var(--green);color:#eef4f0;border-color:var(--green)">All offers</span>
+    {brands.slice(0, 8).map((b) => <span class="rt-chip">{b}</span>)}
+  </section>
+
+  <section class="rt-wrap rt-off-grid">
+    {offers.map((o) => (
+      <div class="rt-off rt-card">
+        <div class={`rt-photo ${o.tag} rt-off-photo`}>
+          <span class="rt-pill rt-pill-clay rt-off-badge">{o.badge}</span>
+          <span class="rt-off-brand">{o.brand}</span>
+        </div>
+        <div class="rt-off-body">
+          <h3>{o.title}</h3>
+          <p class="rt-off-sub">{o.sub}</p>
+          <div class="rt-off-foot">
+            <span class="rt-off-price">{o.price}</span>
+            <a href="/concepts/regional-trust/listings" class="rt-btn rt-btn-ghost rt-btn-sm">View stock →</a>
+          </div>
+        </div>
+      </div>
+    ))}
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-rebi-panel rt-off-rebi">
+      <span class="rt-rebi-orb xl"></span>
+      <div>
+        <h2>Not sure which deal is right for you?</h2>
+        <p>Tell Rebi your budget and what you need — it’ll match you to the offer that genuinely fits, no upsell.</p>
+      </div>
+      <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-primary">Ask Rebi</a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-off-head { padding-block: 44px 20px; }
+  .rt-off-head h1 { font-size: 46px; margin: 12px 0 10px; }
+  .rt-off-head p { font-size: 17px; color: var(--ink-70); max-width: 560px; }
+  .rt-off-filter { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 28px; }
+  .rt-off-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding-bottom: 20px; }
+  .rt-off { overflow: hidden; }
+  .rt-off-photo { height: 160px; position: relative; display: grid; place-items: end start; padding: 12px; }
+  .rt-off-badge { position: absolute; top: 12px; left: 12px; }
+  .rt-off-brand { color: #fff; font-family: var(--ff-display); font-weight: 600; font-size: 18px; z-index: 1; }
+  .rt-off-body { padding: 20px; }
+  .rt-off-body h3 { font-size: 19px; }
+  .rt-off-sub { font-size: 14px; color: var(--muted); margin: 6px 0 16px; }
+  .rt-off-foot { display: flex; justify-content: space-between; align-items: center; }
+  .rt-off-price { font-family: var(--ff-display); font-size: 20px; font-weight: 700; color: var(--green-deep); }
+  .rt-off-rebi { display: flex; align-items: center; gap: 22px; padding: 28px 32px; }
+  .rt-off-rebi h2 { font-size: 26px; }
+  .rt-off-rebi p { font-size: 15px; color: var(--ink-70); margin-top: 6px; }
+  .rt-off-rebi .rt-btn { margin-left: auto; flex: 0 0 auto; }
+</style>

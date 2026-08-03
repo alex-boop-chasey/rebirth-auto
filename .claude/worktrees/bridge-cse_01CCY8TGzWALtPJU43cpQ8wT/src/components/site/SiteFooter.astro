@@ -1,0 +1,70 @@
+---
+/**
+ * SiteFooter — the inline-contextual FULL-DIRECTORY footer (NFY design language).
+ *
+ * Because the top nav is a lean set of hubs, the footer carries the complete site
+ * map: every page grouped into four columns (Shop / Buy & own / Service & parts /
+ * Dealership), so any page is one click away. This is the "long tail" surface of
+ * the inline-contextual IA.
+ *
+ * Config-as-data: the directory columns come from `~/config/nav`; the dealer name
+ * comes from `~/config/dealer`. No dealer literals live here. Uses the shipped
+ * dark `.site-footer` chrome from theme.css. Keeps an honest demo frame. The Rebi
+ * CTA carries the shared `data-rebi-open` seam so it opens the real ChatWidget.
+ *
+ * Props:
+ *   tagline  — optional small text under the brand name
+ *   blurb    — optional one-paragraph description under the brand
+ */
+import { dealerConfig } from '../../config/dealer';
+import { footerColumns } from '../../config/nav';
+
+interface Props {
+  tagline?: string;
+  blurb?: string;
+}
+const { tagline, blurb } = Astro.props as Props;
+
+const dealerName = dealerConfig.identity.name;
+const year = new Date().getFullYear();
+
+const description =
+  blurb ??
+  `A modern, AI-native car yard. The top nav stays out of your way — Rebi and in-context buttons take you straight to what you need.`;
+
+const sparkSvg =
+  '<svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>';
+---
+
+<footer class="site-footer">
+  <div class="site-container site-foot-grid" style="grid-template-columns:1.5fr 1fr 1fr 1fr 1fr">
+    <div>
+      <a class="site-brand site-brand-footer" href="/" aria-label={`${dealerName} home`}>
+        <span class="brand-mark" set:html={sparkSvg}></span>
+        <span>{dealerName}{tagline && <small>{tagline}</small>}</span>
+      </a>
+      <p style="margin-top:16px; font-size:14px; color:#9AA8BC; max-width:32ch">
+        {description}
+      </p>
+      <button type="button" class="btn btn-primary btn-sm" data-rebi-open data-rebi-kind="nav" style="margin-top:16px">
+        <span set:html={sparkSvg}></span> Ask Rebi anything
+      </button>
+    </div>
+
+    {footerColumns.map((c) => (
+      <div>
+        <div class="site-foot-h">{c.heading}</div>
+        <ul>
+          {c.links.map((l) => (
+            <li><a href={l.href}>{l.label}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  <div class="site-container site-foot-bar">
+    <span>© {year} {dealerName} (demo). Placeholder content — not a live dealership.</span>
+    <span class="mono">Inline-Contextual IA · AI-native car yard</span>
+  </div>
+</footer>

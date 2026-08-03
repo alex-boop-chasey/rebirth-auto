@@ -1,0 +1,41 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import { hubs, icon, base } from './_shell/data';
+export const prerender = false;
+const hub = hubs.find((h) => h.key === 'service-parts')!;
+---
+<Layout title="Service & Parts — Rebirth Auto Smart Hubs" active="service-parts" dockPrompt="Need a service slot or a part? I’ll sort it.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Service & Parts']]} /></section>
+  <section class="sh-wrap sh-hero" style="padding-block:20px 24px">
+    <div class="eyebrow">Service &amp; Parts hub</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Owning it well.</h1>
+    <p class="sh-sub">{hub.tagline}</p>
+    <div class="sh-jumprow" style="margin-top:20px">
+      <a href={base + '/service'} class="btn btn-primary btn-sm"><span set:html={icon('wrench',15)}></span> Book a service</a>
+      <a href={base + '/parts'} class="sh-jump"><span class="sh-jic" set:html={icon('gear',15)}></span> Parts enquiry</a>
+      <a href={base + '/rebi'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('spark',15)}></span> Ask Rebi about a part</a>
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:8px">
+    <div class="sh-grid sh-cols-3">
+      {hub.items.map((it) => (
+        <a href={it.href} class="card card-lift sh-panel" style="text-decoration:none; color:inherit; display:flex; flex-direction:column">
+          <div class="sh-tile-ic" set:html={icon(it.icon, 22)}></div>
+          <h2 class="sh-h2" style="font-size:19px">{it.label}</h2>
+          <p style="font-size:14px; color:var(--ink-soft); line-height:1.5; margin:4px 0 14px; flex:1">{it.blurb}</p>
+          <span class="sh-jump" style="align-self:flex-start"><span class="sh-jic" set:html={icon('arrow',15)}></span> Go</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="glass sh-panel" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+      <span set:html={icon('shield',22)} style="color:var(--teal-deep)"></span>
+      <p style="flex:1; min-width:260px; font-size:14px; color:var(--ink-soft)">Bought elsewhere? No problem — service, parts and fleet support are open to every make. <a href={base + '/contact'} style="color:var(--teal-deep)">Find your department →</a></p>
+      <a href={base + '/fleet'} class="sh-jump"><span class="sh-jic" set:html={icon('briefcase',15)}></span> Fleet &amp; business</a>
+    </div>
+  </section>
+</Layout>

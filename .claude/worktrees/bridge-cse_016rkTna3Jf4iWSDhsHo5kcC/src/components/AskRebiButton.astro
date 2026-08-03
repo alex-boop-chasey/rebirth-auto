@@ -1,0 +1,48 @@
+---
+/**
+ * The single, shared "Ask Rebi" trigger button.
+ *
+ * Every AI-feature entry point that opens Rebi (compare tray, per-listing CTA,
+ * and any future surface) renders THIS component so the sparkle-icon + Rebi-blue
+ * pill treatment lives in exactly one place. Behaviour stays declarative: the
+ * ChatWidget's delegated listener reads the `data-rebi-*` attributes, so callers
+ * just pass those (plus `id`/refs) straight through — they land on the <button>
+ * via the attribute spread below, unchanged.
+ *
+ * Rebi-blue is the existing brand value (rgb(1 97 239) / hover rgb(1 84 207))
+ * already used across the AI surfaces; centralising it here means a future
+ * palette change touches one file.
+ *
+ * Props:
+ *   - label:     button text (default "Ask Rebi").
+ *   - size:      'inline' = compact tray pill (default) | 'block' = full-width CTA.
+ *   - iconClass: sparkle icon sizing (default h-4 w-4).
+ * Any other attribute (id, data-rebi-open, data-rebi-kind, data-rebi-ref/-refs,
+ * data-rebi-title, class, …) is forwarded verbatim to the underlying button.
+ */
+import type { HTMLAttributes } from 'astro/types';
+import { iconSvg } from '../lib/listing';
+
+interface Props extends HTMLAttributes<'button'> {
+  label?: string;
+  size?: 'inline' | 'block';
+  iconClass?: string;
+}
+
+const {
+  label = 'Ask Rebi',
+  size = 'inline',
+  iconClass = 'h-4 w-4',
+  class: className,
+  ...rest
+} = Astro.props;
+
+const base =
+  'inline-flex items-center justify-center rounded-xl bg-[rgb(1_97_239)] font-semibold text-white transition hover:bg-[rgb(1_84_207)]';
+const sizing = size === 'block' ? 'w-full gap-2 px-5 py-3' : 'gap-1.5 px-4 py-2 text-sm';
+---
+
+<button type="button" class:list={[base, sizing, className]} {...rest}>
+  <Fragment set:html={iconSvg('sparkle', iconClass)} />
+  {label}
+</button>

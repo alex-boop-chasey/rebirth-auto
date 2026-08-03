@@ -1,0 +1,213 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+import { vehicles, reviews, brands, dealer } from './_data';
+const base = '/concepts/regional-trust';
+const featured = vehicles.slice(0, 4);
+const suggestions = ['Family SUV under $45k', 'Best ute for towing', 'First EV — is it worth it?', 'Something reliable under $25k'];
+---
+<Layout title="Riverbend Motor Co. — home" active="home">
+  <!-- HERO -->
+  <section class="rt-hero">
+    <div class="rt-wrap rt-hero-grid">
+      <div class="rt-hero-copy">
+        <span class="rt-eyebrow">Family-owned since {dealer.established}</span>
+        <h1>The car yard that<br />feels like <span class="rt-hl">a neighbour.</span></h1>
+        <p class="rt-hero-lead">
+          Two generations helping {dealer.region} into the right car — no pressure, no jargon,
+          just straight local advice. And now Rebi, our AI guide, is here to help around the clock.
+        </p>
+
+        <!-- AI search, front and centre -->
+        <div class="rt-hero-search rt-rebi-panel">
+          <div class="rt-hero-search-head">
+            <span class="rt-rebi-orb lg"></span>
+            <div>
+              <strong>Ask Rebi to find your car</strong>
+              <em>Describe what you need in plain English — I know the whole lot.</em>
+            </div>
+          </div>
+          <div class="rt-hero-search-bar">
+            <input class="rt-input" type="text" placeholder="“A safe hybrid for my daughter’s first car, under $30k”" />
+            <button class="rt-btn rt-btn-primary">Find it</button>
+          </div>
+          <div class="rt-hero-chips">
+            {suggestions.map((s) => <span class="rt-chip">{s}</span>)}
+          </div>
+        </div>
+
+        <div class="rt-hero-trust">
+          <div><strong>1,900+</strong><span>local families served</span></div>
+          <div><strong>4.9★</strong><span>from 600+ reviews</span></div>
+          <div><strong>48 yrs</strong><span>in the community</span></div>
+        </div>
+      </div>
+
+      <div class="rt-hero-media">
+        <div class="rt-photo g-sage rt-hero-photo"><span class="rt-hero-photo-tag">Showroom photo</span></div>
+        <div class="rt-hero-card rt-card">
+          <span class="rt-pill rt-pill-gold">★ Since 1978</span>
+          <p>“They’ve looked after our whole family’s cars for 20 years.”</p>
+          <span class="rt-hero-card-by">— The Hutchinson family, Bargara</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONDITION FACETS -->
+  <section class="rt-wrap rt-section rt-facets">
+    <a href={`${base}/listings`} class="rt-facet rt-card">
+      <span class="rt-facet-count">274</span><h3>New vehicles</h3>
+      <p>Latest models across 12 trusted brands, drive-away priced.</p><span class="rt-facet-go">Browse new →</span>
+    </a>
+    <a href={`${base}/listings`} class="rt-facet rt-card">
+      <span class="rt-facet-count">57</span><h3>Demo &amp; near-new</h3>
+      <p>Ex-demo cars with big savings and balance of warranty.</p><span class="rt-facet-go">Browse demo →</span>
+    </a>
+    <a href={`${base}/listings`} class="rt-facet rt-card">
+      <span class="rt-facet-count">305</span><h3>Quality used</h3>
+      <p>Every used car inspected and backed by our local promise.</p><span class="rt-facet-go">Browse used →</span>
+    </a>
+    <a href={`${base}/electric`} class="rt-facet rt-card is-ev">
+      <span class="rt-facet-count">⚡</span><h3>Electric &amp; hybrid</h3>
+      <p>New to EVs? We’ll explain charging and running costs, honestly.</p><span class="rt-facet-go">Explore EV →</span>
+    </a>
+  </section>
+
+  <!-- FEATURED -->
+  <section class="rt-wrap rt-section rt-featured">
+    <div class="rt-section-head">
+      <div>
+        <span class="rt-eyebrow">Freshly arrived</span>
+        <h2>This week on the lot</h2>
+      </div>
+      <a href={`${base}/listings`} class="rt-btn rt-btn-ghost">See all 636 vehicles →</a>
+    </div>
+    <div class="rt-featured-grid">
+      {featured.map((v) => <VehicleCard v={v} />)}
+    </div>
+  </section>
+
+  <!-- REBI feature band -->
+  <section class="rt-rebi-band">
+    <div class="rt-wrap rt-rebi-band-grid">
+      <div>
+        <span class="rt-eyebrow rt-eyebrow-light">Meet Rebi</span>
+        <h2>Like having a mate in the trade — on call, any hour.</h2>
+        <p>Rebi knows every car in our yard, our finance options and our service history. Ask a question in plain
+          language and get an honest, local answer — no call centres, no runaround.</p>
+        <ul class="rt-rebi-band-list">
+          <li>✓ Matches you to the right car from what you tell it</li>
+          <li>✓ Explains finance, trade-in and running costs simply</li>
+          <li>✓ Hands you to a real person the moment you want one</li>
+        </ul>
+        <a href={`${base}/rebi`} class="rt-btn rt-btn-clay"><span class="rt-rebi-orb"></span> Start a chat with Rebi</a>
+      </div>
+      <div class="rt-rebi-band-demo rt-card">
+        <div class="rt-rebi-band-msgs">
+          <div class="rt-rebi-bubble user">We’ve got two kids and a boat — what should we be looking at?</div>
+          <div class="rt-rebi-band-r">
+            <span class="rt-rebi-orb"></span>
+            <div class="rt-rebi-bubble">Good combo! You’ll want 3.5t towing and space in the back. I’d start you on the
+              2023 Ford Ranger XLT or the Isuzu D-MAX LS-U — both here now, both under $62k. Want me to line up a test drive?</div>
+          </div>
+          <div class="rt-rebi-band-chips">
+            <span class="rt-chip">Compare those two</span>
+            <span class="rt-chip">Book a test drive</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEWS / trust -->
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head">
+      <div>
+        <span class="rt-eyebrow">From our neighbours</span>
+        <h2>Real reviews from real locals</h2>
+      </div>
+      <span class="rt-pill rt-pill-gold">★ 4.9 average · 600+ verified reviews</span>
+    </div>
+    <div class="rt-reviews">
+      {reviews.map((r) => (
+        <div class="rt-review rt-card">
+          <span class="rt-stars">{'★'.repeat(r.stars)}</span>
+          <p>“{r.text}”</p>
+          <span class="rt-review-by">{r.name} · {r.town}</span>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Brand strip -->
+  <section class="rt-wrap rt-brandstrip">
+    <span>Proudly representing</span>
+    <div class="rt-brandstrip-logos">{brands.map((b) => <a href={`${base}/brand`}>{b}</a>)}</div>
+  </section>
+</Layout>
+
+<style>
+  .rt-hl { color: var(--clay); font-style: italic; }
+  .rt-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; padding-block: 60px 72px; align-items: center; }
+  .rt-hero-copy h1 { font-size: 58px; margin: 18px 0; }
+  .rt-hero-lead { font-size: 18px; color: var(--ink-70); max-width: 520px; }
+  .rt-hero-search { padding: 20px; margin-top: 28px; }
+  .rt-hero-search-head { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+  .rt-hero-search-head strong { font-size: 16px; color: var(--green-deep); display: block; }
+  .rt-hero-search-head em { font-style: normal; font-size: 13px; color: var(--ink-70); }
+  .rt-hero-search-bar { display: flex; gap: 10px; }
+  .rt-hero-search-bar .rt-input { flex: 1; }
+  .rt-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .rt-hero-trust { display: flex; gap: 36px; margin-top: 30px; }
+  .rt-hero-trust strong { font-family: var(--ff-display); font-size: 28px; color: var(--green-deep); display: block; }
+  .rt-hero-trust span { font-size: 13px; color: var(--muted); }
+  .rt-hero-media { position: relative; }
+  .rt-hero-photo { height: 480px; display: grid; place-items: center; box-shadow: var(--shadow-lg); }
+  .rt-hero-photo-tag { color: rgba(255,255,255,.5); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; font-size: 13px; z-index: 1; }
+  .rt-hero-card { position: absolute; bottom: -26px; left: -34px; width: 320px; padding: 18px; }
+  .rt-hero-card p { font-family: var(--ff-display); font-size: 17px; color: var(--ink); margin: 12px 0 8px; }
+  .rt-hero-card-by { font-size: 13px; color: var(--muted); }
+
+  .rt-facets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding-bottom: 20px; }
+  .rt-facet { padding: 24px; transition: transform .18s, box-shadow .18s; }
+  .rt-facet:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .rt-facet-count { font-family: var(--ff-display); font-size: 40px; color: var(--green); font-weight: 700; }
+  .rt-facet h3 { font-size: 20px; margin: 6px 0 8px; }
+  .rt-facet p { font-size: 14px; color: var(--ink-70); }
+  .rt-facet-go { display: inline-block; margin-top: 14px; font-weight: 700; color: var(--clay); font-size: 14px; }
+  .rt-facet.is-ev { background: var(--green-soft); border-color: var(--green-line); }
+
+  .rt-section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
+  .rt-section-head h2 { font-size: 36px; margin-top: 10px; }
+  .rt-featured-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+
+  .rt-rebi-band { background: var(--green-deep); color: #dbe5df; }
+  .rt-rebi-band-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; padding-block: 72px; align-items: center; }
+  .rt-rebi-band h2 { color: #f4f0e6; font-size: 38px; margin: 14px 0; max-width: 460px; }
+  .rt-rebi-band p { font-size: 16px; color: #b8c7bf; max-width: 460px; }
+  .rt-eyebrow-light { color: #a9cbbc; }
+  .rt-eyebrow-light::before { background: var(--clay); }
+  .rt-rebi-band-list { list-style: none; padding: 0; margin: 22px 0 28px; display: flex; flex-direction: column; gap: 10px; }
+  .rt-rebi-band-list li { font-size: 15px; color: #d7e2db; }
+  .rt-rebi-band-demo { padding: 22px; }
+  .rt-rebi-band-msgs { display: flex; flex-direction: column; gap: 12px; }
+  .rt-rebi-band .rt-rebi-bubble.user { align-self: flex-end; max-width: 78%; }
+  .rt-rebi-band-r { display: flex; gap: 10px; align-items: flex-start; max-width: 88%; }
+  .rt-rebi-band-r .rt-rebi-orb { flex: 0 0 auto; margin-top: 4px; }
+  .rt-rebi-band-chips { display: flex; gap: 8px; margin-top: 4px; }
+
+  .rt-reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-review { padding: 24px; }
+  .rt-review p { font-family: var(--ff-display); font-size: 18px; line-height: 1.45; color: var(--ink); margin: 12px 0; }
+  .rt-review-by { font-size: 13px; color: var(--muted); font-weight: 700; }
+
+  .rt-brandstrip { display: flex; align-items: center; gap: 28px; padding-block: 40px 60px; }
+  .rt-brandstrip > span { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); flex: 0 0 auto; }
+  .rt-brandstrip-logos { display: flex; flex-wrap: wrap; gap: 14px 26px; }
+  .rt-brandstrip-logos a { font-family: var(--ff-display); font-size: 20px; font-weight: 600; color: var(--ink-70); }
+  .rt-brandstrip-logos a:hover { color: var(--green); }
+</style>

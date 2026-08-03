@@ -1,0 +1,50 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+---
+<Layout title="Sell your car — Dark Precision" current="" dockHint="Ask me what your car is really worth today">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Sell outright</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px;max-width:16ch">Sell us your car. No trade required.</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">Get a firm same-day offer whether or not you buy from us. Rebi values it against live market data the moment you enter the rego.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start">
+      <div class="dp-panel dp-tick" style="padding:30px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:20px">Instant valuation</span>
+        <div style="display:grid;gap:16px">
+          <label class="dp-field"><span class="dp-label">Registration</span><input class="dp-input dp-mono" placeholder="e.g. 000ABC" /></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <label class="dp-field"><span class="dp-label">State</span><input class="dp-input" value="QLD" /></label>
+            <label class="dp-field"><span class="dp-label">Odometer</span><input class="dp-input dp-mono" placeholder="km" /></label>
+          </div>
+          <label class="dp-field"><span class="dp-label">Condition</span>
+            <div class="dp-seg" style="margin-top:4px"><button aria-pressed="false">Fair</button><button aria-pressed="true">Good</button><button aria-pressed="false">Excellent</button></div>
+          </label>
+          <button class="dp-btn dp-btn--primary" style="justify-content:center">Value my car with Rebi</button>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:18px">
+        <div class="dp-ai" style="padding:28px;text-align:center">
+          <span class="dp-mono" style="font-size:11px;letter-spacing:0.18em;color:var(--signal)">REBI ESTIMATED OFFER</span>
+          <div class="dp-mono" style="font-size:52px;font-weight:600;margin-top:10px">$28,400<span class="dp-caret"></span></div>
+          <p class="dp-mute" style="font-size:12px;margin-top:6px">Range $26,900 – $29,800 · indicative</p>
+        </div>
+        <div class="dp-insight">
+          <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>HOW REBI GOT THIS</span>
+          <p>Benchmarked against <strong>41 comparable sales</strong> in the last 30 days. Your low kms and full service history push you to the top of the range.</p>
+        </div>
+        <div class="dp-grid dp-cols-3">
+          {[["01","Enter details","30 seconds"],["02","Rebi values it","Live market data"],["03","Get paid","Same-day EFT"]].map(([n,t,d]) => (
+            <div class="dp-panel" style="padding:16px"><span class="dp-mono" style="color:var(--signal);font-size:18px">{n}</span><p style="font-family:var(--font-display);font-weight:600;margin-top:8px;font-size:14px">{t}</p><p class="dp-mute" style="font-size:11px">{d}</p></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

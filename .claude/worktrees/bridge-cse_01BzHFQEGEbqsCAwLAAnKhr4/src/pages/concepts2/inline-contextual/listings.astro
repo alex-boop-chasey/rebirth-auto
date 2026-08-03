@@ -1,0 +1,88 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, brands, fmt, fmtKm, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Browse stock — Rebirth Auto" active="listings">
+  <section class="site-container" style="padding-block:28px 20px">
+    <span class="eyebrow"><span set:html={icon('filter',13)}></span> Browse · 305 cars</span>
+    <h1 style="font-family:var(--font-display); font-size:30px; margin:10px 0 6px">All stock</h1>
+    <p class="muted">New, Demo and Used are <b>filter facets</b> here — not separate pages. One list, sliced how you like.</p>
+
+    <div class="aisearch" style="max-width:44rem; margin-top:18px">
+      <span class="orb" style="width:24px;height:24px"></span>
+      <input type="text" placeholder="Refine with Rebi — “only AWD, budget $50k”" readonly />
+      <button class="btn btn-primary btn-sm" data-rebi-open><span set:html={icon('spark',15)}></span> Ask</button>
+    </div>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:250px 1fr; gap:26px; padding-bottom:60px; align-items:start">
+    <!-- FILTER PANEL — facets, with contextual entries embedded -->
+    <aside class="card" style="padding:18px; position:sticky; top:92px">
+      <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Condition</div>
+      <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px">
+        <a class="facet is-on" href={`${BASE}/listings`}>All</a>
+        <a class="facet" href={`${BASE}/listings?condition=new`}>New</a>
+        <a class="facet" href={`${BASE}/listings?condition=demo`}>Demo</a>
+        <a class="facet" href={`${BASE}/listings?condition=used`}>Used</a>
+      </div>
+
+      <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Fuel</div>
+      <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px">
+        <a class="facet" href={`${BASE}/listings?fuel=petrol`}>Petrol</a>
+        <a class="facet" href={`${BASE}/listings?fuel=diesel`}>Diesel</a>
+        <a class="facet" href={`${BASE}/listings?fuel=hybrid`}>Hybrid</a>
+        <a class="facet" href={`${BASE}/listings?fuel=electric`}>Electric</a>
+      </div>
+      <!-- fuel facet surfaces the EV hub, in context -->
+      <a href={`${BASE}/electric`} class="entry" style="width:100%; box-shadow:none; margin-bottom:18px">
+        <span class="entry-ic" set:html={icon('bolt',16)}></span>
+        <span class="entry-tx"><b>New to EVs?</b><span>Open the electric hub</span></span>
+        <span class="entry-go" set:html={icon('arrow',15)}></span>
+      </a>
+
+      <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Brand</div>
+      <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:6px">
+        {brands.map((b) => (<a class="facet" href={`${BASE}/brand?b=${b.slug}`}>{b.name}</a>))}
+      </div>
+      <p class="faint" style="font-size:11px">Tap a brand to open its hub, or filter the list.</p>
+
+      <hr class="divider" style="margin:16px 0" />
+      <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Body</div>
+      <div style="display:flex; flex-wrap:wrap; gap:7px">
+        {['SUV','Ute','Wagon','Hatch','Van'].map((b) => (<a class="facet" href={`${BASE}/listings?body=${b.toLowerCase()}`}>{b}</a>))}
+      </div>
+    </aside>
+
+    <!-- RESULTS -->
+    <div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
+        <span class="muted" style="font-size:13.5px">Showing {vehicles.length} of 305</span>
+        <span class="chip"><span set:html={icon('gear',13)}></span> Sort: Rebi-recommended</span>
+      </div>
+      <div class="inventory-grid" style="--result-cols:3">
+        {vehicles.map((v) => (
+          <div class="card card-lift" style="overflow:hidden">
+            <a href={`${BASE}/vehicle?id=${v.id}`} style="display:block; text-decoration:none; color:inherit">
+              <div style={`height:140px; background:${v.hue}`}></div>
+              <div style="padding:13px 14px 6px">
+                <div style="display:flex; gap:6px; margin-bottom:6px">
+                  {v.badge && <span class="chip chip-teal" style="padding:3px 8px">{v.badge}</span>}
+                  <span class="chip" style="padding:3px 8px">{v.condition}</span>
+                </div>
+                <b style="font-family:var(--font-display); font-size:15.5px">{v.year} {v.make} {v.model}</b>
+                <div class="muted" style="font-size:12px; margin-top:2px">{v.variant}</div>
+                <div class="faint" style="font-size:11.5px; margin-top:5px">{fmtKm(v.odo)} · {v.trans} · {v.drive}</div>
+                <div style="font-family:var(--font-display); font-weight:700; font-size:18px; margin-top:7px">{fmt(v.price)}</div>
+              </div>
+            </a>
+            <div style="padding:0 14px 13px; display:flex; gap:7px">
+              <a href={`${BASE}/finance?price=${v.price}`} class="chip chip-ai" style="text-decoration:none"><span set:html={icon('calc',12)}></span> Repayments</a>
+              <a href={`${BASE}/test-drive?id=${v.id}`} class="chip" style="text-decoration:none"><span set:html={icon('play',12)}></span> Test drive</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

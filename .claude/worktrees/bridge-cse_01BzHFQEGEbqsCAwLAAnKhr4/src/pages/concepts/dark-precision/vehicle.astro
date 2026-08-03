@@ -1,0 +1,158 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+
+const specs = [
+  ["Engine", "3.0L 4-cyl turbo-diesel"],
+  ["Power", "140 kW @ 3,600 rpm"],
+  ["Torque", "450 Nm @ 1,600 rpm"],
+  ["Transmission", "6-speed automatic"],
+  ["Drive", "Selectable 4x4"],
+  ["Braked towing", "3,500 kg"],
+  ["Fuel economy", "8.0 L/100km comb."],
+  ["Seats", "5"],
+  ["ANCAP", "5 star (2022)"],
+  ["VIN", "MPATFR40J00000000"],
+];
+const gauges = [
+  ["Value vs market", 82, "Priced 4% under comparable"],
+  ["Condition index", 94, "Ex-demo · 12,400 km"],
+  ["Running cost", 71, "Diesel · ~$2,400/yr"],
+  ["Resale hold (3yr)", 88, "Strong for segment"],
+];
+---
+<Layout title="Isuzu D-MAX X-Terrain — Dark Precision" current="listings" dockHint="Ask me anything about this D-MAX">
+
+  <!-- breadcrumb -->
+  <div class="dp-wrap" style="padding-top:22px">
+    <p class="dp-mono dp-mute" style="font-size:11px;letter-spacing:0.1em">
+      <a href={`${base}/listings`} style="color:var(--ink-mute)">INVENTORY</a> / USED UTES / <span style="color:var(--signal)">ISUZU D-MAX X-TERRAIN</span>
+    </p>
+  </div>
+
+  <section class="dp-wrap" style="padding-block:22px 40px;display:grid;grid-template-columns:1.4fr 1fr;gap:34px;align-items:start">
+
+    <!-- LEFT: gallery + configurator readouts -->
+    <div>
+      <div class="dp-panel dp-tick" style="aspect-ratio:16/10;position:relative;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 8%, #26303d, #0c1015 78%);overflow:hidden">
+        <span style="font-size:130px;opacity:0.55">🛻</span>
+        <span class="dp-vcard__scan" style="opacity:0.7;animation:dp-scan 3s ease-in-out infinite"></span>
+        <div style="position:absolute;top:16px;left:16px;display:flex;gap:8px">
+          <span class="dp-chip dp-chip--signal" style="background:rgba(8,9,12,0.75)">DEMO</span>
+          <span class="dp-chip" style="background:rgba(8,9,12,0.75)">5★ ANCAP</span>
+        </div>
+        <div style="position:absolute;bottom:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:flex-end">
+          <span class="dp-mono dp-mute" style="font-size:11px">EXTERIOR · MINERAL WHITE</span>
+          <span class="dp-mono dp-mute" style="font-size:11px">01 / 24</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px">
+        {Array.from({length:6}).map((_,i) => (
+          <div class="dp-panel" style={`aspect-ratio:1;display:grid;place-items:center;font-size:22px;opacity:${i===0?"1":"0.45"};border-color:${i===0?"var(--signal)":"var(--line)"}`}>🛻</div>
+        ))}
+      </div>
+
+      <!-- instrument cluster: AI gauges -->
+      <div class="dp-ai" style="margin-top:24px">
+        <div class="dp-ai__head">
+          <span class="dp-rebi-avatar" style="width:24px;height:24px"></span>
+          <span style="color:var(--ink-dim)">REBI · VEHICLE INTELLIGENCE</span>
+          <span class="dp-chip dp-chip--signal" style="margin-left:auto"><span class="dp-dot dp-dot--live"></span>GROUNDED</span>
+        </div>
+        <div class="dp-ai__body">
+          <div class="dp-grid dp-cols-2" style="gap:18px">
+            {gauges.map(([label, val, note]) => (
+              <div class="dp-panel" style="padding:16px;background:var(--base)">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span class="dp-readout__k">{label}</span>
+                  <span class="dp-mono" style="font-size:20px;color:var(--signal)">{val}</span>
+                </div>
+                <div class="dp-readout__bar" style="margin-top:10px"><i style={`width:${val}%`}></i></div>
+                <p class="dp-mute" style="font-size:11.5px;margin-top:8px">{note}</p>
+              </div>
+            ))}
+          </div>
+          <div class="dp-insight" style="margin-top:18px">
+            <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI SUMMARY · GROUNDED IN VERIFIED SPEC</span>
+            <p>This X-Terrain is an <strong>ex-demo</strong> with just 12,400 km, priced <strong>4% under</strong> comparable used stock in QLD. The 3.0L diesel and 3,500 kg braked tow make it a genuine dual-purpose ute — <strong>strong fit</strong> for the "family + caravan" brief you described. No accident history on record.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== EDMUNDS EXPERT REVIEW SLOT ===================== -->
+      <div class="dp-panel dp-tick" style="margin-top:24px;padding:0;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--raised)">
+          <span class="dp-eyebrow" style="color:var(--amber)">Expert review</span>
+          <span class="dp-attr" style="margin-left:auto">Review by <b>Edmunds</b>
+            <span style="display:inline-grid;place-items:center;width:20px;height:20px;border:1px solid var(--line-bright);border-radius:3px;font-family:var(--font-display);font-weight:700;font-size:11px;color:var(--amber)">E</span>
+          </span>
+        </div>
+        <div style="padding:22px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center">
+          <div style="text-align:center;padding-right:22px;border-right:1px solid var(--line)">
+            <div class="dp-mono" style="font-size:44px;color:var(--amber);line-height:1">8.1</div>
+            <div class="dp-readout__k" style="margin-top:4px">/ 10 EXPERT</div>
+          </div>
+          <div style="display:grid;gap:12px">
+            <p class="dp-dim" style="font-size:14px;line-height:1.6">"The D-MAX pairs proven diesel reliability with a genuinely capable 4x4 system. Ride is composed for a ladder-frame ute, and safety tech is class-leading." <span class="dp-mute">— Edmunds editorial (placeholder excerpt)</span></p>
+            <div class="dp-pillrow">
+              <span class="dp-chip">Reliability 8.6</span>
+              <span class="dp-chip">Comfort 7.4</span>
+              <span class="dp-chip">Tech 8.0</span>
+              <span class="dp-chip">Value 8.3</span>
+            </div>
+            <a href="#" class="dp-mono" style="font-size:12px;color:var(--signal)">Read the full Edmunds review →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: sticky buy rail -->
+    <aside style="position:sticky;top:88px;display:grid;gap:16px">
+      <div class="dp-panel" style="padding:24px">
+        <h1 class="dp-h3">Isuzu D-MAX X-Terrain</h1>
+        <p class="dp-mono dp-mute" style="font-size:12.5px;margin-top:6px">2024 · 4x4 Dual Cab · Auto · Stock #DX-4471</p>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-top:20px">
+          <span class="dp-mono" style="font-size:38px;font-weight:600;letter-spacing:-0.02em">$62,990</span>
+          <span class="dp-chip dp-chip--amber">Drive-away</span>
+        </div>
+        <p class="dp-mute" style="font-size:12px;margin-top:6px">Est. $312/wk over 60 months · <a href={`${base}/finance`} style="color:var(--signal)">finance →</a></p>
+        <div style="display:grid;gap:10px;margin-top:22px">
+          <a class="dp-btn dp-btn--primary" href={`${base}/test-drive`} style="justify-content:center">Book a test drive</a>
+          <a class="dp-btn" href={`${base}/rebi`} style="justify-content:center">Ask Rebi about this car</a>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <a class="dp-btn dp-btn--ghost dp-btn--sm" href={`${base}/finance`} style="justify-content:center">Get finance</a>
+            <a class="dp-btn dp-btn--ghost dp-btn--sm" href={`${base}/sell`} style="justify-content:center">Trade-in</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- key specs table -->
+      <div class="dp-panel" style="padding:22px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="margin-bottom:14px;display:flex">Specification</span>
+        {specs.map(([k,v]) => (
+          <div class="dp-readout" style="grid-template-columns:1fr auto">
+            <span class="dp-readout__k">{k}</span>
+            <span class="dp-readout__v">{v}</span>
+          </div>
+        ))}
+      </div>
+
+      <!-- ask rebi mini -->
+      <div class="dp-ai" style="padding:18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span class="dp-rebi-avatar" style="width:22px;height:22px"></span>
+          <span class="dp-mono" style="font-size:11px;color:var(--signal)">POPULAR QUESTIONS</span>
+        </div>
+        <div style="display:grid;gap:8px">
+          {["Can it tow a 2.5t caravan?","What's the real fuel cost?","Is the warranty transferable?"].map((q) => (
+            <a href={`${base}/rebi`} class="dp-facet" style="border:1px solid var(--line);border-radius:3px;padding:10px 12px;font-size:12.5px;color:var(--ink-dim)">
+              <span>{q}</span><span style="color:var(--signal)">→</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </aside>
+  </section>
+</Layout>

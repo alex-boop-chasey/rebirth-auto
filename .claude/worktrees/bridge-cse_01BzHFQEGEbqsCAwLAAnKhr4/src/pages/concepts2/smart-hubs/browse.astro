@@ -1,0 +1,89 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, brands, icon, base } from './_shell/data';
+export const prerender = false;
+// New/Demo/Used/EV are FACETS on this one hub — never separate pages.
+const conditionTabs = ['All', 'New', 'Demo', 'Used', 'Electric'];
+const bodyFacets = ['SUV','Ute','Wagon','Van'];
+const fuelFacets = ['Petrol','Diesel','Hybrid','Electric'];
+---
+<Layout title="Browse — Rebirth Auto Smart Hubs" active="browse" dockPrompt="Narrow this down for me — what matters most?">
+  <section class="sh-wrap" style="padding-block:22px 0">
+    <Crumbs items={[['Browse']]} />
+  </section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:20px 12px">
+    <div class="eyebrow">Browse hub</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">All 305 cars — one place, all the filters.</h1>
+    <p class="sh-sub">New, Demo, Used, EV and every brand are <b>facets of this hub</b>, not pages you hunt for.
+      Switch a tab, tick a filter, or let Rebi shortlist.</p>
+
+    <div class="aisearch" style="margin-top:22px; max-width:680px">
+      <span set:html={icon('spark',20)} style="color:var(--indigo)"></span>
+      <input type="text" placeholder="“family SUV under $45k with low km”" readonly />
+      <a href={base + '/rebi'} class="btn btn-primary btn-sm"><span set:html={icon('send',15)}></span> Ask Rebi</a>
+    </div>
+    <!-- brand facet as contextual chips (no "Our Brands" nav item) -->
+    <div class="sh-jumprow" style="margin-top:14px">
+      {brands.slice(0,8).map((b) => (
+        <a href={base + '/brand'} class="sh-jump" style="padding:7px 13px; font-size:12.5px"><span class="sh-jic" set:html={icon('tag',13)}></span> {b}</a>
+      ))}
+      <a href={base + '/brand'} class="sh-jump" style="padding:7px 13px; font-size:12.5px">All brands →</a>
+    </div>
+  </section>
+
+  <!-- condition tabs -->
+  <section class="sh-wrap" style="padding-block:8px">
+    <div class="sh-tabs">
+      {conditionTabs.map((t, i) => (
+        <a href={t === 'Electric' ? base + '/electric' : '#'} class={'sh-tab' + (i === 0 ? ' is-on' : '')}>
+          {t === 'Electric' && <span set:html={icon('plug',14)}></span>}{t}
+        </a>
+      ))}
+      <a href={base + '/electric'} class="sh-jump sh-jump-ai" style="margin-left:auto"><span class="sh-jic" set:html={icon('leaf',14)}></span> EV hub: range &amp; charging help</a>
+    </div>
+  </section>
+
+  <section class="sh-wrap" style="display:grid; grid-template-columns:250px 1fr; gap:24px; padding-block:16px 40px; align-items:start">
+    <!-- FACET PANEL -->
+    <aside class="card sh-panel" style="position:sticky; top:92px; padding:20px">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px"><span set:html={icon('filter',16)} style="color:var(--teal-deep)"></span><b style="font-size:14px">Filters</b></div>
+      <div class="sh-facet-h">Body type</div>
+      {bodyFacets.map((b) => (
+        <label class="sh-facet"><input type="checkbox" /> {b}</label>
+      ))}
+      <div class="sh-facet-h" style="margin-top:16px">Fuel</div>
+      {fuelFacets.map((f) => (
+        <label class="sh-facet"><input type="checkbox" /> {f} {f === 'Electric' && <a href={base + '/electric'} style="margin-left:auto; font-size:11px; color:var(--teal-deep); text-decoration:none">hub →</a>}</label>
+      ))}
+      <div class="sh-facet-h" style="margin-top:16px">Price</div>
+      <input type="range" min="20000" max="80000" value="55000" style="width:100%" />
+      <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-faint)"><span>$20k</span><span>$80k+</span></div>
+    </aside>
+
+    <!-- RESULTS -->
+    <div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px">
+        <span style="font-size:13.5px; color:var(--ink-soft)"><b style="color:var(--ink)">9</b> of 305 shown</span>
+        <div class="sh-jumprow">
+          <a href={base + '/finance'} class="sh-jump" style="padding:7px 13px; font-size:12.5px"><span class="sh-jic" set:html={icon('calc',13)}></span> Repayment calculator</a>
+          <a href={base + '/offers'} class="sh-jump" style="padding:7px 13px; font-size:12.5px"><span class="sh-jic" set:html={icon('tag',13)}></span> Today’s offers</a>
+        </div>
+      </div>
+      <div class="sh-grid sh-cols-3">
+        {vehicles.map((v) => <VehicleCard v={v} />)}
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .sh-tabs { display: flex; gap: 6px; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 2px; flex-wrap: wrap; }
+    .sh-tab { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; font-size: 14px; font-weight: 600; color: var(--ink-soft); text-decoration: none; border-radius: 10px 10px 0 0; border-bottom: 2px solid transparent; }
+    .sh-tab:hover { color: var(--ink); }
+    .sh-tab.is-on { color: var(--teal-deep); border-bottom-color: var(--teal); }
+    .sh-facet-h { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+    .sh-facet { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--ink-soft); padding: 5px 0; cursor: pointer; }
+  </style>
+</Layout>

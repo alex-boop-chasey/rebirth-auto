@@ -1,0 +1,68 @@
+---
+/**
+ * Self-contained "Contact Seller" demo modal.
+ *
+ * Uses the native <dialog> element, which gives us focus-trapping, Escape-to-close,
+ * focus restoration to the trigger, and an inert background for free. Fully
+ * self-contained: wired to a trigger button by id, no page state leaks in or out.
+ */
+interface Props {
+  title?: string;
+  body?: string;
+  /** id of the element that opens the modal. */
+  triggerId?: string;
+  /** id applied to the <dialog>. */
+  modalId?: string;
+}
+
+const {
+  title = 'This is a demo',
+  body = "In a real deployment, this button would open the seller's contact form or reveal their phone/email. Wire it up however your listing site needs.",
+  triggerId = 'contact-btn',
+  modalId = 'contact-modal',
+} = Astro.props;
+---
+
+<dialog
+  id={modalId}
+  data-contact-modal
+  data-trigger={triggerId}
+  aria-labelledby={`${modalId}-title`}
+  class="m-auto w-full max-w-md rounded-2xl border-0 bg-white p-6 text-slate-800 shadow-xl backdrop:bg-slate-900/50"
+>
+  <h2 id={`${modalId}-title`} class="text-xl font-bold text-slate-900">{title}</h2>
+  <p class="mt-3 text-slate-600">{body}</p>
+  <button
+    type="button"
+    data-modal-close
+    class="mt-6 w-full rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-700"
+  >
+    Close
+  </button>
+</dialog>
+
+<script>
+  document.querySelectorAll<HTMLDialogElement>('dialog[data-contact-modal]').forEach((dialog) => {
+    const trigger = dialog.dataset.trigger ? document.getElementById(dialog.dataset.trigger) : null;
+
+    trigger?.addEventListener('click', () => {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', ''); // minimal fallback for very old browsers
+    });
+
+    dialog.querySelector<HTMLElement>('[data-modal-close]')?.addEventListener('click', () => {
+      dialog.close();
+    });
+
+    // Close when clicking the backdrop (outside the dialog's content box).
+    dialog.addEventListener('click', (event) => {
+      const rect = dialog.getBoundingClientRect();
+      const inside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      if (!inside) dialog.close();
+    });
+  });
+</script>

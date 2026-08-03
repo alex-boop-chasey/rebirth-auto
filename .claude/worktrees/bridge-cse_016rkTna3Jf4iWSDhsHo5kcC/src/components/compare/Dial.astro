@@ -1,0 +1,47 @@
+---
+/**
+ * C3_Dial — one weight dial in Rebi's Balance (Candidate 3). A native range input
+ * (0..5) styled as a premium, per-dimension-coloured slider: accessible for free
+ * (keyboard, touch, pointer-drag) and the tactile heart of the instrument. Drag
+ * it and the leaderboard re-ranks live. A non-comparable dimension (fewer than
+ * two cars state it) renders disabled with an honest note rather than a fake dial.
+ */
+import { iconSvg } from '../../lib/listing';
+import { WEIGHT_MAX } from './reckon';
+
+interface Props {
+  dimKey: string;
+  label: string;
+  icon: string;
+  color: string;
+  value: number; // initial weight 0..WEIGHT_MAX
+  comparable: boolean;
+  note?: string;
+}
+const { dimKey, label, icon, color, value, comparable, note } = Astro.props;
+const fill = comparable ? Math.round((value / WEIGHT_MAX) * 100) : 0;
+---
+
+<div
+  class:list={['c3-dial', !comparable && 'off']}
+  data-dim={dimKey}
+  style={`--dc:${color};--fill:${fill}%`}
+>
+  <div class="c3-dial-head">
+    <span class="c3-dial-ic"><Fragment set:html={iconSvg(icon, 'ic')} /></span>
+    <span class="c3-dial-label">{label}</span>
+    <span class="c3-dial-weight" data-weight>{comparable ? `×${value}` : 'n/a'}</span>
+  </div>
+  <input
+    class="c3-range"
+    type="range"
+    min="0"
+    max={WEIGHT_MAX}
+    step="1"
+    value={comparable ? value : 0}
+    data-dim={dimKey}
+    disabled={!comparable}
+    aria-label={`How much ${label} matters, 0 to ${WEIGHT_MAX}`}
+  />
+  {!comparable && note && <p class="c3-dial-note">{note}</p>}
+</div>

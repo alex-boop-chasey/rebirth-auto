@@ -1,0 +1,220 @@
+---
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+import RebiDock from './RebiDock.astro';
+
+interface Props {
+  title?: string;
+  active?: string;
+}
+const { title = 'Riverbend Motor Co.', active = '' } = Astro.props;
+---
+
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1440" />
+    <title>{title} · Regional Trust concept</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="rt-root">
+      <div class="rt-demo-ribbon">Demo concept · “Regional Trust” theme · dummy content only — not a real business</div>
+      <Nav active={active} />
+      <main>
+        <slot />
+      </main>
+      <Footer />
+      <RebiDock />
+    </div>
+
+    <style is:global>
+      /* ============================================================
+         REGIONAL TRUST — design tokens + shared component system
+         Scoped under .rt-root so it never leaks into shipped surfaces.
+         ============================================================ */
+      .rt-root {
+        /* Warm neutral base */
+        --cream: #fbf8f1;
+        --paper: #f4ecdd;
+        --sand: #ede2cd;
+        --sand-deep: #e2d4b8;
+        --white: #ffffff;
+        /* Warm ink */
+        --ink: #2b2822;
+        --ink-70: #5a5449;
+        --muted: #8b8375;
+        --line: #e2d6bf;
+        --line-soft: #ece3d2;
+        /* Trust accents */
+        --green: #2f5d50;
+        --green-deep: #21453a;
+        --green-soft: #e3ede7;
+        --green-line: #c8dcd1;
+        --clay: #b5502e;      /* country red / terracotta */
+        --clay-deep: #93401f;
+        --clay-soft: #f4e2d7;
+        --navy: #2c4257;
+        --teal: #3d7a72;
+        --gold: #c08a3e;
+        --gold-soft: #f3e6cd;
+        /* form */
+        --r-sm: 10px;
+        --r: 16px;
+        --r-lg: 24px;
+        --shadow: 0 1px 2px rgba(60,48,26,.05), 0 8px 24px rgba(60,48,26,.06);
+        --shadow-lg: 0 2px 6px rgba(60,48,26,.06), 0 22px 48px rgba(60,48,26,.12);
+        --ff-display: 'Fraunces', Georgia, serif;
+        --ff-body: 'Nunito Sans', system-ui, sans-serif;
+
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--ff-body);
+        font-size: 16px;
+        line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+      .rt-root *,
+      .rt-root *::before,
+      .rt-root *::after { box-sizing: border-box; }
+
+      .rt-root h1, .rt-root h2, .rt-root h3, .rt-root h4 {
+        font-family: var(--ff-display);
+        font-weight: 600;
+        line-height: 1.08;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        margin: 0;
+      }
+      .rt-root p { margin: 0; }
+      .rt-root a { color: inherit; text-decoration: none; }
+      .rt-root img { display: block; max-width: 100%; }
+
+      /* ---- layout helpers ---- */
+      .rt-wrap { width: 1440px; max-width: 1440px; margin-inline: auto; padding-inline: 72px; }
+      .rt-section { padding-block: 72px; }
+      .rt-demo-ribbon {
+        background: var(--green-deep); color: #eaf1ec;
+        font-size: 12px; letter-spacing: .04em; text-align: center;
+        padding: 6px 12px; font-weight: 600;
+      }
+
+      /* ---- eyebrow / labels ---- */
+      .rt-eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 12px; font-weight: 800; letter-spacing: .14em;
+        text-transform: uppercase; color: var(--green);
+      }
+      .rt-eyebrow::before {
+        content: ''; width: 22px; height: 2px; background: var(--clay); border-radius: 2px;
+      }
+
+      /* ---- buttons ---- */
+      .rt-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+        font-family: var(--ff-body); font-weight: 700; font-size: 15px;
+        padding: 13px 24px; border-radius: 999px; border: 1.5px solid transparent;
+        cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+      }
+      .rt-btn:hover { transform: translateY(-1px); }
+      .rt-btn-primary { background: var(--green); color: #f4f0e6; box-shadow: 0 8px 20px rgba(47,93,80,.28); }
+      .rt-btn-primary:hover { background: var(--green-deep); }
+      .rt-btn-clay { background: var(--clay); color: #fbf0ea; box-shadow: 0 8px 20px rgba(181,80,46,.26); }
+      .rt-btn-clay:hover { background: var(--clay-deep); }
+      .rt-btn-ghost { background: var(--white); color: var(--ink); border-color: var(--line); }
+      .rt-btn-ghost:hover { border-color: var(--green); color: var(--green); }
+      .rt-btn-sm { padding: 9px 16px; font-size: 13px; }
+
+      /* ---- cards / panels ---- */
+      .rt-card {
+        background: var(--white); border: 1px solid var(--line);
+        border-radius: var(--r); box-shadow: var(--shadow);
+      }
+      .rt-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px;
+      }
+      .rt-pill-green { background: var(--green-soft); color: var(--green-deep); }
+      .rt-pill-clay { background: var(--clay-soft); color: var(--clay-deep); }
+      .rt-pill-gold { background: var(--gold-soft); color: #8a601f; }
+      .rt-pill-sand { background: var(--sand); color: var(--ink-70); }
+
+      /* ---- Rebi AI visual language (warm local advisor) ---- */
+      .rt-rebi-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--white); border: 1px solid var(--green-line);
+        border-radius: 999px; padding: 6px 14px 6px 6px; font-weight: 700; font-size: 13px; color: var(--green-deep);
+      }
+      .rt-rebi-orb {
+        width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+        background: radial-gradient(circle at 32% 28%, #6fb39d, var(--green) 62%, var(--green-deep));
+        box-shadow: 0 0 0 3px rgba(47,93,80,.14); position: relative;
+      }
+      .rt-rebi-orb::after {
+        content: ''; position: absolute; inset: 0; border-radius: 50%;
+        background: radial-gradient(circle at 68% 74%, rgba(255,255,255,.55), transparent 45%);
+      }
+      .rt-rebi-orb.lg { width: 46px; height: 46px; }
+      .rt-rebi-orb.xl { width: 66px; height: 66px; }
+
+      .rt-rebi-panel {
+        background: linear-gradient(180deg, var(--green-soft), var(--white) 70%);
+        border: 1px solid var(--green-line); border-radius: var(--r-lg);
+        box-shadow: var(--shadow);
+      }
+      .rt-rebi-bubble {
+        background: var(--white); border: 1px solid var(--green-line);
+        border-radius: 18px 18px 18px 6px; padding: 14px 16px; box-shadow: var(--shadow);
+        font-size: 15px; color: var(--ink-70);
+      }
+      .rt-rebi-bubble.user {
+        background: var(--green); color: #eef4f0; border: none;
+        border-radius: 18px 18px 6px 18px;
+      }
+      .rt-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--white); border: 1px solid var(--green-line);
+        color: var(--green-deep); font-weight: 700; font-size: 13px;
+        padding: 8px 14px; border-radius: 999px; cursor: pointer; transition: background .15s;
+      }
+      .rt-chip:hover { background: var(--green-soft); }
+
+      /* ---- gradient photo stand-ins (no external images) ---- */
+      .rt-photo { border-radius: var(--r); position: relative; overflow: hidden; background: var(--sand); }
+      .rt-photo::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(115deg, rgba(255,255,255,.14), transparent 40%),
+                    radial-gradient(120% 80% at 80% 110%, rgba(0,0,0,.16), transparent 60%);
+      }
+      .g-sage { background: linear-gradient(135deg, #7d9a86, #3f5f4f); }
+      .g-clay { background: linear-gradient(135deg, #c9764f, #8a3f22); }
+      .g-navy { background: linear-gradient(135deg, #5b7288, #2c4257); }
+      .g-teal { background: linear-gradient(135deg, #5aa199, #2f6b63); }
+      .g-sand { background: linear-gradient(135deg, #e6d4ae, #c6a866); }
+      .g-cream { background: linear-gradient(135deg, #efe6d3, #d8c7a4); }
+
+      /* subtle float animation for the Rebi orb (look only) */
+      @keyframes rt-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+      @keyframes rt-pulse { 0%,100% { opacity: .5; transform: scale(1); } 50% { opacity: 0; transform: scale(1.9); } }
+
+      /* ---- inputs (visual only) ---- */
+      .rt-field { display: flex; flex-direction: column; gap: 6px; }
+      .rt-field label { font-size: 13px; font-weight: 700; color: var(--ink-70); }
+      .rt-input, .rt-select {
+        width: 100%; background: var(--white); border: 1.5px solid var(--line);
+        border-radius: var(--r-sm); padding: 12px 14px; font-family: var(--ff-body);
+        font-size: 15px; color: var(--ink);
+      }
+      .rt-input::placeholder { color: var(--muted); }
+
+      /* ---- trust strip ---- */
+      .rt-stars { color: var(--gold); letter-spacing: 2px; font-size: 14px; }
+    </style>
+  </body>
+</html>

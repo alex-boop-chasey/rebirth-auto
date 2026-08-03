@@ -1,0 +1,85 @@
+---
+import '../styles/global.css';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+
+const year = new Date().getFullYear();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Page not found · Rebirth Auto</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <div class="site-container">
+      <!-- Header -->
+      <header class="flex items-center justify-between py-6">
+        <a href="/" class="text-base font-semibold tracking-tight text-slate-900">
+          Rebirth<span class="text-slate-400"> Auto</span>
+        </a>
+        <nav class="flex items-center gap-6 text-sm">
+          <a href="/#inventory" class="text-slate-500 transition hover:text-slate-900">
+            Inventory
+          </a>
+          <a
+            href="#"
+            id="nav-contact"
+            class="text-slate-500 transition hover:text-slate-900"
+          >
+            Contact
+          </a>
+        </nav>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="mx-auto max-w-2xl py-24 text-center md:py-32">
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+            404
+          </span>
+          <h1 class="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
+            This one's left the lot.
+          </h1>
+          <p class="mx-auto mt-5 max-w-xl text-lg text-slate-600">
+            The page you're looking for isn't here — the vehicle may have been sold, removed, or
+            never existed.
+          </p>
+          <a
+            href="/#inventory"
+            class="mt-8 inline-block rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-700"
+          >
+            Browse our inventory
+          </a>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="mt-24 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
+        © {year} Rebirth Auto · All vehicles subject to availability.
+      </footer>
+    </div>
+
+    <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
+    <ChatWidget />
+
+    <script>
+      // "Contact" in the nav opens the floating chat assistant.
+      document.getElementById('nav-contact')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('reb-launcher')?.click();
+      });
+    </script>
+  </body>
+</html>

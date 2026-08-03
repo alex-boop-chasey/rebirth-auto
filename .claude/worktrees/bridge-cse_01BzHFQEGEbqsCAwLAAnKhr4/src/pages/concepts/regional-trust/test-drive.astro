@@ -1,0 +1,74 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+const days = ['Mon 4', 'Tue 5', 'Wed 6', 'Thu 7', 'Fri 8', 'Sat 9'];
+const times = ['9:00', '10:30', '12:00', '1:30', '3:00', '4:30'];
+---
+<Layout title="Book a test drive" active="">
+  <section class="rt-wrap rt-td">
+    <div class="rt-td-copy">
+      <span class="rt-eyebrow">Come take one for a spin</span>
+      <h1>Book a test drive</h1>
+      <p>Pick a car and a time that suits — we’ll have it fuelled, cleaned and ready when you arrive. Prefer a longer
+        loan or a drive out to your place? Just ask; we’re flexible for locals.</p>
+
+      <div class="rt-td-selected rt-card">
+        <div class="rt-photo g-sage rt-td-selected-photo"><span>Photo</span></div>
+        <div>
+          <span class="rt-pill rt-pill-gold">Demo · Local favourite</span>
+          <h3>2024 Toyota RAV4 Cruiser Hybrid</h3>
+          <p class="rt-td-selected-p">All-wheel drive · 12,480 km · $52,990 drive-away</p>
+          <a href="/concepts/regional-trust/listings" class="rt-td-change">Change vehicle</a>
+        </div>
+      </div>
+
+      <div class="rt-td-rebi rt-rebi-panel">
+        <span class="rt-rebi-orb lg"></span>
+        <div><strong>Want to drive a few back-to-back?</strong><p>Tell Rebi your shortlist and it’ll line them up in one visit — no waiting around.</p></div>
+      </div>
+    </div>
+
+    <div class="rt-card rt-td-form">
+      <h3>Choose a time</h3>
+      <div class="rt-field"><label>Day</label>
+        <div class="rt-td-days">{days.map((d, i) => <button class={`rt-td-day ${i === 5 ? 'on' : ''}`}>{d}</button>)}</div>
+      </div>
+      <div class="rt-field"><label>Time</label>
+        <div class="rt-td-times">{times.map((t, i) => <button class={`rt-td-time ${i === 1 ? 'on' : ''}`}>{t}</button>)}</div>
+      </div>
+      <div class="rt-td-form-row">
+        <div class="rt-field"><label>First name</label><input class="rt-input" placeholder="Jamie" /></div>
+        <div class="rt-field"><label>Mobile</label><input class="rt-input" placeholder="04__ ___ ___" /></div>
+      </div>
+      <div class="rt-field"><label>Anything we should know?</label><textarea class="rt-input" rows="2" placeholder="e.g. I’ll bring my Hilux for a trade-in valuation too"></textarea></div>
+      <button class="rt-btn rt-btn-primary rt-td-cta">Confirm test drive</button>
+      <p class="rt-td-note"><span class="rt-rebi-orb"></span> Rebi confirms instantly; a real person calls to lock it in. Demo only — no booking is made.</p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-td { display: grid; grid-template-columns: 1fr 440px; gap: 40px; padding-block: 48px 64px; align-items: start; }
+  .rt-td-copy h1 { font-size: 46px; margin: 12px 0; }
+  .rt-td-copy > p { font-size: 17px; color: var(--ink-70); max-width: 500px; }
+  .rt-td-selected { display: flex; gap: 16px; padding: 16px; margin: 26px 0 18px; align-items: center; }
+  .rt-td-selected-photo { width: 140px; height: 100px; flex: 0 0 auto; display: grid; place-items: center; color: rgba(255,255,255,.55); font-weight: 800; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .rt-td-selected h3 { font-size: 19px; margin: 8px 0 4px; }
+  .rt-td-selected-p { font-size: 14px; color: var(--ink-70); }
+  .rt-td-change { font-size: 13px; color: var(--clay); font-weight: 700; display: inline-block; margin-top: 8px; }
+  .rt-td-rebi { display: flex; gap: 14px; align-items: center; padding: 18px; }
+  .rt-td-rebi strong { display: block; font-size: 16px; color: var(--green-deep); }
+  .rt-td-rebi p { font-size: 14px; color: var(--ink-70); margin-top: 3px; }
+  .rt-td-rebi .rt-rebi-orb { flex: 0 0 auto; }
+  .rt-td-form { padding: 26px; position: sticky; top: 120px; }
+  .rt-td-form h3 { font-size: 22px; margin-bottom: 18px; }
+  .rt-td-form .rt-field { margin-bottom: 16px; }
+  .rt-td-days, .rt-td-times { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .rt-td-day, .rt-td-time { padding: 10px 4px; border-radius: var(--r-sm); border: 1.5px solid var(--line); background: var(--white); font-size: 13px; font-weight: 700; color: var(--ink-70); cursor: pointer; }
+  .rt-td-day.on, .rt-td-time.on { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); }
+  .rt-td-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rt-td-cta { width: 100%; }
+  .rt-td-note { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .rt-td-note .rt-rebi-orb { flex: 0 0 auto; }
+</style>

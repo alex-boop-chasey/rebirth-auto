@@ -1,0 +1,31 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"compatibility_date": "2026-07-18",
+	"compatibility_flags": ["global_fetch_strictly_public"],
+	"name": "rebirth-auto",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
+	},
+	// Chatbot persistent conversation memory. Miniflare creates a local SQLite
+	// store during `astro dev`; this id points at the real remote D1 in prod.
+	"d1_databases": [
+		{
+			"binding": "CHAT_DB",
+			"database_name": "astro-listings-chat",
+			"database_id": "6edf386e-1a21-45e0-b525-1cd36981c607"
+		}
+	],
+	// Chatbot per-IP rate limiting. Miniflare uses a local store during
+	// `astro dev`; this id points at the real remote KV namespace in prod.
+	"kv_namespaces": [
+		{
+			"binding": "RATE_LIMIT_KV",
+			"id": "ecf965fdd6a34e3ea096250f0cd5065d"
+		}
+	]
+}

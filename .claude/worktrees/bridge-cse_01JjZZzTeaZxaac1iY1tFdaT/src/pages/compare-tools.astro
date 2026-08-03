@@ -1,0 +1,936 @@
+---
+export const prerender = false;
+
+/**
+ * /compare-tools — "Rebi's Balance" (promoted contest Candidate 3).
+ * =================================================================
+ * The comparison-tools / weighing-room companion to the main /compare table,
+ * reached via the "Comparison tools" button beside "Ask Rebi to decide". Reads
+ * the same `?ids=` contract and links back to /compare?ids=… in its header.
+ * A tactile DECISION INSTRUMENT: the shopper physically WEIGHS what matters via
+ * a row of draggable dials (price, age, km, seats, fuel economy) and the cars
+ * re-rank LIVE in Rebi's hands (FLIP), each score bar SEGMENTED by dimension so
+ * you can see exactly why a car leads, with Rebi re-narrating the call in real
+ * time. Light-only — native beside `/` and the rest of the site.
+ *
+ * Real-data + read-only reuse: same `?ids=` compare-tray contract as before, the
+ * same `LISTING_FIELDS` Sanity fetch and `CompareCar` mapping (incl. fuelEconomy),
+ * and the reckoning engine reuses the shared `normDim` + `SCORE_DIMS` from
+ * compare-verdict.ts verbatim. Never fabricates a spec or price.
+ */
+import '../styles/global.css';
+import { client } from '../sanity/lib/client';
+import { urlFor } from '../sanity/lib/image';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import AskRebiButton from '../components/AskRebiButton.astro';
+import Dial from '../components/compare/Dial.astro';
+import Contender from '../components/compare/Contender.astro';
+import { dealerConfig } from '../config/dealer';
+import { type Listing, LISTING_FIELDS, formatPrice, iconSvg } from '../lib/listing';
+import { type CompareCar, LENSES } from '../lib/compare-verdict';
+import { DIM_ORDER, DIM_META, reckon, type Weights } from '../components/compare/reckon';
+
+const year = new Date().getFullYear();
+
+// --- Data loading ------------------------------------------------------------
+// Parse ?ids=a,b,c — trim, drop blanks, dedupe, cap at 3 (a 2–3 car head-to-head
+// keeps the verdict decisive). Preserve the order given in the URL (GROQ `in`
+// doesn't guarantee it). When no/one id resolves, we show the empty state — the
+// instrument is never fabricated from arbitrary stock.
+const idsParam = Astro.url.searchParams.get('ids') ?? '';
+const ids = [
+  ...new Set(
+    idsParam
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ),
+].slice(0, 3);
+
+let listings: Listing[] = [];
+if (ids.length > 0) {
+  const fetched = await client.fetch<Listing[]>(
+    `*[_type == "listing" && _id in $ids]{ ${LISTING_FIELDS} }`,
+    { ids },
+  );
+  const byId = new Map(fetched.map((l) => [l._id, l]));
+  listings = ids.map((id) => byId.get(id)).filter((l): l is Listing => Boolean(l));
+}
+const activeIds = listings.map((l) => l._id);
+const canCompare = listings.length >= 2;
+
+// --- Scoring input (identical shape to the shared verdict) --------------------
+const cars: CompareCar[] = listings.map((l) => ({
+  id: l._id,
+  name: [l.make, l.model].filter(Boolean).join(' ') || l.title,
+  currency: l.currency || dealerConfig.locale.currency,
+  price: l.price ?? null,
+  year: l.vehicleSpecs?.year ?? null,
+  odometer: l.vehicleSpecs?.odometer ?? null,
+  seats: l.vehicleSpecs?.seatCount ?? null,
+  fuelEconomy: l.vehicleSpecs?.fuelEconomy ?? null,
+}));
+
+// Default weights = Balanced (every comparable dim at 1). Non-comparable dims
+// contribute nothing regardless, but we keep the shape honest via the dial state.
+const comparable = canCompare
+  ? reckon(cars, {}).comparable
+  : ({} as Record<string, boolean>);
+const initialWeights: Weights = {};
+for (const k of DIM_ORDER) initialWeights[k] = 1;
+
+const initial = canCompare ? reckon(cars, initialWeights) : null;
+const carById = new Map(cars.map((c) => [c.id, c]));
+
+// How many cars state each dimension — used for the honest "not comparable" note.
+const statingCount = (field: keyof CompareCar): number =>
+  cars.filter((c) => typeof c[field] === 'number' && Number.isFinite(c[field] as number)).length;
+const DIM_FIELD: Record<string, keyof CompareCar> = {
+  value: 'price',
+  newer: 'year',
+  lowkm: 'odometer',
+  space: 'seats',
+  economy: 'fuelEconomy',
+};
+
+const heroFor = (l: Listing) =>
+  l.images?.[0]
+    ? urlFor(l.images[0]).width(200).height(200).fit('crop').auto('format').url()
+    : null;
+const photoById = new Map(listings.map((l) => [l._id, heroFor(l)]));
+const slugById = new Map(listings.map((l) => [l._id, l.slug?.current ?? '']));
+const titleById = new Map(listings.map((l) => [l._id, l.title]));
+const priceDisplayById = new Map(listings.map((l) => [l._id, formatPrice(l.price, l.currency)]));
+
+const RING_C = 2 * Math.PI * 52;
+
+const title = 'Comparison tools — Rebirth Auto';
+const description = 'Weigh what matters and watch Rebi re-rank your shortlist live.';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="balance-page">
+    <!-- Page backdrop wash (paper + the two soft Rebi/teal radial glows) as a
+         FIXED, full-viewport direct child of <body>. Previously painted on the
+         <body> background itself — but Rebi's "dreaming" backdrop greys+blurs
+         `body > :not(#reb-chat)` and deliberately never touches <body>, so a
+         body-painted wash escaped the effect (the compare page showed a bright
+         white/coloured backdrop instead of the greyed one seen on /). Living on a
+         child element, it now desaturates identically to every other Rebi surface. -->
+    <div class="page-bg" aria-hidden="true"></div>
+    <div class="glow-a" aria-hidden="true"></div>
+    <div class="glow-b" aria-hidden="true"></div>
+
+    <div class="wrap">
+      <div class="topbar">
+        <a class="brand" href="/">Rebirth<span> Auto</span></a>
+        <a class="back" href={`/compare?ids=${ids.join(',')}`}>
+          <Fragment set:html={iconSvg('arrowLeft', 'ic')} />
+          Back to comparison
+        </a>
+      </div>
+
+      <main id="main-content">
+        {
+          canCompare && initial ? (
+            <>
+              <header class="mast">
+                <p class="eyebrow"><span class="dot" /> Compare · The weighing room</p>
+                <h1>Weigh what <span class="grad">actually matters.</span></h1>
+                <p class="lede">
+                  No two buyers value the same things. Turn the dials to tell Rebi how much price,
+                  age, kilometres and space weigh for you — and watch it re-rank your shortlist in
+                  real time, showing exactly what tips the balance.
+                </p>
+              </header>
+
+              {/* THE CONSOLE — dials (left) + Rebi's live verdict (right) */}
+              <section class="console" data-ring-c={RING_C}>
+                <div class="dials">
+                  <div class="dials-head">
+                    <span class="dials-title">
+                      <Fragment set:html={iconSvg('filter', 'ic')} /> Your priorities
+                    </span>
+                    <button class="dials-reset" type="button" id="reset" title="Reset to balanced">
+                      Reset
+                    </button>
+                  </div>
+
+                  <div class="dial-grid" id="dials">
+                    {DIM_ORDER.map((k) => {
+                      const m = DIM_META[k];
+                      const ok = comparable[k];
+                      const n = statingCount(DIM_FIELD[k]);
+                      return (
+                        <Dial
+                          dimKey={k}
+                          label={m.label}
+                          icon={m.icon}
+                          color={m.color}
+                          value={initialWeights[k] ?? 0}
+                          comparable={ok}
+                          note={
+                            n === 0
+                              ? 'Not stated by any of these cars'
+                              : `Only ${n} of ${cars.length} state it`
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+
+                  <div class="presets" id="presets" role="group" aria-label="Priority presets">
+                    <span class="presets-lbl">Quick set</span>
+                    {LENSES.map((l) => (
+                      <button
+                        class:list={['preset', l.id === 'balanced' && 'active']}
+                        data-preset={l.id}
+                        type="button"
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <aside class="verdict" id="verdict">
+                  <div class="v-glow" aria-hidden="true"></div>
+                  <div class="v-kick">
+                    <span class="rebi-orb"><Fragment set:html={iconSvg('sparkle', 'ic')} /></span>
+                    Rebi’s call
+                  </div>
+                  <div class="v-gauge">
+                    <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+                      <circle class="ring-bg" cx="60" cy="60" r="52" />
+                      <circle
+                        class="ring-fill"
+                        id="v-ring"
+                        cx="60"
+                        cy="60"
+                        r="52"
+                        style={`stroke-dasharray:${RING_C};stroke-dashoffset:${RING_C * (1 - initial.score / 100)}`}
+                      />
+                    </svg>
+                    <div class="v-gauge-num">
+                      <span class="num" id="v-score">{initial.score}</span>
+                      <span class="v-pct">balance</span>
+                    </div>
+                  </div>
+                  <p class="v-pick">Go with the <em id="v-pick">{initial.pickName}</em></p>
+                  <div class="v-reasons" id="v-reasons" aria-live="polite">
+                    {initial.reasons.map((r) => (
+                      <span class:list={['v-chip', r.caveat && 'caveat']}>
+                        <Fragment set:html={iconSvg(r.caveat ? 'cross' : 'check', 'ic')} />
+                        {r.text}
+                      </span>
+                    ))}
+                  </div>
+                  <p class="v-weigh" id="v-weigh">
+                    {initial.weighing.length ? (
+                      <>
+                        Weighing{' '}
+                        {initial.weighing.map((w, i) => (
+                          <>
+                            <b style={`color:${w.color}`}>{w.label} ×{w.weight}</b>
+                            {i < initial.weighing.length - 1 ? ', ' : ''}
+                          </>
+                        ))}
+                      </>
+                    ) : (
+                      'Turn up a dial to begin.'
+                    )}
+                  </p>
+                  <AskRebiButton
+                    id="compare-decide"
+                    class="ask"
+                    size="block"
+                    data-rebi-open
+                    data-rebi-kind="compare"
+                    data-rebi-refs={activeIds.join(',')}
+                    data-rebi-title={`these ${listings.length} vehicles`}
+                    label={`Ask Rebi about the ${initial.pickName}`}
+                  />
+                </aside>
+              </section>
+
+              {/* THE LEADERBOARD — rows physically reorder (FLIP) as dials move */}
+              <section class="board">
+                <div class="board-head">
+                  <h2 class="board-title">The standings</h2>
+                  <div class="legend" id="legend">
+                    {DIM_ORDER.map((k) => (
+                      <span
+                        class:list={['leg', !comparable[k] && 'off']}
+                        data-leg-dim={k}
+                        style={`--dc:${DIM_META[k].color}`}
+                      >
+                        <span class="leg-dot" />
+                        {DIM_META[k].label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="board-rows" id="board-rows">
+                  {initial.standings.map((s) => (
+                    <Contender
+                      id={s.id}
+                      name={carById.get(s.id)?.name ?? ''}
+                      title={titleById.get(s.id) ?? ''}
+                      slug={slugById.get(s.id) ?? ''}
+                      priceDisplay={priceDisplayById.get(s.id) ?? ''}
+                      photo={photoById.get(s.id) ?? null}
+                      rank={s.rank}
+                      overall={s.overall}
+                      segments={s.segments}
+                    />
+                  ))}
+                </div>
+
+                <p class="board-note">
+                  Every bar segment is a real, weighted spec score — longer means that priority is
+                  pulling this car up. Nothing here is estimated.
+                </p>
+              </section>
+            </>
+          ) : (
+            <div class="empty">
+              <div class="empty-ic"><Fragment set:html={iconSvg('image', 'ic-lg')} /></div>
+              <h2>{listings.length === 1 ? 'Add one more to compare' : 'Nothing to compare yet'}</h2>
+              <p>
+                {listings.length === 1
+                  ? 'The weighing room needs at least two vehicles on the scale.'
+                  : 'Add a couple of listings using the “Compare” button on any card.'}
+              </p>
+              <a class="empty-cta" href="/">Browse listings<Fragment set:html={iconSvg('arrow', 'ic')} /></a>
+            </div>
+          )
+        }
+      </main>
+
+      <footer>
+        © {year} {dealerConfig.identity.name} · All vehicles subject to availability. Comparison is
+        indicative only.
+      </footer>
+    </div>
+
+    {canCompare && (
+      <script type="application/json" id="balance-data" is:inline set:html={JSON.stringify(cars).replace(/</g, '\\u003c')} />
+    )}
+
+    <!-- Continuity-journey beacon: record this comparison (fail-open, best-effort). -->
+    {canCompare && (
+      <script
+        is:inline
+        define:vars={{
+          payload: {
+            kind: 'compare',
+            ref: ids.join(','),
+            label: listings.map((l) => l.title).join(', '),
+          },
+        }}
+      >
+        (function () {
+          try {
+            var data = JSON.stringify(payload);
+            var url = '/api/journey';
+            var sent = false;
+            if (navigator.sendBeacon) {
+              sent = navigator.sendBeacon(url, new Blob([data], { type: 'application/json' }));
+            }
+            if (!sent) {
+              fetch(url, {
+                method: 'POST',
+                body: data,
+                headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
+                credentials: 'same-origin',
+              }).catch(function () {});
+            }
+          } catch (e) {
+            /* fail-open — the beacon never affects the page */
+          }
+        })();
+      </script>
+    )}
+
+    <!-- Floating AI chat assistant (Rebi) -->
+    <ChatWidget />
+
+    <style is:global>
+      /* ==========================================================================
+         /compare — "Rebi's Balance" (LIGHT-only). A boxless canvas: soft Rebi
+         glows over the site's slate-50 paper, translucent white glass, no
+         spreadsheet rings. Colours per PRIORITY (five dimension hues) not per car.
+         Built from the site's real DNA: slate-50 page, white glass with
+         ring-slate-900/10 hairlines, emerald winners, gold medals, Rebi-blue
+         accent. Namespaced under `.balance-page`. NO dark variant — the site is
+         light-only.
+         ========================================================================== */
+      .balance-page {
+        --paper: #f8fafc; /* slate-50 — exact site page colour */
+        --ink: #0f172a; /* slate-900 — headings */
+        --ink-2: #1e293b; /* slate-800 — body */
+        --mut: #64748b; /* slate-500 — muted */
+        --dim: #94a3b8; /* slate-400 — dim */
+        --glass: rgba(255, 255, 255, 0.72);
+        --glass-2: rgba(255, 255, 255, 0.52);
+        --hair: rgba(15, 23, 42, 0.1); /* the site's ring-slate-900/10 signature */
+        --hair-2: rgba(15, 23, 42, 0.06); /* softer inner hairline */
+        --rebi: rgb(1 97 239);
+        --rebi-2: rgb(1 84 207);
+        --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
+        --track: rgba(15, 23, 42, 0.08);
+        --good: #059669; /* emerald-600 — winner text/badge */
+        --good-strong: #047857; /* emerald-700 — strong winner */
+        --gold: #f5b942; /* the pick / medal thread */
+        --gold-deep: #d99414;
+        --gold-ink: #a15c07; /* gold text on white */
+        --silver: #9aa7b6;
+        --bronze: #c08752;
+        --danger: #dc2626;
+        --r: 22px;
+        --r-sm: 13px;
+        --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+        --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 24px 60px -30px rgba(15, 23, 42, 0.22);
+
+        color-scheme: light;
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+        color: var(--ink);
+        font-size: 15px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        /* Flat paper on <body> itself (grayscale-neutral, exactly like the
+           homepage's bg-slate-50). The COLOURED washes live on .page-bg below so
+           Rebi's dreaming filter can grey them — see the .page-bg note. */
+        background: var(--paper);
+      }
+      .balance-page * { box-sizing: border-box; }
+
+      /* Full-viewport backdrop wash: the site's soft Rebi-blue + teal glows over
+         the paper. A FIXED direct child of <body> (not the body background) so
+         Rebi's `body.reb-dreaming > :not(#reb-chat)` greys+blurs it in step with
+         the rest of the page — the fix for the /compare backdrop inconsistency.
+         Mirrors .glow-a/.glow-b, which are already fixed z-index:0 children. */
+      .balance-page .page-bg {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(1150px 560px at 78% -10%, rgba(1, 97, 239, 0.07), transparent 60%),
+          radial-gradient(900px 520px at 8% 6%, rgba(20, 184, 166, 0.055), transparent 58%);
+      }
+      .balance-page .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+      .balance-page .ic { width: 15px; height: 15px; }
+      .balance-page .ic-lg { width: 38px; height: 38px; }
+
+      .balance-page .glow-a,
+      .balance-page .glow-b { position: fixed; z-index: 0; border-radius: 50%; filter: blur(90px); pointer-events: none; opacity: 0.55; }
+      .balance-page .glow-a { top: -170px; right: -70px; width: 560px; height: 560px; background: radial-gradient(circle, rgba(1, 97, 239, 0.26), transparent 68%); }
+      .balance-page .glow-b { bottom: -220px; left: -120px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(20, 184, 166, 0.16), transparent 68%); }
+
+      /* Align to the site-wide gutter system (defined once in global.css). */
+      .balance-page .wrap { position: relative; z-index: 1; max-width: var(--site-max); margin: 0 auto; padding: 0 var(--site-gutter); }
+
+      /* top bar */
+      .balance-page .topbar { display: flex; align-items: center; justify-content: space-between; padding: 22px 0 8px; }
+      .balance-page .brand { font-weight: 700; letter-spacing: -0.02em; font-size: 16px; text-decoration: none; color: var(--ink); }
+      .balance-page .brand span { color: var(--dim); font-weight: 600; }
+      .balance-page .back { display: inline-flex; align-items: center; gap: 7px; color: var(--mut); text-decoration: none; font-size: 13.5px; font-weight: 500; transition: color 0.2s var(--ease); }
+      .balance-page .back:hover { color: var(--ink); }
+      .balance-page .back svg { width: 14px; height: 14px; }
+
+      /* masthead */
+      .balance-page .mast { padding: 30px 0 8px; max-width: 70ch; }
+      .balance-page .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rebi-2); }
+      .balance-page .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rebi); box-shadow: 0 0 0 4px rgba(1, 97, 239, 0.14); }
+      .balance-page h1 { font-size: clamp(30px, 5vw, 52px); line-height: 1.02; letter-spacing: -0.035em; margin: 0.3em 0 0; font-weight: 800; text-wrap: balance; }
+      .balance-page h1 .grad { background: var(--rebi-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      .balance-page .lede { color: var(--mut); font-size: 15px; margin: 14px 0 0; max-width: 62ch; }
+
+      /* ---- CONSOLE ------------------------------------------------------------ */
+      .balance-page .console { margin-top: 26px; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+
+      .balance-page .dials { border-radius: var(--r); background: var(--glass); backdrop-filter: blur(18px) saturate(1.3); box-shadow: var(--shadow), inset 0 0 0 1px var(--hair); padding: 20px 22px 18px; }
+      .balance-page .dials-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+      .balance-page .dials-title { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+      .balance-page .dials-title svg { width: 15px; height: 15px; color: var(--rebi-2); }
+      .balance-page .dials-reset { appearance: none; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: var(--mut); cursor: pointer; padding: 5px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--hair); transition: 0.16s var(--ease); }
+      .balance-page .dials-reset:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--dim); }
+
+      .balance-page .dial-grid { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+
+      /* one dial */
+      .balance-page .c3-dial { padding: 11px 4px 12px; border-bottom: 1px solid var(--hair-2); transition: opacity 0.25s var(--ease); }
+      .balance-page .c3-dial:last-child { border-bottom: 0; }
+      .balance-page .c3-dial.off { opacity: 0.55; }
+      .balance-page .c3-dial-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+      .balance-page .c3-dial-ic { width: 26px; height: 26px; border-radius: 8px; flex: none; display: grid; place-items: center; color: #fff; background: var(--dc); box-shadow: 0 5px 14px -6px color-mix(in srgb, var(--dc) 70%, transparent); }
+      .balance-page .c3-dial-ic svg { width: 15px; height: 15px; }
+      .balance-page .c3-dial-label { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); margin-right: auto; }
+      .balance-page .c3-dial-weight { font-size: 13px; font-weight: 800; color: var(--dc); font-variant-numeric: tabular-nums; min-width: 30px; text-align: right; }
+      .balance-page .c3-dial.off .c3-dial-weight { color: var(--dim); }
+
+      /* the range slider (native, themed per dimension via --dc + --fill) */
+      .balance-page .c3-range { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; cursor: pointer; margin: 0; display: block; }
+      .balance-page .c3-range:disabled { cursor: not-allowed; }
+      .balance-page .c3-range::-webkit-slider-runnable-track { height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--dc) var(--fill), var(--track) var(--fill)); box-shadow: inset 0 0 0 1px var(--hair-2); }
+      .balance-page .c3-range::-moz-range-track { height: 8px; border-radius: 999px; background: var(--track); box-shadow: inset 0 0 0 1px var(--hair-2); }
+      .balance-page .c3-range::-moz-range-progress { height: 8px; border-radius: 999px; background: var(--dc); }
+      .balance-page .c3-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -6px; border-radius: 50%; background: #fff; border: 3px solid var(--dc); box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--dc) 60%, transparent); transition: transform 0.12s var(--ease); }
+      .balance-page .c3-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--dc); box-shadow: 0 3px 10px -2px color-mix(in srgb, var(--dc) 60%, transparent); }
+      .balance-page .c3-range:active::-webkit-slider-thumb { transform: scale(1.15); }
+      .balance-page .c3-range:focus-visible { outline: none; }
+      .balance-page .c3-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 30%, transparent); }
+      /* Firefox (non-webkit) keyboard-focus ring on the thumb — mirrors the webkit style above. */
+      .balance-page .c3-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dc) 30%, transparent); }
+      .balance-page .c3-range:disabled::-webkit-slider-thumb { background: var(--dim); border-color: var(--dim); box-shadow: none; }
+      .balance-page .c3-range:disabled::-webkit-slider-runnable-track { background: var(--track); }
+      .balance-page .c3-dial-note { margin: 7px 0 0; font-size: 11px; color: var(--dim); font-style: italic; }
+
+      /* emphasise a dial's whole row on focus/hover — mirrored onto the board */
+      .balance-page .c3-dial:hover:not(.off), .balance-page .c3-dial:focus-within:not(.off) { opacity: 1; }
+
+      /* presets */
+      .balance-page .presets { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--hair); }
+      .balance-page .presets-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin-right: 2px; }
+      .balance-page .preset { appearance: none; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--mut); background: transparent; border: 0; box-shadow: inset 0 0 0 1px var(--hair); padding: 7px 13px; border-radius: 999px; transition: 0.16s var(--ease); white-space: nowrap; }
+      .balance-page .preset:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--dim); }
+      .balance-page .preset.active { color: #fff; background: var(--rebi-grad); box-shadow: 0 8px 20px -8px rgba(1, 97, 239, 0.55); }
+
+      /* ---- VERDICT ------------------------------------------------------------ */
+      .balance-page .verdict { position: relative; overflow: hidden; border-radius: var(--r); background: var(--glass); backdrop-filter: blur(18px) saturate(1.3); box-shadow: var(--shadow), inset 0 0 0 1px var(--hair); padding: 22px 22px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      .balance-page .v-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(460px 220px at 50% -25%, rgba(1, 97, 239, 0.16), transparent 70%); }
+      .balance-page .verdict > *:not(.v-glow) { position: relative; z-index: 1; }
+      .balance-page .v-kick { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rebi-2); }
+      .balance-page .rebi-orb { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; color: #fff; background: var(--rebi-grad); box-shadow: 0 6px 16px -6px rgba(1, 97, 239, 0.6); }
+      .balance-page .rebi-orb svg { width: 14px; height: 14px; }
+      .balance-page .v-gauge { position: relative; width: 132px; height: 132px; margin: 14px 0 4px; }
+      .balance-page .ring { width: 132px; height: 132px; transform: rotate(-90deg); }
+      .balance-page .ring-bg { fill: none; stroke: var(--track); stroke-width: 9; }
+      .balance-page .ring-fill { fill: none; stroke: var(--rebi); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.7s var(--ease); filter: drop-shadow(0 4px 12px rgba(1, 97, 239, 0.4)); }
+      .balance-page .v-gauge-num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .balance-page .v-gauge-num .num { font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+      .balance-page .v-pct { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mut); margin-top: 3px; }
+      .balance-page .v-pick { font-size: clamp(20px, 2.6vw, 26px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin: 8px 0 0; color: var(--mut); }
+      .balance-page .v-pick em { font-style: normal; color: var(--ink); }
+      .balance-page .v-reasons { display: flex; flex-direction: column; align-items: stretch; gap: 7px; margin-top: 15px; width: 100%; }
+      .balance-page .v-chip { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); background: var(--glass-2); box-shadow: inset 0 0 0 1px var(--hair); padding: 8px 12px; border-radius: 11px; text-align: left; }
+      .balance-page .v-chip svg { width: 13px; height: 13px; color: var(--good); flex: none; }
+      .balance-page .v-chip.caveat svg { color: var(--gold-deep); }
+      .balance-page .v-weigh { font-size: 12px; color: var(--dim); margin: 14px 0 0; line-height: 1.5; }
+      .balance-page .v-weigh b { font-weight: 800; }
+      .balance-page .ask { margin-top: 16px; width: 100%; border-radius: var(--r-sm); background: var(--rebi-grad); box-shadow: 0 12px 26px -12px rgba(1, 97, 239, 0.6); transition: transform 0.14s var(--ease), box-shadow 0.2s var(--ease); }
+      .balance-page .ask:hover { transform: translateY(-1px); background: var(--rebi-grad); box-shadow: 0 16px 34px -12px rgba(1, 97, 239, 0.6); }
+
+      /* ---- LEADERBOARD -------------------------------------------------------- */
+      .balance-page .board { margin-top: 28px; }
+      .balance-page .board-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 14px; }
+      .balance-page .board-title { font-size: 13px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin: 0; }
+      .balance-page .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+      .balance-page .leg { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--mut); cursor: default; transition: opacity 0.2s var(--ease); }
+      .balance-page .leg.off { opacity: 0.4; text-decoration: line-through; }
+      .balance-page .leg-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--dc); flex: none; }
+
+      .balance-page .board-rows { display: flex; flex-direction: column; gap: 12px; }
+
+      /* one contender row */
+      .balance-page .c3-con {
+        position: relative; display: grid;
+        grid-template-columns: 44px 62px 1fr auto; align-items: center; gap: 16px;
+        padding: 14px 18px 14px 14px; border-radius: var(--r-sm);
+        background: var(--glass); backdrop-filter: blur(14px);
+        box-shadow: var(--shadow), inset 0 0 0 1px var(--hair);
+        transition: box-shadow 0.4s var(--ease), transform 0.5s var(--ease);
+        will-change: transform;
+      }
+      .balance-page .c3-con.lead { box-shadow: var(--shadow), inset 0 0 0 1.5px color-mix(in srgb, var(--gold) 60%, transparent), 0 0 0 5px color-mix(in srgb, var(--gold) 12%, transparent); }
+      .balance-page .c3-remove { position: absolute; top: 8px; right: 8px; z-index: 3; width: 24px; height: 24px; border-radius: 7px; cursor: pointer; border: 0; box-shadow: inset 0 0 0 1px var(--hair); background: var(--glass-2); color: var(--mut); display: grid; place-items: center; opacity: 0; transition: opacity 0.18s, color 0.18s, background 0.18s, transform 0.18s var(--ease); }
+      .balance-page .c3-con:hover .c3-remove, .balance-page .c3-remove:focus-visible { opacity: 1; }
+      .balance-page .c3-remove:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); transform: rotate(90deg); }
+      .balance-page .c3-remove svg { width: 11px; height: 11px; }
+
+      /* rank medal */
+      .balance-page .c3-medal { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; position: relative; background: var(--track); box-shadow: inset 0 0 0 1px var(--hair); }
+      .balance-page .c3-medal-num { font-size: 17px; font-weight: 800; color: var(--mut); font-variant-numeric: tabular-nums; }
+      .balance-page .c3-medal[data-rank="1"] { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--gold) 92%, #fff), var(--gold)); box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--gold) 70%, transparent); }
+      .balance-page .c3-medal[data-rank="1"] .c3-medal-num { color: #4a3506; }
+      .balance-page .c3-medal[data-rank="2"] { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--silver) 92%, #fff), var(--silver)); }
+      .balance-page .c3-medal[data-rank="2"] .c3-medal-num { color: #2b3440; }
+      .balance-page .c3-medal[data-rank="3"] { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--bronze) 92%, #fff), var(--bronze)); }
+      .balance-page .c3-medal[data-rank="3"] .c3-medal-num { color: #43290f; }
+
+      .balance-page .c3-thumb { width: 62px; height: 48px; border-radius: 10px; overflow: hidden; background: var(--track); display: block; flex: none; position: relative; }
+      .balance-page .c3-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .balance-page .c3-thumb-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--dim); }
+
+      .balance-page .c3-con-main { min-width: 0; }
+      .balance-page .c3-con-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+      .balance-page .c3-con-name { display: inline-flex; align-items: center; gap: 6px; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .balance-page .c3-con-name:hover { color: var(--rebi-2); }
+      .balance-page .c3-crown { display: none; color: var(--gold-deep); flex: none; }
+      .balance-page .c3-crown svg { width: 14px; height: 14px; }
+      .balance-page .c3-con.lead .c3-crown { display: inline-grid; place-items: center; }
+      .balance-page .c3-con-price { font-size: 14px; font-weight: 700; color: var(--ink-2); white-space: nowrap; flex: none; }
+
+      /* segmented score bar */
+      .balance-page .c3-bar { display: flex; height: 12px; border-radius: 999px; background: var(--track); overflow: hidden; box-shadow: inset 0 0 0 1px var(--hair-2); }
+      .balance-page .c3-seg { height: 100%; background: var(--sc); box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.28); transition: width 0.55s var(--ease), opacity 0.2s var(--ease); }
+      .balance-page .c3-seg:first-child { border-radius: 999px 0 0 999px; }
+
+      /* score readout */
+      .balance-page .c3-score { display: flex; flex-direction: column; align-items: center; min-width: 46px; }
+      .balance-page .c3-score-num { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+      .balance-page .c3-con.lead .c3-score-num { color: color-mix(in srgb, var(--gold-deep) 72%, var(--ink)); }
+      .balance-page .c3-score-lbl { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); margin-top: 4px; }
+
+      /* dimension focus link: dim non-matching segments + legend entries */
+      .balance-page .board-rows.focus .c3-seg { opacity: 0.28; }
+      .balance-page .board-rows.focus .c3-seg.hot { opacity: 1; }
+
+      .balance-page .board-note { margin: 16px 0 0; font-size: 12px; color: var(--dim); max-width: 66ch; }
+
+      /* empty state */
+      .balance-page .empty { margin-top: 44px; border-radius: var(--r); background: var(--glass); box-shadow: var(--shadow), inset 0 0 0 1px var(--hair); padding: 64px 24px; text-align: center; }
+      .balance-page .empty-ic { display: flex; justify-content: center; color: var(--dim); margin-bottom: 16px; }
+      .balance-page .empty h2 { font-size: 19px; font-weight: 700; color: var(--ink); }
+      .balance-page .empty p { margin-top: 6px; color: var(--mut); font-size: 14px; }
+      .balance-page .empty-cta { margin-top: 24px; display: inline-flex; align-items: center; gap: 7px; border-radius: var(--r-sm); background: var(--rebi-grad); padding: 12px 20px; font-weight: 700; color: #fff; text-decoration: none; box-shadow: 0 12px 26px -12px rgba(1, 97, 239, 0.6); transition: transform 0.14s var(--ease); }
+      .balance-page .empty-cta:hover { transform: translateY(-1px); }
+      .balance-page .empty-cta svg { width: 15px; height: 15px; }
+
+      .balance-page footer { position: relative; z-index: 1; color: var(--dim); font-size: 12.5px; text-align: center; padding: 48px 0 44px; }
+
+      /* entrance */
+      .balance-page .anim { opacity: 0; transform: translateY(14px); }
+      .balance-page .anim.in { animation: bal-up 0.55s var(--ease) forwards; }
+      @keyframes bal-up { to { opacity: 1; transform: none; } }
+
+      /* ---- responsive --------------------------------------------------------- */
+      @media (max-width: 860px) {
+        .balance-page .console { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 520px) {
+        .balance-page .c3-con { grid-template-columns: 38px 1fr auto; gap: 12px; padding: 13px 14px; }
+        .balance-page .c3-thumb { display: none; }
+        .balance-page .c3-medal { width: 38px; height: 38px; }
+        .balance-page .c3-medal-num { font-size: 15px; }
+        .balance-page .c3-score { min-width: 40px; }
+        .balance-page .c3-score-num { font-size: 22px; }
+        .balance-page .dials { padding: 18px 16px 16px; }
+        .balance-page .verdict { padding: 20px 16px 18px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .balance-page *, .balance-page .c3-seg, .balance-page .ring-fill, .balance-page .c3-con { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+        .balance-page .anim { opacity: 1; transform: none; }
+      }
+    </style>
+
+    <script>
+      import { type CompareCar } from '../lib/compare-verdict';
+      import {
+        reckon,
+        DIM_ORDER,
+        WEIGHT_MAX,
+        type Weights,
+      } from '../components/compare/reckon';
+      import { LENSES } from '../lib/compare-verdict';
+
+      const dataEl = document.getElementById('balance-data');
+      const rowsEl = document.getElementById('board-rows');
+      const dialsEl = document.getElementById('dials');
+      if (dataEl?.textContent && rowsEl && dialsEl) {
+        const cars = JSON.parse(dataEl.textContent) as CompareCar[];
+        const board = rowsEl as HTMLElement;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const $ = (id: string) => document.getElementById(id);
+        const esc = (s: string) =>
+          s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.2l3 3 7-7"/></svg>';
+        const CROSS = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+
+        const RING_C = 2 * Math.PI * 52;
+        const currentIds = cars.map((c) => c.id);
+
+        // Live weight state (mirrors the dials).
+        const weights: Weights = {};
+        DIM_ORDER.forEach((k) => (weights[k] = 1));
+        dialsEl.querySelectorAll<HTMLInputElement>('.c3-range').forEach((r) => {
+          const dim = r.dataset.dim as keyof Weights;
+          weights[dim] = r.disabled ? 0 : Number(r.value);
+        });
+
+        // Row element lookup by car id (stable across reorders).
+        const rowById = new Map<string, HTMLElement>();
+        board.querySelectorAll<HTMLElement>('.c3-con').forEach((el) => {
+          if (el.dataset.carId) rowById.set(el.dataset.carId, el);
+        });
+
+        function countTo(el: HTMLElement, target: number) {
+          if (reduceMotion) { el.textContent = String(target); return; }
+          const start = Number(el.textContent || '0');
+          if (start === target) return;
+          const t0 = performance.now();
+          const step = (now: number) => {
+            const p = Math.min(1, (now - t0) / 420);
+            const eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = String(Math.round(start + (target - start) * eased));
+            if (p < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+
+        // Rebuild one row's segmented bar from the reckoning segments.
+        function paintBar(row: HTMLElement, segments: { key: string; color: string; value: number }[]) {
+          const bar = row.querySelector<HTMLElement>('.c3-bar');
+          if (!bar) return;
+          const byDim = new Map(segments.map((s) => [s.key, s]));
+          // Update existing segments in DIM_ORDER; create/remove as needed.
+          const existing = new Map<string, HTMLElement>();
+          bar.querySelectorAll<HTMLElement>('.c3-seg').forEach((s) => {
+            if (s.dataset.segDim) existing.set(s.dataset.segDim, s);
+          });
+          DIM_ORDER.forEach((k) => {
+            const seg = byDim.get(k);
+            let el = existing.get(k);
+            if (seg && seg.value > 0) {
+              if (!el) {
+                el = document.createElement('span');
+                el.className = 'c3-seg';
+                el.dataset.segDim = k;
+                el.style.setProperty('--sc', seg.color);
+                el.style.width = '0%';
+                bar.appendChild(el);
+                // force layout so the first grow animates
+                void el.offsetWidth;
+              }
+              el.style.width = `${seg.value}%`;
+              bar.appendChild(el); // keep DIM_ORDER left→right
+            } else if (el) {
+              el.style.width = '0%';
+              el.addEventListener('transitionend', () => el && el.parentElement && el.remove(), { once: true });
+            }
+          });
+          if (activeDim) applyFocusClasses();
+        }
+
+        // FLIP: reorder rows to the new standings, animating the slide.
+        function reorder(orderIds: string[]) {
+          const rows = [...board.querySelectorAll<HTMLElement>('.c3-con')];
+          const firstTop = new Map(rows.map((r) => [r.dataset.carId, r.getBoundingClientRect().top]));
+          orderIds.forEach((id) => {
+            const el = rowById.get(id);
+            if (el) board.appendChild(el);
+          });
+          if (reduceMotion) return;
+          rows.forEach((r) => {
+            const before = firstTop.get(r.dataset.carId);
+            if (before == null) return;
+            const dy = before - r.getBoundingClientRect().top;
+            if (!dy) return;
+            r.style.transition = 'none';
+            r.style.transform = `translateY(${dy}px)`;
+            requestAnimationFrame(() => {
+              r.style.transition = '';
+              r.style.transform = '';
+            });
+          });
+        }
+
+        function render() {
+          const r = reckon(cars, weights);
+
+          // Verdict
+          const pick = $('v-pick');
+          if (pick) pick.textContent = r.pickName;
+          const scoreEl = $('v-score');
+          if (scoreEl) countTo(scoreEl, r.score);
+          const ring = $('v-ring') as unknown as SVGElement | null;
+          if (ring) ring.style.strokeDashoffset = String(RING_C * (1 - r.score / 100));
+          const reasons = $('v-reasons');
+          if (reasons) {
+            reasons.innerHTML = r.reasons
+              .map((x) => `<span class="v-chip${x.caveat ? ' caveat' : ''}">${x.caveat ? CROSS : CHECK}${esc(x.text)}</span>`)
+              .join('');
+          }
+          const weigh = $('v-weigh');
+          if (weigh) {
+            weigh.innerHTML = r.weighing.length
+              ? 'Weighing ' +
+                r.weighing
+                  .map((w) => `<b style="color:${w.color}">${esc(w.label)} ×${w.weight}</b>`)
+                  .join(', ')
+              : 'Turn up a dial to begin.';
+          }
+          const ask = $('compare-decide');
+          if (ask) {
+            const labelNode = [...ask.childNodes].find(
+              (n) => n.nodeType === Node.TEXT_NODE && (n.textContent || '').trim().length > 0,
+            );
+            const txt = `Ask Rebi about the ${r.pickName}`;
+            if (labelNode) labelNode.textContent = txt;
+            ask.setAttribute('aria-label', txt);
+          }
+
+          // Rows: scores, bars, medals, lead
+          const rankById = new Map(r.standings.map((s) => [s.id, s]));
+          rowById.forEach((row, id) => {
+            const st = rankById.get(id);
+            if (!st) return;
+            const num = row.querySelector<HTMLElement>('.c3-score-num');
+            if (num) countTo(num, st.overall);
+            paintBar(row, st.segments);
+            const medal = row.querySelector<HTMLElement>('.c3-medal');
+            if (medal) {
+              medal.dataset.rank = String(st.rank);
+              medal.setAttribute('aria-label', `Rank ${st.rank}`);
+              const mn = medal.querySelector('.c3-medal-num');
+              if (mn) mn.textContent = String(st.rank);
+            }
+            row.classList.toggle('lead', st.rank === 1);
+          });
+
+          reorder(r.standings.map((s) => s.id));
+        }
+
+        // --- Dimension focus link (dial hover/focus → highlight its segments) ---
+        let activeDim: string | null = null;
+        function applyFocusClasses() {
+          board.querySelectorAll<HTMLElement>('.c3-seg').forEach((s) => {
+            s.classList.toggle('hot', s.dataset.segDim === activeDim);
+          });
+        }
+        function setActiveDim(dim: string | null) {
+          activeDim = dim;
+          board.classList.toggle('focus', dim != null);
+          document.getElementById('legend')?.querySelectorAll<HTMLElement>('.leg').forEach((l) => {
+            l.style.opacity = dim && l.dataset.legDim !== dim && !l.classList.contains('off') ? '0.4' : '';
+          });
+          if (dim) applyFocusClasses();
+        }
+        dialsEl.querySelectorAll<HTMLElement>('.c3-dial').forEach((d) => {
+          const dim = d.dataset.dim || null;
+          if (d.classList.contains('off')) return;
+          d.addEventListener('pointerenter', () => setActiveDim(dim));
+          d.addEventListener('pointerleave', () => setActiveDim(null));
+          d.addEventListener('focusin', () => setActiveDim(dim));
+          d.addEventListener('focusout', () => setActiveDim(null));
+        });
+
+        // --- Dial input → update weight, fill, readout, presets, re-render ------
+        function syncDial(input: HTMLInputElement) {
+          const dim = input.dataset.dim as keyof Weights;
+          const val = Number(input.value);
+          weights[dim] = val;
+          const dial = input.closest('.c3-dial') as HTMLElement | null;
+          if (dial) {
+            dial.style.setProperty('--fill', `${(val / WEIGHT_MAX) * 100}%`);
+            const w = dial.querySelector<HTMLElement>('[data-weight]');
+            if (w) w.textContent = `×${val}`;
+          }
+        }
+        function matchPreset(): string | null {
+          for (const l of LENSES) {
+            const ok = DIM_ORDER.every((k) => {
+              const input = dialsEl!.querySelector<HTMLInputElement>(`.c3-range[data-dim="${k}"]`);
+              if (input?.disabled) return true; // non-comparable dims are ignored
+              return (weights[k] ?? 0) === (l.w[k] ?? 0);
+            });
+            if (ok) return l.id;
+          }
+          return null;
+        }
+        function syncPresetChips() {
+          const id = matchPreset();
+          document.getElementById('presets')?.querySelectorAll<HTMLElement>('.preset').forEach((p) => {
+            p.classList.toggle('active', p.dataset.preset === id);
+          });
+        }
+
+        dialsEl.querySelectorAll<HTMLInputElement>('.c3-range').forEach((input) => {
+          if (input.disabled) return;
+          input.addEventListener('input', () => {
+            syncDial(input);
+            syncPresetChips();
+            render();
+          });
+        });
+
+        // --- Preset chips → snap all dials to a lens -----------------------------
+        function applyPreset(lensId: string) {
+          const lens = LENSES.find((l) => l.id === lensId) ?? LENSES[0];
+          dialsEl!.querySelectorAll<HTMLInputElement>('.c3-range').forEach((input) => {
+            if (input.disabled) return;
+            const dim = input.dataset.dim as keyof Weights;
+            const val = lens.w[dim] ?? 0;
+            input.value = String(val);
+            syncDial(input);
+          });
+          syncPresetChips();
+          render();
+        }
+        document.getElementById('presets')?.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+          btn.addEventListener('click', () => applyPreset(btn.dataset.preset || 'balanced'));
+        });
+        document.getElementById('reset')?.addEventListener('click', () => applyPreset('balanced'));
+
+        // --- Remove-from-compare (min-two guard) — reload so the server recomputes
+        const COMPARE_KEY = 'astro-listings-compare';
+        const META_KEY = 'astro-listings-compare-meta';
+        function removeFromStore(id: string) {
+          try {
+            const raw = localStorage.getItem(COMPARE_KEY);
+            const arr = raw ? (JSON.parse(raw) as string[]) : [];
+            const next = Array.isArray(arr) ? arr.filter((x) => x !== id) : [];
+            localStorage.setItem(COMPARE_KEY, JSON.stringify(next));
+            const mraw = localStorage.getItem(META_KEY);
+            const meta = mraw ? JSON.parse(mraw) : {};
+            if (meta && typeof meta === 'object') { delete meta[id]; localStorage.setItem(META_KEY, JSON.stringify(meta)); }
+          } catch { /* localStorage unavailable — no-op */ }
+        }
+        board.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = btn.dataset.remove || '';
+            const remaining = currentIds.filter((x) => x !== id);
+            if (remaining.length < 2) {
+              const row = btn.closest('.c3-con') as HTMLElement | null;
+              row?.animate(
+                [{ boxShadow: '0 0 0 4px rgba(220,38,38,0)' }, { boxShadow: '0 0 0 4px rgba(220,38,38,0.45)' }, { boxShadow: '0 0 0 4px rgba(220,38,38,0)' }],
+                { duration: 600 },
+              );
+              return;
+            }
+            removeFromStore(id);
+            window.location.href = `/compare-tools?ids=${remaining.map(encodeURIComponent).join(',')}`;
+          });
+        });
+
+        // Entrance: stagger the rows in, then settle bars/scores from the live state.
+        if (!reduceMotion) {
+          board.querySelectorAll<HTMLElement>('.c3-con').forEach((el, i) => {
+            el.classList.add('anim');
+            el.style.animationDelay = `${i * 70}ms`;
+            requestAnimationFrame(() => el.classList.add('in'));
+          });
+        }
+        // Initial paint reconciles client state with SSR (identical, but wires bars
+        // to the animated transitions + ensures the ask label matches the pick).
+        render();
+      }
+    </script>
+  </body>
+</html>

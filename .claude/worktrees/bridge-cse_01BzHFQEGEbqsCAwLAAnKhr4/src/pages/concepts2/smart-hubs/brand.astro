@@ -1,0 +1,51 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, brands, icon, base } from './_shell/data';
+export const prerender = false;
+// One template; a real build reads the brand from the URL. Demo = Subaru.
+const brand = 'Subaru';
+const brandStock = vehicles.filter((v) => v.make === brand);
+const models = ['Outback','Forester','Crosstrek','WRX','Solterra (EV)'];
+---
+<Layout title={`${brand} — Smart Hubs`} active="browse" dockPrompt={`Comparing ${brand} models? I can help.`}>
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Browse', base + '/browse'], ['Brands', base + '/brand'], [brand]]} /></section>
+
+  <!-- brand switcher = the "shop by brand" facet, as chips not a nav item -->
+  <section class="sh-wrap" style="padding-block:14px 8px">
+    <div class="sh-jumprow">
+      {brands.map((b) => (
+        <a href={base + '/brand'} class={'sh-jump' + (b === brand ? '' : '')} style={b === brand ? 'border-color:var(--teal); color:var(--teal-deep)' : 'padding:8px 14px'}>{b}</a>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:10px 20px">
+    <div class="eyebrow"><span set:html={icon('tag',13)}></span> Brand hub</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">{brand} at Rebirth Auto.</h1>
+    <p class="sh-sub">Symmetrical AWD, safety-first engineering. Browse the {brand} range, current offers, and
+      what’s in stock now.</p>
+    <div class="sh-jumprow" style="margin-top:16px">
+      <a href={base + '/offers'} class="sh-jump"><span class="sh-jic" set:html={icon('tag',15)}></span> {brand} offers</a>
+      <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('filter',15)}></span> Filter to {brand}</a>
+      <a href={base + '/electric'} class="sh-jump sh-jump-ai"><span class="sh-jic" set:html={icon('plug',15)}></span> {brand} EV &amp; hybrid</a>
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="eyebrow" style="margin-bottom:12px">Models</div>
+    <div class="sh-jumprow">{models.map((m) => <a href={base + '/browse'} class="sh-jump" style="padding:9px 16px"><span class="sh-jic" set:html={icon('car',15)}></span> {m}</a>)}</div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:16px">
+      <h2 class="sh-h2">{brand} in stock</h2>
+      <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('grid',15)}></span> All {brand}</a>
+    </div>
+    <div class="sh-grid sh-cols-3">
+      {brandStock.length ? brandStock.map((v) => <VehicleCard v={v} />) : <p class="muted">More {brand} arriving soon — ask Rebi to notify you.</p>}
+      {vehicles.slice(2,4).map((v) => <VehicleCard v={v} />)}
+    </div>
+  </section>
+</Layout>

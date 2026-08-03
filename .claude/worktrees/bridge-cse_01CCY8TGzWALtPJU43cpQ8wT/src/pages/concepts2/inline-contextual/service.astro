@@ -1,0 +1,29 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Book a service — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from a vehicle page · Parts · Contact (Service dept) · footer</div>
+    <span class="eyebrow"><span set:html={icon('wrench',13)}></span> Service</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Book a service</h1>
+    <p class="lead">Factory-trained techs, genuine parts, fixed-price plans. Pick a date and we'll take it from there.</p>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.3fr 1fr; gap:26px; padding-bottom:44px; align-items:start">
+    <div class="card" style="padding:26px">
+      <div class="grid-auto" style="grid-template-columns:1fr 1fr; gap:14px">
+        {[['Vehicle','Make / model / year'],['Rego','ABC123'],['Service type','Logbook · minor'],['Preferred date','Mon 5 Aug'],['Name','Your name'],['Contact','Email or phone']].map(([l,ph]) => (
+          <label style="display:block"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+        ))}
+      </div>
+      <button class="btn btn-primary" style="margin-top:18px; width:100%; justify-content:center"><span set:html={icon('check',15)}></span> Request booking</button>
+      <p class="faint" style="font-size:11.5px; margin-top:10px">Demo form — we'll confirm availability by phone.</p>
+    </div>
+    <aside class="stack" style="gap:14px">
+      <a href={`${BASE}/parts`} class="entry"><span class="entry-ic" set:html={icon('gear',18)}></span><span class="entry-tx"><b>Need a part too?</b><span>genuine parts enquiry</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <button class="entry entry--ai" data-rebi-open style="cursor:pointer; text-align:left"><span class="entry-ic" set:html={icon('spark',18)}></span><span class="entry-tx"><b>Book via Rebi</b><span>"service my Tucson next week"</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></button>
+    </aside>
+  </section>
+</Layout>

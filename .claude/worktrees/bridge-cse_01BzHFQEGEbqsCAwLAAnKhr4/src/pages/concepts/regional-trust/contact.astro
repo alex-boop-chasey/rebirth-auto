@@ -1,0 +1,91 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import { dealer } from './_data';
+const depts = [
+  { h: 'New & demo sales', phone: '(07) 0000 0001', hours: 'Mon–Fri 8:30–5:30 · Sat 8:30–2' },
+  { h: 'Used cars', phone: '(07) 0000 0002', hours: 'Mon–Fri 8:30–5:30 · Sat 8:30–2' },
+  { h: 'Service & parts', phone: '(07) 0000 0003', hours: 'Mon–Fri 7:30–5 · Sat by appt' },
+  { h: 'Finance & insurance', phone: '(07) 0000 0004', hours: 'Mon–Fri 8:30–5:30' },
+];
+---
+<Layout title="Contact & find us" active="contact">
+  <section class="rt-wrap rt-contact-head">
+    <span class="rt-eyebrow">Come say g’day</span>
+    <h1>Find us &amp; get in touch</h1>
+    <p>One yard, every department under one roof. Call the right team direct, drop in, or ask Rebi any time.</p>
+  </section>
+
+  <section class="rt-wrap rt-contact-grid">
+    <div class="rt-contact-left">
+      <div class="rt-photo g-sage rt-contact-map"><span>Map placeholder · {dealer.region}</span></div>
+      <div class="rt-card rt-contact-visit">
+        <h3>Riverbend Motor Co.</h3>
+        <p class="rt-contact-addr">{dealer.addressPlaceholder}</p>
+        <div class="rt-contact-visit-row">
+          <div><span>Main line</span><strong>{dealer.phonePlaceholder}</strong></div>
+          <div><span>Email</span><strong>{dealer.emailPlaceholder}</strong></div>
+          <div><span>Open</span><strong>Mon–Sat</strong></div>
+        </div>
+      </div>
+      <div class="rt-contact-depts">
+        {depts.map((d) => (
+          <div class="rt-card rt-contact-dept"><h4>{d.h}</h4><p class="rt-contact-dept-ph">{d.phone}</p><p class="rt-contact-dept-hr">{d.hours}</p></div>
+        ))}
+      </div>
+    </div>
+
+    <div class="rt-contact-right">
+      <div class="rt-rebi-panel rt-contact-rebi">
+        <span class="rt-rebi-orb lg"></span>
+        <div><strong>Quickest way to an answer</strong><p>Rebi replies instantly, any hour — and passes anything important to the right person here.</p></div>
+        <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-primary rt-btn-sm">Chat now</a>
+      </div>
+      <div class="rt-card rt-contact-form">
+        <h3>Send us a message</h3>
+        <div class="rt-contact-form-row">
+          <div class="rt-field"><label>Name</label><input class="rt-input" placeholder="Your name" /></div>
+          <div class="rt-field"><label>Phone</label><input class="rt-input" placeholder="04__ ___ ___" /></div>
+        </div>
+        <div class="rt-field"><label>Department</label>
+          <select class="rt-select"><option>Sales</option><option>Service & parts</option><option>Finance</option><option>Something else</option></select>
+        </div>
+        <div class="rt-field"><label>Message</label><textarea class="rt-input" rows="4" placeholder="How can we help?"></textarea></div>
+        <button class="rt-btn rt-btn-primary rt-contact-cta">Send message</button>
+        <p class="rt-td-note">Demo form — nothing is sent.</p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-contact-head { padding-block: 44px 20px; }
+  .rt-contact-head h1 { font-size: 46px; margin: 12px 0 10px; }
+  .rt-contact-head p { font-size: 17px; color: var(--ink-70); max-width: 560px; }
+  .rt-contact-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 32px; padding-block: 20px 64px; align-items: start; }
+  .rt-contact-left { display: flex; flex-direction: column; gap: 22px; }
+  .rt-contact-map { height: 280px; display: grid; place-items: center; color: rgba(255,255,255,.55); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .rt-contact-visit { padding: 24px; }
+  .rt-contact-visit h3 { font-size: 22px; }
+  .rt-contact-addr { color: var(--ink-70); margin: 6px 0 18px; }
+  .rt-contact-visit-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .rt-contact-visit-row span { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+  .rt-contact-visit-row strong { display: block; font-size: 15px; color: var(--ink); margin-top: 3px; }
+  .rt-contact-depts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .rt-contact-dept { padding: 18px; }
+  .rt-contact-dept h4 { font-size: 16px; margin-bottom: 6px; }
+  .rt-contact-dept-ph { font-weight: 800; color: var(--green-deep); }
+  .rt-contact-dept-hr { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .rt-contact-right { display: flex; flex-direction: column; gap: 22px; position: sticky; top: 120px; }
+  .rt-contact-rebi { display: flex; align-items: center; gap: 12px; padding: 18px; }
+  .rt-contact-rebi strong { display: block; font-size: 15px; color: var(--green-deep); }
+  .rt-contact-rebi p { font-size: 13px; color: var(--ink-70); margin-top: 3px; }
+  .rt-contact-rebi .rt-btn { flex: 0 0 auto; }
+  .rt-contact-form { padding: 24px; }
+  .rt-contact-form h3 { font-size: 20px; margin-bottom: 16px; }
+  .rt-contact-form .rt-field { margin-bottom: 14px; }
+  .rt-contact-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rt-contact-cta { width: 100%; }
+  .rt-td-note { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
+</style>

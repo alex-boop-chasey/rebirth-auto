@@ -1,0 +1,74 @@
+---
+/**
+ * Smart Hubs Layout — wraps every page in the shipped NFY skin (global.css →
+ * theme tokens + primitives) plus the Smart-Hubs nav/footer/Rebi dock.
+ * Desktop-first demo. `.page-surface` paints the ambient NFY mesh.
+ */
+import '../../../../styles/global.css';
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+import RebiDock from './RebiDock.astro';
+const { title = 'Rebirth Auto — Smart Hubs', active = '', dockPrompt, hideDock = false } = Astro.props;
+---
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="robots" content="noindex" />
+</head>
+<body class="page-surface">
+  <Nav active={active} />
+  <main>
+    <slot />
+  </main>
+  <Footer />
+  {!hideDock && <RebiDock prompt={dockPrompt} />}
+</body>
+</html>
+
+<style is:global>
+  /* page-local layout helpers, scoped by prefix so nothing leaks to shipped code */
+  body { font-family: var(--font-ui); }
+  .sh-wrap { max-width: 1240px; margin-inline: auto; padding-inline: var(--site-gutter); }
+  .sh-hero { padding-block: 52px 20px; }
+  .sh-h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; font-size: clamp(30px, 4vw, 46px); line-height: 1.05; color: var(--ink); margin: 12px 0 0; }
+  .sh-h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; font-size: 24px; color: var(--ink); margin: 0 0 4px; }
+  .sh-sub { font-size: 17px; color: var(--ink-soft); max-width: 60ch; margin-top: 14px; }
+  .sh-grid { display: grid; gap: 18px; }
+  .sh-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .sh-cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .sh-cols-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) { .sh-cols-3, .sh-cols-4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .sh-cols-2, .sh-cols-3, .sh-cols-4 { grid-template-columns: 1fr; } }
+
+  /* breadcrumb — the constant "where am I / how did I get here" wayfinder */
+  .sh-crumbs { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-faint); font-family: var(--font-mono); }
+  .sh-crumbs a { color: var(--ink-soft); text-decoration: none; }
+  .sh-crumbs a:hover { color: var(--teal-deep); }
+  .sh-crumbs .sep { opacity: 0.5; }
+
+  /* contextual "jump to" button rows — the third wayfinding surface */
+  .sh-jumprow { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sh-jump {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px;
+    border-radius: var(--r-pill); font-size: 13.5px; font-weight: 600; text-decoration: none;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+    transition: border-color 0.16s, color 0.16s, transform 0.16s;
+  }
+  .sh-jump:hover { border-color: var(--teal); color: var(--teal-deep); transform: translateY(-2px); }
+  .sh-jump .sh-jic { color: var(--teal-deep); display: inline-flex; }
+  .sh-jump-ai { background: var(--indigo-glow); border-color: rgba(85,102,240,0.22); color: var(--indigo-deep); }
+  .sh-jump-ai .sh-jic { color: var(--indigo-deep); }
+
+  .sh-panel { padding: 26px; }
+  .sh-tile-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--mint-glow); color: var(--teal-deep); margin-bottom: 14px; }
+  .sh-field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+  .sh-field input, .sh-field select, .sh-field textarea {
+    width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); font-size: 14.5px; font-family: var(--font-ui); color: var(--ink);
+  }
+  .sh-field { margin-bottom: 14px; }
+  .sh-note { font-size: 12px; color: var(--ink-faint); }
+</style>

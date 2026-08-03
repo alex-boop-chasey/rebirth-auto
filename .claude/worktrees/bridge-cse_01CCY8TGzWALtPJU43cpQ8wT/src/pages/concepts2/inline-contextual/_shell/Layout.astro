@@ -1,0 +1,96 @@
+---
+/**
+ * Layout — shared shell for the Inline-Contextual IA concept demo.
+ * Imports the REAL shipped NFY tokens/primitives (global.css → theme.css), then
+ * adds a thin concept-local layer for the "inline contextual entry" affordance
+ * (.entry / .entry-rail) that is this IA's signature. Ships the near-zero Nav,
+ * the full-directory Footer, and the Rebi navigator dock on every page.
+ */
+import '../../../../styles/global.css';
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+import RebiChat from './RebiChat.astro';
+const { title = 'Rebirth Auto — Inline Contextual', active = '' } = Astro.props;
+---
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="robots" content="noindex" />
+</head>
+<body class="page-surface">
+  <Nav active={active} />
+  <main>
+    <slot />
+  </main>
+  <Footer />
+  <RebiChat />
+
+  <script is:inline>
+    // Wire the shared data-rebi-open seam to the CSS chat toggle (static demo).
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-rebi-open]');
+      if (!t) return;
+      e.preventDefault();
+      const box = document.getElementById('rebi-toggle');
+      if (box) box.checked = true;
+    });
+  </script>
+
+  <style is:global>
+    /* ---- concept-local: the inline contextual ENTRY affordance ------------
+       The whole IA rests on reaching pages from where they're relevant. These
+       classes give every such in-context jump one consistent, recognisable look
+       so users learn "a boxed action with an arrow takes me somewhere". */
+    .entry-rail {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch;
+    }
+    .entry {
+      display: inline-flex; align-items: center; gap: 11px; text-decoration: none;
+      background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--teal);
+      border-radius: var(--r-sm); padding: 11px 15px; color: var(--ink);
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+      box-shadow: var(--sh-1);
+    }
+    .entry:hover { transform: translateY(-2px); box-shadow: var(--sh-2); border-left-color: var(--indigo); }
+    .entry .entry-ic { color: var(--teal-deep); flex: none; display: inline-flex; }
+    .entry .entry-tx { display: flex; flex-direction: column; line-height: 1.25; }
+    .entry .entry-tx b { font-size: 14px; }
+    .entry .entry-tx span { font-size: 11.5px; color: var(--ink-faint); }
+    .entry .entry-go { margin-left: 8px; color: var(--ink-faint); flex: none; transition: transform .16s; }
+    .entry:hover .entry-go { transform: translateX(3px); color: var(--indigo); }
+    .entry--ai { border-left-color: var(--indigo); }
+    .entry--ai .entry-ic { color: var(--indigo-deep); }
+    .entry--amber { border-left-color: var(--amber); }
+    .entry--amber .entry-ic { color: #B4611F; }
+
+    /* the small "reached from" origin tag we print above an inline entry group */
+    .entry-origin {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .entry-origin::before { content: ""; width: 16px; height: 1.5px; background: var(--teal); }
+
+    /* generic page helpers reused across the concept pages */
+    .hero-wrap { padding-block: 54px 40px; }
+    .grid-auto { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+    .stack { display: flex; flex-direction: column; }
+    .facet { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--r-pill);
+      font-size: 13px; font-weight: 500; background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft); text-decoration: none; cursor: pointer; }
+    .facet:hover { border-color: var(--teal); color: var(--teal-deep); }
+    .facet.is-on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px;
+      background: linear-gradient(90deg, var(--teal), var(--indigo)); outline: none; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 2px solid var(--indigo); box-shadow: var(--sh-1); cursor: pointer; }
+    .field { width: 100%; padding: 11px 14px; border-radius: var(--r-sm); border: 1px solid var(--line);
+      background: var(--surface); font-size: 14px; font-family: var(--font-ui); color: var(--ink); }
+    .field:focus { outline: 2px solid var(--indigo); }
+    .divider { border: 0; border-top: 1px solid var(--line); margin: 0; }
+    a { color: var(--indigo-deep); }
+  </style>
+</body>
+</html>

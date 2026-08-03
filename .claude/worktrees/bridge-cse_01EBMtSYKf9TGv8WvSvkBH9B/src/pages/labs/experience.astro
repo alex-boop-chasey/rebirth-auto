@@ -1,0 +1,78 @@
+---
+/**
+ * /labs/experience — EXPERIMENTAL, UNLINKED prototype (Contest Candidate A).
+ * ------------------------------------------------------------------
+ * "Experience Mode": an opt-in premium mode where Rebi becomes a concierge that
+ * asks a few of the right questions and CURATES, instead of handing the shopper a
+ * filter form. See ExperienceCanvas.astro for the interpretation + the three
+ * beats (onboarding → standby → boom).
+ *
+ * Additive + isolated: this route is not linked from the main nav and touches no
+ * existing page/component/config. SSR only so it reads real inventory at request
+ * time via the shared LISTING_FIELDS projection.
+ */
+export const prerender = false;
+
+import '../../styles/global.css';
+import { client } from '../../sanity/lib/client';
+import { urlFor } from '../../sanity/lib/image';
+import { LISTING_FIELDS, formatPrice, type Listing } from '../../lib/listing';
+import { dealerConfig } from '../../config/dealer';
+import ExperienceCanvas from '../../components/experience/ExperienceCanvas.astro';
+import type { ExperienceVehicle } from '../../components/experience/matcher';
+
+// Real inventory, via the SHARED projection (never a bespoke field list). Only
+// active vehicles that carry the specs + an image the reveal leans on — so the
+// curated "boom" always has something honest and photogenic to show.
+const query = `*[_type == "listing" && category == "automotive" && status == "active"
+  && defined(vehicleSpecs) && defined(price) && defined(images)][0...24]{${LISTING_FIELDS}}`;
+let listings: Listing[] = [];
+try {
+  listings = await client.fetch<Listing[]>(query);
+} catch {
+  listings = []; // fail-open: the canvas degrades to a graceful "no match" state
+}
+
+// Map to the slim client payload. Image URL + display price are resolved here
+// (server-side) so the client stays framework-free and does no Sanity work.
+const vehicles: ExperienceVehicle[] = listings
+  .filter((l) => l && l.title)
+  .map((l) => ({
+    id: l._id,
+    title: l.title,
+    make: l.make ?? null,
+    model: l.model ?? null,
+    price: typeof l.price === 'number' ? l.price : null,
+    currency: l.currency || dealerConfig.locale.currency,
+    priceLabel: formatPrice(l.price, l.currency),
+    image: l.images?.[0] ? urlFor(l.images[0]).width(640).height(400).fit('crop').url() : null,
+    specs: {
+      bodyType: l.vehicleSpecs?.bodyType,
+      transmission: l.vehicleSpecs?.transmission,
+      fuelType: l.vehicleSpecs?.fuelType,
+      driveType: l.vehicleSpecs?.driveType,
+      seatCount: l.vehicleSpecs?.seatCount,
+      year: l.vehicleSpecs?.year,
+      odometer: l.vehicleSpecs?.odometer,
+      condition: l.vehicleSpecs?.condition,
+    },
+  }));
+
+const dealerName = dealerConfig.identity.name;
+const title = `Experience Mode — ${dealerName}`;
+const description = 'An opt-in premium mode where Rebi curates the lot for you. Experimental preview.';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="bg-slate-50 text-slate-800 antialiased">
+    <ExperienceCanvas vehicles={vehicles} dealerName={dealerName} />
+  </body>
+</html>

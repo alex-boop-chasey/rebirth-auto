@@ -1,0 +1,42 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+const model = Astro.url.searchParams.get('model');
+---
+<Layout title="Genuine parts — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from a vehicle page ("parts for this model") · service page · footer</div>
+    <span class="eyebrow"><span set:html={icon('wrench',13)}></span> Parts</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Genuine parts &amp; accessories</h1>
+    <p class="lead">{model ? `Pre-filled for your ${model.replace('-', ' ')}. ` : ''}Tell us the part and the vehicle — we'll confirm fitment before you pay.</p>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))">
+      {[['gear','Service parts','Filters, brakes, belts'],['drive','Tyres & wheels','Fitment-matched'],['bolt','Batteries','12V & EV'],['truck','Tow & tray','Bars, racks, liners'],['shield','Protection','Mats, covers, film'],['car','Styling','Genuine accessories']].map(([ic,t,d]) => (
+        <button class="card card-lift" data-rebi-open style="padding:16px; text-align:left; cursor:pointer; border:1px solid var(--line)"><span style="color:var(--teal-deep)" set:html={icon(ic as string,20)}></span><b style="display:block; font-size:14.5px; margin:8px 0 3px">{t}</b><span class="muted" style="font-size:12.5px">{d}</span></button>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.3fr 1fr; gap:26px; padding-bottom:40px; align-items:start">
+    <div class="card" style="padding:26px">
+      <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:16px">Parts enquiry</h2>
+      <div class="grid-auto" style="grid-template-columns:1fr 1fr; gap:14px">
+        {[['Your vehicle', model ? model.replace('-',' ') : 'Make / model / year'],['Part needed','e.g. front brake pads'],['Name','Your name'],['Contact','Email or phone']].map(([l,ph]) => (
+          <label style="display:block"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+        ))}
+      </div>
+      <button class="btn btn-primary" data-rebi-open style="margin-top:18px"><span set:html={icon('send',15)}></span> Send enquiry</button>
+    </div>
+    <aside class="stack" style="gap:14px">
+      <div class="ai-summary" style="padding:20px">
+        <div style="display:flex; gap:9px; align-items:center; margin-bottom:8px"><span class="orb" style="width:22px;height:22px"></span><b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b></div>
+        <p style="font-size:13.5px">"Will these pads fit my 2021 D-MAX?" Rebi checks fitment against the model.</p>
+        <button class="btn btn-ghost btn-sm" data-rebi-open style="margin-top:10px"><span set:html={icon('spark',14)}></span> Check a part for my vehicle</button>
+      </div>
+      <a href={`${BASE}/service`} class="entry"><span class="entry-ic" set:html={icon('clock',18)}></span><span class="entry-tx"><b>Want it fitted?</b><span>book a service</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+    </aside>
+  </section>
+</Layout>

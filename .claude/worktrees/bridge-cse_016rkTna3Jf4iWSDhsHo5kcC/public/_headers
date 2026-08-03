@@ -1,0 +1,32 @@
+# Cloudflare Pages security + caching headers.
+# Note: these are applied at the Cloudflare edge only — `astro dev`/`astro preview`
+# do NOT serve this file, so headers are verifiable only on the deployed site.
+#
+# 'unsafe-inline' in script-src/style-src is required because Astro emits inline
+# scripts and Tailwind emits inline styles. If we later add a nonce-based CSP we
+# can drop 'unsafe-inline' and tighten this further.
+#
+# https://challenges.cloudflare.com in script-src + frame-src is required by the
+# chatbot's Turnstile gate (api.js + the challenge iframe) — without both, the
+# widget silently fails and first messages are stuck on "complete the quick
+# verification". See https://developers.cloudflare.com/turnstile/reference/content-security-policy/
+#
+# Permissions-Policy: microphone=(self) is required by the chatbot's voice-typing
+# (Web Speech API) feature — `microphone=()` blocks the API entirely, before the
+# browser ever prompts. camera / geolocation / interest-cohort stay locked to `()`
+# as they're deliberately unused in v1. To enable one for a future feature, loosen
+# that directive the same way: `()` (blocked) → `(self)` (this origin only), or add
+# a specific origin, e.g. `camera=(self "https://example.com")`.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.sanity.io; font-src 'self' data:; connect-src 'self' https://*.api.sanity.io https://cdn.sanity.io; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(self), geolocation=(), interest-cohort=()
+  X-Frame-Options: DENY
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.html
+  Cache-Control: no-cache, must-revalidate

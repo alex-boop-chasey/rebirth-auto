@@ -1,0 +1,48 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, brands, vehicles, fmt, BASE } from './_shell/data';
+export const prerender = false;
+const slug = Astro.url.searchParams.get('b') ?? brands[0].slug;
+const brand = brands.find((b) => b.slug === slug) ?? brands[0];
+const stock = vehicles.filter((v) => v.make.toLowerCase().replace(/\s+/g,'') === slug);
+const models = stock.length ? [...new Set(stock.map((v) => v.model))] : ['Sportage','Sorento','EV5','Picanto'];
+---
+<Layout title={`${brand.name} at Rebirth Auto`}>
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from a brand chip (home / listings / vehicle) — not an "Our Brands" menu</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px">
+      {brands.map((b) => (<a class={`facet ${b.slug===slug?'is-on':''}`} href={`${BASE}/brand?b=${b.slug}`}>{b.name}</a>))}
+    </div>
+    <span class="eyebrow"><span set:html={icon('star',13)}></span> Brand hub</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">{brand.name}</h1>
+    <p class="lead">{brand.blurb}</p>
+    <div class="entry-rail" style="margin-top:18px">
+      <a href={`${BASE}/listings?brand=${slug}`} class="entry"><span class="entry-ic" set:html={icon('filter',18)}></span><span class="entry-tx"><b>{brand.name} in stock</b><span>filtered listing</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/offers`} class="entry entry--amber"><span class="entry-ic" set:html={icon('tag',18)}></span><span class="entry-tx"><b>{brand.name} offers</b><span>current specials</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="entry-origin">Models</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px">{models.map((m) => (<a class="facet" href={`${BASE}/listings?brand=${slug}`}>{m}</a>))}</div>
+  </section>
+
+  <section class="site-container section-tight">
+    <div style="display:flex; align-items:end; justify-content:space-between; margin-bottom:16px">
+      <h2 style="font-family:var(--font-display); font-size:22px">{brand.name} stock</h2>
+      <a href={`${BASE}/listings?brand=${slug}`} class="btn btn-ghost btn-sm">See all <span set:html={icon('arrow',15)}></span></a>
+    </div>
+    {stock.length ? (
+      <div class="grid-auto">
+        {stock.map((v) => (
+          <a href={`${BASE}/vehicle?id=${v.id}`} class="card card-lift" style="overflow:hidden; text-decoration:none; color:inherit">
+            <div style={`height:130px; background:${v.hue}`}></div>
+            <div style="padding:13px 14px"><b style="display:block; font-family:var(--font-display); font-size:15px">{v.year} {v.make} {v.model}</b><div style="font-family:var(--font-display); font-weight:700; font-size:17px; margin-top:6px">{fmt(v.price)}</div></div>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <div class="card" style="padding:26px; text-align:center"><p class="muted">No {brand.name} in this demo dataset — <a href={`${BASE}/listings`}>browse all stock</a> or ask Rebi to notify you.</p></div>
+    )}
+  </section>
+</Layout>

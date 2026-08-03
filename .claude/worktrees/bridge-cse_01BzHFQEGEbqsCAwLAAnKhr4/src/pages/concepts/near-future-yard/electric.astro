@@ -1,0 +1,82 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const evs = vehicles.filter(v => v.fuel === 'Electric' || v.fuel === 'Hybrid');
+---
+<Layout title="Electric & hybrid — Rebirth Auto" active="electric" dockPrompt="Curious if an EV suits your daily drive? Ask me.">
+  <!-- HERO -->
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh" style="background:radial-gradient(40rem 30rem at 80% 10%, rgba(15,181,166,.28), transparent 60%), radial-gradient(34rem 26rem at 10% 90%, rgba(85,102,240,.18), transparent 60%)"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:52px 36px; display:grid; grid-template-columns:1.1fr .9fr; gap:44px; align-items:center">
+      <div>
+        <span class="nfy-eyebrow"><span set:html={icon('leaf',14)}></span> Electric & hybrid hub</span>
+        <h1 class="nfy-h1" style="font-size:52px; margin-top:16px">Going electric,<br/>the country way.</h1>
+        <p class="nfy-lead" style="margin-top:16px">Big distances, gravel driveways, no city charger on every corner. We’ll tell you straight whether an EV, a hybrid, or neither fits your patch — and Rebi does the range maths for you.</p>
+        <div class="nfy-row" style="gap:12px; margin-top:26px">
+          <a href="#ev-stock" class="nfy-btn nfy-btn-primary nfy-btn-lg"><span set:html={icon('bolt',17)}></span> See EV & hybrid stock</a>
+          <a href={`${base}/rebi`} class="nfy-btn nfy-btn-ghost nfy-btn-lg"><span set:html={icon('spark',16)}></span> Is an EV right for me?</a>
+        </div>
+      </div>
+      <!-- Rebi range checker card -->
+      <div class="nfy-glass nfy-scan" style="padding:24px">
+        <div class="nfy-row" style="gap:10px; margin-bottom:14px"><span class="nfy-orb nfy-orb--halo" style="width:34px;height:34px"></span><b style="font-family:var(--font-display); font-size:16px">Rebi’s range reality check</b></div>
+        <div class="nfy-field" style="margin-bottom:12px"><span class="nfy-label">Your typical day</span><div class="nfy-input" style="pointer-events:none">School run + work ≈ 65 km/day</div></div>
+        <div class="nfy-field" style="margin-bottom:16px"><span class="nfy-label">Longest regular trip</span><div class="nfy-input" style="pointer-events:none">Bundaberg → Brisbane ≈ 375 km</div></div>
+        <div class="nfy-ai-summary" style="padding:16px">
+          <div class="nfy-row" style="gap:7px; margin-bottom:6px"><span class="nfy-spark" set:html={icon('spark',14)} style="color:var(--indigo)"></span><b style="font-size:13px; color:var(--indigo-deep)">Verdict</b></div>
+          <p style="font-size:13.5px; color:var(--ink-soft); line-height:1.5">An EV with 450km+ real range covers your week on home charging, with one quick top-up on the Brisbane run. The Kia EV5 (555km) fits comfortably.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px">
+      {[
+        ['plug','Charge at home','Most regional owners charge overnight from a normal or wallbox socket — you wake up full every morning.'],
+        ['range','Real range','We quote realistic highway range, not lab figures. Rebi shows what you’ll actually get out here.'],
+        ['leaf','Running cost','Home charging can cost a fraction of a tank. We’ll model your yearly saving honestly.'],
+        ['shield','Warranty','EV batteries here carry long warranties — typically 8 years. We explain what’s covered before you buy.'],
+      ].map(([ic,h,p]) => (
+        <div class="nfy-card nfy-card--lift" style="padding:22px">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,18)} style="color:#fff; margin-bottom:14px"></span>
+          <h3 style="font-family:var(--font-display); font-size:17px; font-weight:600">{h}</h3>
+          <p class="nfy-muted" style="font-size:13.5px; margin-top:8px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- EV vs Hybrid helper -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div class="nfy-card nfy-scan" style="padding:30px; display:grid; grid-template-columns:1fr 1fr auto; gap:26px; align-items:center; overflow:hidden">
+      <div>
+        <div class="nfy-chip nfy-chip--teal" style="margin-bottom:10px">Fully electric</div>
+        <h3 class="nfy-h3">Best if you charge at home</h3>
+        <p class="nfy-muted" style="font-size:14px; margin-top:8px">Lowest running cost, quietest drive, V2L to power tools and campsites. Ideal for predictable daily distances.</p>
+      </div>
+      <div>
+        <div class="nfy-chip nfy-chip--amber" style="margin-bottom:10px">Hybrid</div>
+        <h3 class="nfy-h3">Best for big, unpredictable km</h3>
+        <p class="nfy-muted" style="font-size:14px; margin-top:8px">No range anxiety, no charging setup, still sips fuel. A sensible stepping stone for long rural trips and towing.</p>
+      </div>
+      <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary nfy-btn-lg" style="justify-content:center"><span set:html={icon('spark',16)}></span> Rebi decides for you</a>
+    </div>
+  </section>
+
+  <!-- EV STOCK -->
+  <section id="ev-stock" class="nfy-wrap nfy-section--tight">
+    <div class="nfy-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:22px">
+      <div><span class="nfy-eyebrow">In stock now</span><h2 class="nfy-h2" style="margin-top:10px; font-size:30px">Electric & hybrid vehicles</h2></div>
+      <a href={`${base}/listings`} class="nfy-btn nfy-btn-ghost">All EV & hybrid <span set:html={icon('arrow',16)}></span></a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px">
+      {evs.map(v => <VehicleCard v={v} />)}
+    </div>
+  </section>
+</Layout>

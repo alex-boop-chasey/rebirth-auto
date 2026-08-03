@@ -1,0 +1,283 @@
+---
+// SSR (not prerendered): reads the dealer config feature flag at request time.
+// Ported from concepts2/inline-contextual/careers.astro onto the REAL shell +
+// REAL config.
+//
+// DETERMINISM: open roles come from `careers.roles` (DEFAULT [] → an honest "no
+// open roles" state); NEVER invents a role. Culture cards are generic positioning
+// copy. The register-interest form posts to the stubbed /api/careers-enquiry.
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.careers;
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+const roles = cfg.roles ?? [];
+
+// Optional bot protection — only rendered when a site key is configured.
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_USER_TURNSTILE_KEY;
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 13h18"/>',
+    heart: '<path d="M12 20s-7-4.4-7-9a4 4 0 017-2.6A4 4 0 0119 11c0 4.6-7 9-7 9z"/>',
+    star: '<path d="M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9 6.7 19l1-5.8L3.5 9.2l5.9-.9z"/>',
+    shield: '<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
+    spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={copy.subheading} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from About ("Join the team") · footer · Rebi</div>
+        <span class="eyebrow"><span set:html={icon('briefcase', 13)} /> {copy.eyebrow}</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">{copy.heading}</h1>
+        <p class="lead mt-3 max-w-2xl">{copy.subheading}</p>
+      </section>
+
+      <section class="site-container section-tight">
+        <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:14px">{copy.cultureHeading}</h2>
+        <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+          {cfg.culture.map((c) => (
+            <div class="card" style="padding:18px">
+              <span style="color:var(--teal-deep)" set:html={icon(c.icon, 22)} />
+              <b style="display:block; font-size:15px; margin:10px 0 4px">{c.title}</b>
+              <p class="muted" style="font-size:13px">{c.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="site-container section-tight">
+        <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:14px">{copy.rolesHeading}</h2>
+        {roles.length > 0 ? (
+          <div class="stack" style="gap:10px">
+            {roles.map((r) => (
+              <div class="card card-lift" style="padding:16px 18px; display:flex; align-items:center; gap:16px">
+                <div style="flex:1">
+                  <b style="font-size:15.5px">{r.title}</b>
+                  <div class="faint" style="font-size:12.5px; margin-top:2px">{r.department} · {r.type} · {r.location}</div>
+                </div>
+                <a href={`#register?role=${r.id}`} class="btn btn-primary btn-sm" data-role-apply={r.id}>
+                  <span set:html={icon('arrow', 14)} /> Register interest
+                </a>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class="ai-summary" style="padding:22px; max-width:44rem">
+            <b style="display:block; font-size:15px; margin-bottom:6px">{copy.emptyRolesHeading}</b>
+            <p class="muted" style="font-size:13.5px">{copy.emptyRolesBody}</p>
+          </div>
+        )}
+      </section>
+
+      <section id="register" class="site-container section-tight">
+        <div id="careers-root" class="card" data-loading-label={copy.loadingLabel} style="padding:24px; max-width:44rem">
+          <h2 style="font-family:var(--font-display); font-size:18px; margin-bottom:16px">{copy.formHeading}</h2>
+          <form id="careers-form" novalidate class="stack" style="gap:14px">
+            <div class="field">
+              <label class="field-label" for="cr-name">Your name</label>
+              <input class="field-input" id="cr-name" name="name" type="text" required autocomplete="name" placeholder="e.g. Jordan Smith" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="cr-email">Email</label>
+              <input class="field-input" id="cr-email" name="email" type="email" required autocomplete="email" placeholder="you@example.com" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="cr-phone">Phone <span class="faint">(optional)</span></label>
+              <input class="field-input" id="cr-phone" name="phone" type="tel" autocomplete="tel" placeholder="e.g. 0400 000 000" />
+            </div>
+            {roles.length > 0 && (
+              <div class="field">
+                <label class="field-label" for="cr-role">Role of interest <span class="faint">(optional)</span></label>
+                <select class="field-select" id="cr-role" name="roleId">
+                  <option value="">General interest</option>
+                  {roles.map((r) => <option value={r.id}>{r.title} — {r.department}</option>)}
+                </select>
+              </div>
+            )}
+            <div class="field">
+              <label class="field-label" for="cr-message">Tell us about yourself</label>
+              <textarea class="field-textarea" id="cr-message" name="message" rows="4" required placeholder="A little about your experience and what you're after."></textarea>
+            </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <div class="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="light"></div>
+            )}
+
+            <div>
+              <button type="submit" id="cr-submit" class="btn btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                <span set:html={icon('send', 15)} /> <span id="cr-submit-label">{copy.submitLabel}</span>
+              </button>
+            </div>
+          </form>
+
+          <p id="cr-error" role="alert" hidden class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></p>
+          <div id="cr-success" hidden aria-live="polite" class="ai-summary mt-6">
+            <p id="cr-success-text" class="text-sm font-medium text-ink"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="site-container section">
+        <div class="ai-summary" style="padding:22px; max-width:44rem">
+          <div style="display:flex; gap:9px; align-items:center; margin-bottom:8px">
+            <span class="orb" style="width:22px;height:22px"></span>
+            <b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b>
+          </div>
+          <p style="font-size:14px">"What's it like working here?" Rebi answers general questions from our public info.</p>
+          <button type="button" class="btn btn-ghost btn-sm" data-rebi-open data-rebi-kind="nav" style="margin-top:12px"><span set:html={icon('spark', 14)} /> Ask about working here</button>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+
+    {TURNSTILE_SITE_KEY && (
+      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    )}
+
+    <script>
+      // Deep-link a role's "Register interest" button to the form + preselect it.
+      document.querySelectorAll<HTMLElement>('[data-role-apply]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const roleId = btn.getAttribute('data-role-apply') || '';
+          const select = document.getElementById('cr-role') as HTMLSelectElement | null;
+          if (select) select.value = roleId;
+          document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setTimeout(() => (document.getElementById('cr-name') as HTMLInputElement | null)?.focus(), 300);
+        });
+      });
+
+      const root = document.getElementById('careers-root');
+      const form = document.getElementById('careers-form') as HTMLFormElement | null;
+      if (root && form) {
+        const loadingLabel = root.dataset.loadingLabel || 'Sending your details…';
+        const submit = document.getElementById('cr-submit') as HTMLButtonElement;
+        const submitLabel = document.getElementById('cr-submit-label') as HTMLElement;
+        const defaultLabel = submitLabel.textContent || 'Register interest';
+        const errorEl = document.getElementById('cr-error') as HTMLElement;
+        const successEl = document.getElementById('cr-success') as HTMLElement;
+        const successText = document.getElementById('cr-success-text') as HTMLElement;
+
+        const showError = (msg: string) => {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+          successEl.hidden = true;
+        };
+        const setLoading = (on: boolean) => {
+          submit.disabled = on;
+          submitLabel.textContent = on ? loadingLabel : defaultLabel;
+        };
+        const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorEl.hidden = true;
+          const data = new FormData(form);
+          const payload = {
+            name: String(data.get('name') || '').trim(),
+            email: String(data.get('email') || '').trim(),
+            phone: String(data.get('phone') || '').trim(),
+            roleId: String(data.get('roleId') || '').trim(),
+            message: String(data.get('message') || '').trim(),
+            turnstileToken: String(data.get('cf-turnstile-response') || ''),
+          };
+          if (!payload.name) return showError('Please enter your name.');
+          if (!isEmail(payload.email)) return showError('Please enter a valid email address.');
+          if (!payload.message) return showError('Please tell us a little about yourself.');
+
+          setLoading(true);
+          try {
+            const res = await fetch('/api/careers-enquiry', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const body = (await res.json()) as { ok?: boolean; message?: string; error?: string; reference?: string };
+            if (!res.ok || !body.ok) {
+              showError(body.error || 'We could not send that right now — please try again.');
+              return;
+            }
+            successText.textContent =
+              (body.message || "Thanks — we've received your details.") +
+              (body.reference ? ` Reference: ${body.reference}.` : '');
+            successEl.hidden = false;
+            form.reset();
+            if (typeof (window as any).turnstile !== 'undefined') (window as any).turnstile.reset();
+            successEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch {
+            showError('Something went wrong — please check your connection and try again.');
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+    </script>
+
+    <style>
+      .field { display: flex; flex-direction: column; gap: 7px; }
+      .field-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+      .field-input,
+      .field-select,
+      .field-textarea {
+        width: 100%;
+        font-family: var(--font-ui);
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-sm);
+        padding: 12px 14px;
+        transition: border-color 0.16s, box-shadow 0.16s;
+      }
+      .field-input::placeholder,
+      .field-textarea::placeholder { color: var(--ink-faint); }
+      .field-input:focus,
+      .field-select:focus,
+      .field-textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 181, 166, 0.15);
+        outline: none;
+      }
+      .field-textarea { resize: vertical; min-height: 96px; }
+    </style>
+  </body>
+</html>

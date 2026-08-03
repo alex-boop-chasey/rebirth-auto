@@ -1,0 +1,91 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+const steps = [
+  { n: 1, h: 'Tell Rebi about your car', p: 'Rego or make, model and kays — takes 30 seconds.' },
+  { n: 2, h: 'Get an instant estimate', p: 'A fair, data-backed range based on real local sales.' },
+  { n: 3, h: 'Book a quick inspection', p: 'Pop in, we confirm the figure and pay you — often same day.' },
+];
+---
+<Layout title="Sell your car" active="sell">
+  <section class="rt-sell-hero">
+    <div class="rt-wrap rt-sell-grid">
+      <div>
+        <span class="rt-eyebrow">Sell outright — no trade-in needed</span>
+        <h1>Sell us your car. Fair price, no faffing about.</h1>
+        <p>Whether you’re buying from us or not, we’ll make you a genuine offer. Rebi gives you a ballpark now,
+          and a real local confirms it. No dressing it up for photos, no tyre-kickers at your door.</p>
+        <div class="rt-sell-trust">
+          <span class="rt-pill rt-pill-green">✓ Free valuation</span>
+          <span class="rt-pill rt-pill-gold">✓ Same-day payment</span>
+          <span class="rt-pill rt-pill-sand">✓ We handle the paperwork</span>
+        </div>
+      </div>
+
+      <div class="rt-card rt-sell-form">
+        <div class="rt-sell-form-head">
+          <span class="rt-rebi-orb lg"></span>
+          <div><strong>What’s my car worth?</strong><em>Instant Rebi estimate</em></div>
+        </div>
+        <div class="rt-field"><label>Rego or VIN</label><input class="rt-input" placeholder="ABC123" /></div>
+        <div class="rt-sell-form-row">
+          <div class="rt-field"><label>Make</label><input class="rt-input" placeholder="Toyota" /></div>
+          <div class="rt-field"><label>Year</label><input class="rt-input" placeholder="2019" /></div>
+        </div>
+        <div class="rt-field"><label>Odometer (km)</label><input class="rt-input" placeholder="86,000" /></div>
+        <button class="rt-btn rt-btn-primary rt-sell-form-cta">Get my estimate</button>
+
+        <div class="rt-sell-estimate">
+          <span>Estimated range</span>
+          <strong>$18,500 – $21,000</strong>
+          <div class="rt-sell-estimate-rebi"><span class="rt-rebi-orb"></span><p>“Clean examples with service history are fetching the top of this range right now.”</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">How it works</span><h2>Sold in three steps</h2></div></div>
+    <div class="rt-sell-steps">
+      {steps.map((s) => <div class="rt-sell-step rt-card"><span class="rt-fin-step-n">{s.n}</span><h3>{s.h}</h3><p>{s.p}</p></div>)}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-sell-compare rt-card">
+      <div><h3>Selling outright</h3><p>Cash in hand, no strings. Best if you’re not buying from us right now.</p><a href="#" class="rt-btn rt-btn-ghost rt-btn-sm">This page</a></div>
+      <div class="rt-sell-or">or</div>
+      <div><h3>Trading in</h3><p>Put your car’s value straight toward your next one — and save on stamp duty.</p><a href="/concepts/regional-trust/listings" class="rt-btn rt-btn-ghost rt-btn-sm">Browse to trade</a></div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-sell-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-sell-grid { display: grid; grid-template-columns: 1fr 440px; gap: 48px; padding-block: 56px 64px; align-items: center; }
+  .rt-sell-hero h1 { font-size: 44px; margin: 16px 0; }
+  .rt-sell-hero p { font-size: 17px; color: var(--ink-70); max-width: 480px; }
+  .rt-sell-trust { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .rt-sell-form { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .rt-sell-form-head { display: flex; gap: 12px; align-items: center; }
+  .rt-sell-form-head strong { display: block; font-size: 17px; color: var(--green-deep); }
+  .rt-sell-form-head em { font-style: normal; font-size: 13px; color: var(--muted); }
+  .rt-sell-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rt-sell-form-cta { width: 100%; margin-top: 4px; }
+  .rt-sell-estimate { background: var(--green-soft); border: 1px solid var(--green-line); border-radius: var(--r); padding: 16px; }
+  .rt-sell-estimate > span { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--green); }
+  .rt-sell-estimate > strong { display: block; font-family: var(--ff-display); font-size: 30px; color: var(--green-deep); margin: 4px 0 12px; }
+  .rt-sell-estimate-rebi { display: flex; gap: 10px; align-items: flex-start; }
+  .rt-sell-estimate-rebi .rt-rebi-orb { flex: 0 0 auto; margin-top: 2px; }
+  .rt-sell-estimate-rebi p { font-size: 13px; color: var(--ink-70); font-style: italic; }
+  .rt-sell-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-sell-step { padding: 26px; }
+  .rt-fin-step-n { width: 40px; height: 40px; border-radius: 50%; background: var(--clay-soft); color: var(--clay-deep); font-family: var(--ff-display); font-weight: 700; font-size: 20px; display: grid; place-items: center; margin-bottom: 14px; }
+  .rt-sell-step h3 { font-size: 20px; margin-bottom: 8px; }
+  .rt-sell-step p { font-size: 14px; color: var(--ink-70); }
+  .rt-sell-compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; align-items: center; padding: 32px; }
+  .rt-sell-compare h3 { font-size: 22px; margin-bottom: 8px; }
+  .rt-sell-compare p { font-size: 14px; color: var(--ink-70); margin-bottom: 14px; }
+  .rt-sell-or { font-family: var(--ff-display); font-style: italic; color: var(--muted); font-size: 18px; }
+</style>

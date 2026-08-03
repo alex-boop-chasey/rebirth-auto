@@ -1,0 +1,132 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, brands, offers, fmt, BASE } from './_shell/data';
+export const prerender = false;
+const featured = vehicles.slice(0, 4);
+---
+<Layout title="Rebirth Auto — find your next car" active="home">
+  <!-- HERO: the home is the one true hub. Wayfinding radiates from here, inline. -->
+  <section class="site-container hero-wrap">
+    <div style="max-width:60rem">
+      <span class="eyebrow">Bundaberg &amp; the Wide Bay</span>
+      <h1 style="font-family:var(--font-display); font-size:clamp(34px,5vw,54px); line-height:1.05; letter-spacing:-.02em; margin:14px 0 16px">
+        Tell Rebi what you need.<br />Skip the menu maze.
+      </h1>
+      <p class="lead">305 cars in stock. No mega-menu — describe your life and Rebi points you at the right stock, the right tools, the right people.</p>
+
+      <!-- AI search bar (Browse entry) -->
+      <div class="aisearch" style="max-width:44rem; margin-top:24px">
+        <span class="orb" style="width:26px;height:26px"></span>
+        <input type="text" placeholder="e.g. “7-seater under $45k for gravel roads”" readonly />
+        <a href={`${BASE}/listings`} class="btn btn-primary btn-sm"><span set:html={icon('send',15)}></span> Search</a>
+      </div>
+
+      <!-- inline facet chips: New/Demo/Used are FACETS not pages; fuel facet surfaces EV hub -->
+      <div class="entry-origin" style="margin-top:22px">Jump straight in</div>
+      <div style="display:flex; flex-wrap:wrap; gap:9px">
+        <a class="facet" href={`${BASE}/listings?condition=new`}>New</a>
+        <a class="facet" href={`${BASE}/listings?condition=demo`}>Demo</a>
+        <a class="facet" href={`${BASE}/listings?condition=used`}>Used</a>
+        <a class="facet" href={`${BASE}/listings?seats=7`}><span set:html={icon('seat',14)}></span> 7 seats</a>
+        <a class="facet" href={`${BASE}/listings?body=ute`}><span set:html={icon('truck',14)}></span> Utes</a>
+        <a class="facet" href={`${BASE}/electric`}><span set:html={icon('bolt',14)}></span> Electric &amp; hybrid</a>
+        <a class="facet" href={`${BASE}/offers`}><span set:html={icon('tag',14)}></span> Offers</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED STOCK: each card price carries an inline "repayments" entry -->
+  <section class="site-container section-tight">
+    <div style="display:flex; align-items:end; justify-content:space-between; margin-bottom:18px">
+      <div><span class="eyebrow">In stock now</span><h2 style="font-family:var(--font-display); font-size:26px; margin-top:8px">Featured stock</h2></div>
+      <a href={`${BASE}/listings`} class="btn btn-ghost btn-sm">All 305 cars <span set:html={icon('arrow',15)}></span></a>
+    </div>
+    <div class="grid-auto">
+      {featured.map((v) => (
+        <div class="card card-lift" style="overflow:hidden">
+          <a href={`${BASE}/vehicle?id=${v.id}`} style="display:block; text-decoration:none; color:inherit">
+            <div style={`height:150px; background:${v.hue}`}></div>
+            <div style="padding:14px 15px 4px">
+              <div style="display:flex; gap:7px; margin-bottom:6px">
+                {v.badge && <span class="chip chip-teal" style="padding:3px 9px">{v.badge}</span>}
+                <span class="chip" style="padding:3px 9px">{v.condition}</span>
+              </div>
+              <b style="font-family:var(--font-display); font-size:16px">{v.year} {v.make} {v.model}</b>
+              <div class="muted" style="font-size:12.5px; margin-top:2px">{v.variant} · {v.fuel} · {v.drive}</div>
+              <div style="font-family:var(--font-display); font-weight:700; font-size:20px; margin-top:8px">{fmt(v.price)} <span class="faint" style="font-size:11px; font-weight:400">drive away</span></div>
+            </div>
+          </a>
+          <!-- inline entry, in situ on the price -->
+          <div style="padding:0 15px 14px">
+            <a href={`${BASE}/finance?price=${v.price}`} class="entry entry--ai" style="width:100%; box-shadow:none; padding:8px 12px">
+              <span class="entry-ic" set:html={icon('calc',16)}></span>
+              <span class="entry-tx"><b>Work out repayments</b><span>≈ ${Math.round(v.price/260)}/wk · 5yr</span></span>
+              <span class="entry-go" set:html={icon('arrow',15)}></span>
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- FUEL FACET → EV hub, contextual -->
+  <section class="site-container section-tight">
+    <div class="card" style="padding:26px; display:grid; grid-template-columns:1.2fr 1fr; gap:26px; align-items:center; background:linear-gradient(120deg, rgba(15,181,166,.06), rgba(85,102,240,.05))">
+      <div>
+        <span class="eyebrow"><span set:html={icon('leaf',13)}></span> Thinking electric?</span>
+        <h2 style="font-family:var(--font-display); font-size:24px; margin:10px 0 8px">The EV hub is one tap from the fuel facet</h2>
+        <p class="muted" style="font-size:14.5px">Running-cost compare, charging basics and every EV/hybrid in stock — folded into the same filter you'd use anyway. No separate silo.</p>
+        <div class="entry-rail" style="margin-top:16px">
+          <a href={`${BASE}/electric`} class="entry"><span class="entry-ic" set:html={icon('bolt',16)}></span><span class="entry-tx"><b>Electric &amp; hybrid hub</b><span>EV vs petrol cost compare</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+          <a href={`${BASE}/listings?fuel=electric`} class="entry"><span class="entry-ic" set:html={icon('plug',16)}></span><span class="entry-tx"><b>EVs in stock</b><span>filtered listing</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        {[vehicles[3], vehicles[5]].map((v) => (
+          <a href={`${BASE}/vehicle?id=${v.id}`} class="card card-lift" style="display:flex; gap:12px; padding:10px; text-decoration:none; color:inherit; align-items:center">
+            <span style={`width:64px;height:44px;border-radius:9px;flex:none;background:${v.hue}`}></span>
+            <span style="flex:1"><b style="font-size:13.5px">{v.make} {v.model}</b><span class="muted" style="display:block;font-size:11.5px">{v.badge}</span></span>
+            <b style="font-size:13.5px">{fmt(v.price)}</b>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- BRAND CHIPS → brand hubs, contextual -->
+  <section class="site-container section-tight">
+    <div class="entry-origin">Shop by brand — no “Our Brands” menu, just chips</div>
+    <div style="display:flex; flex-wrap:wrap; gap:9px">
+      {brands.map((b) => (
+        <a class="facet" href={`${BASE}/brand?b=${b.slug}`}>{b.name}</a>
+      ))}
+    </div>
+  </section>
+
+  <!-- OFFERS strip → offers page (finance ↔ offers fold hinted) -->
+  <section class="site-container section-tight">
+    <div style="display:flex; align-items:end; justify-content:space-between; margin-bottom:16px">
+      <div><span class="eyebrow"><span set:html={icon('tag',13)}></span> This month</span><h2 style="font-family:var(--font-display); font-size:24px; margin-top:8px">Drive-away offers</h2></div>
+      <a href={`${BASE}/offers`} class="btn btn-ghost btn-sm">All offers <span set:html={icon('arrow',15)}></span></a>
+    </div>
+    <div class="grid-auto">
+      {offers.map((o) => (
+        <a href={`${BASE}/offers`} class="card card-lift" style="padding:16px; text-decoration:none; color:inherit">
+          <span class="chip chip-amber" style="padding:3px 9px">{o.tag}</span>
+          <b style="display:block; font-family:var(--font-display); font-size:16px; margin-top:10px">{o.title}</b>
+          <span class="muted" style="font-size:13px">{o.sub}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- SELL/TRADE fold + service, contextual entries -->
+  <section class="site-container section">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))">
+      <a href={`${BASE}/trade-in`} class="entry entry--amber"><span class="entry-ic" set:html={icon('tag',18)}></span><span class="entry-tx"><b>Value my trade-in</b><span>put it toward a car here</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/sell`} class="entry entry--amber"><span class="entry-ic" set:html={icon('doc',18)}></span><span class="entry-tx"><b>Sell outright</b><span>not trading? sell to us</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/service`} class="entry"><span class="entry-ic" set:html={icon('wrench',18)}></span><span class="entry-tx"><b>Book a service</b><span>keep it running sweet</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/finance`} class="entry entry--ai"><span class="entry-ic" set:html={icon('calc',18)}></span><span class="entry-tx"><b>Finance &amp; pre-approval</b><span>know your budget first</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+    </div>
+  </section>
+</Layout>

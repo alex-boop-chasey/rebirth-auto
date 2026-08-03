@@ -1,0 +1,390 @@
+/* ==========================================================================
+   Rebi — the floating chat widget's styles, layout + "dreaming" backdrop.
+   ----------------------------------------------------------------------------
+   Extracted verbatim from ChatWidget.astro's <style is:global> so Rebi's whole
+   look/layout lives in ONE editable place. Imported (side-effect) from
+   ChatWidget's frontmatter, so it loads globally in the page <head> exactly as
+   the inline is:global block did. LIGHT-theme only — Rebi's greyed backdrop is a
+   filter over the light page. Nothing here is scoped; selectors are unchanged.
+   ========================================================================== */
+.reb-chat {
+  /* Near-Future Yard skin — Rebi speaks in indigo/aurora over glass. */
+  --reb-primary: var(--indigo);
+  --reb-primary-hover: var(--indigo-deep);
+  /* Focus Stage brand tokens — inherited down into the .focus-stage cards so the
+     shared stage renders identically to the homepage search bar. NAMES preserved
+     (SearchDock sets the same ones); only the VALUES are NFY now. --ink is left
+     unset so it inherits the global NFY ink (#0D1626); --muted maps to ink-soft. */
+  --rebi-blue: var(--indigo);
+  --rebi-blue-hover: var(--indigo-deep);
+  --rebi-grad: var(--aurora);
+  --muted: var(--ink-soft);
+  /* Light / near-white glass palette. */
+  --reb-panel-bg: rgb(255 255 255 / 0.92);
+  --reb-panel-border: rgb(85 102 240 / 0.18);
+  --reb-bot-bg: var(--bg-2);             /* legacy .reb-msg (hidden log) fallbacks */
+  --reb-bot-text: var(--ink);
+  --reb-human-bg: var(--teal-deep);
+  --reb-text: var(--ink);
+  --reb-muted: var(--muted);
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 9999;
+  font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+@media (min-width: 640px) {
+  .reb-chat { right: 1.5rem; bottom: 1.5rem; }
+}
+
+/* Launcher — the demo's bottom-right pill: an orb bead + "Ask Rebi". Fixed to the
+   viewport corner (22px) so it shares the docked drawer's anchor. The white
+   surface + shadow come from the component's scoped <style>; geometry lives here.
+   It hides while the drawer is open — the drawer carries its own close ✕. */
+.reb-launcher {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 7px 16px 7px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--sh-2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.reb-launcher:hover { transform: translateY(-2px); }
+.reb-launcher:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.reb-launcher-txt { line-height: 1; }
+.reb-chat.reb-open .reb-launcher { display: none; }
+
+/* Launcher badge — iOS-style dot shown when a conversation waits behind a hidden panel */
+.reb-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: #ef4444;
+  border: 2px solid var(--reb-primary); /* subtle ring matching the launcher */
+}
+.reb-badge[hidden] { display: none; }
+
+/* Panel — the bottom-right docked DRAWER (matches the inline-contextual demo's
+   .rebi-dock). A rounded surface card with header / scrolling thread / composer
+   stacked in a column. NOT a centred modal, NOT a full-height edge drawer. On
+   narrow viewports it becomes a near-full-width sheet via max-width. */
+.reb-panel {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 10000;
+  width: 392px;
+  max-width: calc(100vw - 44px);
+  max-height: min(78vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-3);
+  color: var(--ink);
+}
+.reb-panel[hidden] { display: none; }
+/* Gentle dock-in (fade + rise). Not the old centred grayscale reb-rise. */
+@media (prefers-reduced-motion: no-preference) {
+  .reb-panel:not([hidden]) { animation: reb-dock-in 0.24s ease-out; }
+}
+@keyframes reb-dock-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Header — orb + "Rebi" + status, a "Full view" chip and the close/minimise
+   controls, over the demo's teal→indigo tint wash. */
+.reb-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(120deg, rgb(15 181 166 / 0.06), rgb(85 102 240 / 0.06));
+}
+.reb-head-orb { flex: none; }
+.reb-head-titles { flex: 1; min-width: 0; }
+.reb-head-titles b { font-size: 14.5px; color: var(--ink); }
+.reb-status { font-size: 11.5px; color: var(--teal-deep); display: flex; align-items: center; gap: 5px; }
+.reb-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex: none; }
+.reb-fullview { flex: none; cursor: pointer; text-decoration: none; }
+.reb-head-actions { display: flex; align-items: center; gap: 0.3rem; flex: none; }
+.reb-head .reb-close { width: 1.7rem; height: 1.7rem; }
+.reb-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 1.95rem; height: 1.95rem;
+  background: rgb(255 255 255 / 0.7);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  color: var(--muted); cursor: pointer; border-radius: 9999px;
+  box-shadow: 0 4px 12px -6px rgb(13 22 38 / 0.22);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.reb-close:hover { background: rgb(255 255 255 / 0.95); color: var(--rebi-blue); }
+.reb-close:focus-visible { outline: 2px solid var(--rebi-blue); outline-offset: 2px; }
+.reb-close svg { width: 1.05rem; height: 1.05rem; }
+
+/* Speaker toggle (message tones) — icon swaps on the .muted class */
+.reb-speaker .reb-ico-sound-off { display: none; }
+.reb-speaker.muted .reb-ico-sound-on { display: none; }
+.reb-speaker.muted .reb-ico-sound-off { display: block; }
+
+/* Action buttons — shared by the end-chat dialog and the inline wrap-up card */
+.reb-actions { display: flex; gap: 0.5rem; margin: 0.1rem 0 0.3rem; }
+.reb-action-btn {
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.65rem 0.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.reb-action-btn svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+.reb-action-primary { background: var(--aurora); background-size: 160% 160%; color: #fff; box-shadow: var(--sh-glow); }
+.reb-action-primary:hover { box-shadow: 0 16px 46px -12px rgb(85 102 240 / 0.55); }
+.reb-action-secondary { background: var(--indigo-glow); color: var(--ink); border-color: rgb(85 102 240 / 0.28); }
+.reb-action-secondary:hover { background: rgb(85 102 240 / 0.14); }
+
+/* ================= Scrolling thread (the drawer's middle column) =================
+   Normal vertical document flow — the focus-stage engine in THREAD mode stacks
+   turns here newest-at-bottom and scrolls this element. No 3D theatre, no recede,
+   no mask; the demo's straight top→bottom conversation. */
+.reb-thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 16px;
+}
+
+/* Visually-hidden live region (announces the complete landed message once). */
+.reb-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); border: 0;
+  white-space: nowrap;
+}
+
+/* Dev fallback log — hidden (kept in the DOM for a later phase). */
+.reb-log { display: none; }
+.reb-log[hidden] { display: none; }
+/* Message row: bot/human rows carry an avatar to the left; user rows sit right. */
+.reb-row { display: flex; align-items: flex-end; gap: 0.45rem; max-width: 85%; }
+.reb-row-bot { align-self: flex-start; }
+.reb-row-user { align-self: flex-end; }
+.reb-col { display: flex; flex-direction: column; gap: 0.15rem; }
+
+/* Avatars — robot for Rebi, person for the team. */
+.reb-avatar {
+  width: 1.75rem; height: 1.75rem; flex-shrink: 0;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--reb-primary), rgb(109 40 217));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+}
+.reb-avatar-human { background: linear-gradient(135deg, #10b981, #047857); }
+.reb-avatar svg { width: 1.05rem; height: 1.05rem; color: #fff; }
+
+/* Sender name (only the team is labelled, to distinguish the human from Rebi). */
+.reb-name { font-size: 0.66rem; color: var(--reb-muted); margin: 0 0 0 0.15rem; font-weight: 600; letter-spacing: 0.02em; }
+
+/* Centered time separators + system notices. */
+.reb-time { align-self: center; font-size: 0.66rem; color: var(--reb-muted); margin: 0.35rem 0 0.1rem; letter-spacing: 0.02em; }
+.reb-system {
+  align-self: center; text-align: center; max-width: 90%;
+  font-size: 0.75rem; color: var(--reb-muted); font-style: italic;
+  background: rgb(255 255 255 / 5%); border-radius: 0.6rem; padding: 0.4rem 0.7rem; margin: 0.25rem 0;
+}
+
+.reb-msg { max-width: 100%; padding: 0.5rem 0.85rem; border-radius: 1.25rem; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 1px rgb(0 0 0 / 15%); }
+.reb-msg a { color: #93c5fd; text-decoration: underline; }
+.reb-msg-bot { background: var(--reb-bot-bg); color: var(--reb-bot-text); border-bottom-left-radius: 0.4rem; }
+.reb-msg-bot a { color: #7fb4ff; }
+.reb-msg-human { background: var(--reb-human-bg); color: #eafff6; border-bottom-left-radius: 0.4rem; }
+.reb-msg-human a { color: #d1fae5; }
+.reb-msg-user { background: var(--reb-primary); color: #fff; border-bottom-right-radius: 0.4rem; }
+.reb-msg-user a { color: #e8f0ff; }
+.reb-msg-error { background: rgb(239 68 68 / 15%); border: 1px solid rgb(239 68 68 / 40%); color: #fca5a5; }
+
+/* Typing indicator */
+.reb-typing { display: flex; gap: 0.25rem; align-items: center; }
+.reb-typing span { width: 0.45rem; height: 0.45rem; border-radius: 9999px; background: var(--reb-muted); animation: reb-blink 1.2s infinite; }
+.reb-typing span:nth-child(2) { animation-delay: 0.2s; }
+.reb-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes reb-blink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+
+/* Turnstile */
+.reb-turnstile { padding: 0.5rem 0.75rem 0; display: flex; justify-content: center; }
+.reb-turnstile[hidden] { display: none; }
+
+/* Contact capture — presented as a pinned focal stage card during a handoff. */
+.reb-contact { display: flex; flex-direction: column; gap: 0.4rem; }
+.reb-contact[hidden] { display: none; }
+.reb-contact-label { font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.reb-contact-row { display: flex; gap: 0.4rem; }
+.reb-contact-input {
+  flex: 1; background: rgb(255 255 255 / 0.9); border: 1px solid rgb(85 102 240 / 0.25);
+  border-radius: var(--r-sm); color: var(--ink); padding: 0.5rem 0.65rem; font-size: 0.88rem; font-family: inherit;
+  min-width: 0;
+}
+.reb-contact-input::placeholder { color: var(--muted); }
+.reb-contact-input:focus { outline: none; border-color: var(--reb-primary); }
+.reb-contact-send {
+  background: var(--reb-primary); color: #fff; border: none; border-radius: 0.6rem;
+  padding: 0 0.9rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; flex-shrink: 0;
+}
+.reb-contact-send:hover { background: var(--reb-primary-hover); }
+
+/* Composer — the NFY aurora-bordered pill (mirrors .aisearch): a white surface
+   ringed by the aurora gradient via the two-layer padding-box/border-box trick. */
+.reb-form.reb-entry {
+  display: flex; align-items: flex-end; gap: 0.4rem;
+  margin: 0 0.75rem;
+  padding: 0.4rem 0.4rem 0.4rem 1rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-pill);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--aurora) border-box;
+  box-shadow: var(--sh-2);
+  transition: box-shadow 220ms ease;
+}
+.reb-form.reb-entry:focus-within {
+  box-shadow: var(--sh-glow), var(--sh-2);
+}
+.reb-input {
+  flex: 1;
+  resize: none;
+  max-height: 6rem;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  padding: 0.4rem 0.15rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.4;
+  min-width: 0;
+}
+.reb-input::placeholder { color: var(--ink-faint); }
+.reb-input:focus { outline: none; }
+
+/* Secondary icon buttons (mic + speaker) sit inline in the entry row. */
+.reb-icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.1rem; height: 2.1rem; flex-shrink: 0;
+  background: transparent; color: var(--muted);
+  border: none; border-radius: 9999px;
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+}
+.reb-icon-btn:hover { background: var(--indigo-glow); color: var(--rebi-blue); }
+.reb-icon-btn:focus-visible { outline: 2px solid var(--rebi-blue); outline-offset: 2px; }
+.reb-icon-btn svg { width: 1.15rem; height: 1.15rem; }
+.reb-mic[hidden] { display: none; }
+.reb-mic.reb-recording { background: rgb(16 185 129 / 15%); color: rgb(16 185 129); animation: reb-pulse 1.4s ease-in-out infinite; }
+@keyframes reb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 45%); } 50% { box-shadow: 0 0 0 4px rgb(16 185 129 / 0%); } }
+
+/* Send — the primary aurora action, matching the NFY composer button. */
+.reb-send {
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem; flex-shrink: 0;
+  background: var(--aurora); background-size: 160% 160%; color: #fff; border: none;
+  box-shadow: var(--sh-glow);
+  border-radius: 9999px; cursor: pointer; transition: box-shadow 0.2s ease, transform 0.12s ease;
+}
+.reb-send:hover:not(:disabled) { box-shadow: 0 16px 40px -12px rgb(85 102 240 / 0.55); }
+.reb-send:active:not(:disabled) { transform: scale(0.94); }
+.reb-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+.reb-send svg { width: 1.15rem; height: 1.15rem; }
+
+.reb-foot { font-size: 0.68rem; color: var(--reb-muted); text-align: center; margin: 0; padding: 0 0.75rem 0.6rem; }
+.reb-foot a { color: var(--reb-muted); text-decoration: underline; }
+
+/* End-chat confirmation — a small, centered FLOATING card (no full-panel scrim
+   box). The container is transparent; only the little card is visible. */
+.reb-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.reb-confirm[hidden] { display: none; }
+.reb-confirm-card {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+  background: var(--surface);
+  border: 1px solid var(--reb-panel-border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.1rem 1.1rem;
+  box-shadow: var(--sh-3);
+}
+.reb-confirm-x { position: absolute; top: 0.5rem; right: 0.5rem; color: var(--muted); }
+.reb-confirm-x:hover { background: var(--indigo-glow); color: var(--ink); }
+.reb-confirm-title { font-size: 1rem; font-weight: 600; margin: 0 1.25rem 0.35rem 0; color: var(--reb-text); }
+.reb-confirm-sub { font-size: 0.8rem; color: var(--reb-muted); margin: 0 0 0.9rem; }
+.reb-confirm-actions { flex-direction: column; } /* stacked — the primary label is long */
+/* Inline wrap-up card: identical to the dialog card, just spaced inside the log. */
+#reb-resolved { margin-top: 0.5rem; }
+
+/* ================= In-thread listing tiles + action pills =================
+   Rendered from the chat response's optional `cards` / `actions` arrays (see the
+   widget's renderCardsAndActions). Tiles are keyboard-focusable links to
+   /listings/<slug>; a null image shows a neutral placeholder swatch — never a
+   fabricated photo (determinism). Action pills are real <a href> links. */
+.reb-tiles { display: flex; flex-direction: column; gap: 8px; }
+.reb-tile {
+  display: flex; align-items: center; gap: 12px; padding: 10px;
+  text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md, 0.75rem);
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+.reb-tile:hover { box-shadow: var(--sh-2); transform: translateY(-1px); border-color: rgb(85 102 240 / 0.28); }
+.reb-tile:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.reb-tile-thumb {
+  width: 78px; height: 54px; border-radius: 10px; flex: none;
+  object-fit: cover; display: block;
+  background: var(--indigo-glow); /* neutral placeholder swatch when no image */
+}
+.reb-tile-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.reb-tile-top { display: flex; align-items: center; gap: 8px; }
+.reb-tile-title {
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reb-tile-spec { font-size: 12px; color: var(--muted); }
+.reb-tile-price { text-align: right; flex: none; }
+.reb-tile-price b { font-size: 15px; color: var(--ink); }
+.reb-tile-price span { font-size: 10.5px; color: var(--ink-faint); display: block; }
+
+.reb-acts { display: flex; flex-wrap: wrap; gap: 7px; }
+.reb-act {
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+  font-size: 12.5px; font-weight: 600; color: var(--indigo-deep);
+  background: var(--indigo-glow); border: 1px solid rgb(85 102 240 / 0.22);
+  padding: 7px 12px; border-radius: var(--r-pill);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.reb-act:hover { background: rgb(85 102 240 / 0.16); transform: translateY(-1px); }
+.reb-act:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.reb-act svg { width: 14px; height: 14px; flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reb-panel, .reb-launcher, .reb-typing span, .reb-mic.reb-recording { animation: none; transition: none; }
+}

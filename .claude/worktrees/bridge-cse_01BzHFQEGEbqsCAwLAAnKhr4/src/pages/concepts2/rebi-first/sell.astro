@@ -1,0 +1,74 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="Sell your car — Rebirth Auto" active="Sell your car">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Sell your car</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:16ch">Sell it outright — or trade it in. Your call.</h1>
+    <p class="lead" style="margin-top:16px">No purchase required. Give Rebi four details and get an indicative figure in about a minute.</p>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-3">
+      {[
+        ['doc','1 · Tell us the car','Make, model, year, odometer and condition — that\'s the whole intake.'],
+        ['calc','2 · Get a figure','An indicative outright offer, plus what it\'d be worth as a trade-in.'],
+        ['shield','3 · Confirm & get paid','Bring it in for a quick check; if it stacks up, we settle same day.'],
+      ].map(([ic, h, p]) => (
+        <div class="card" style="padding:24px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px">{h}</h3>
+          <p class="muted" style="margin-top:8px; font-size:14px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- VALUATION INTAKE -->
+  <section id="trade" class="site-container section-tight">
+    <div class="rf-grid-2" style="grid-template-columns:1.1fr .9fr; align-items:start">
+      <div class="card" style="padding:28px 30px">
+        <div class="rf-row" style="gap:9px; margin-bottom:20px"><span class="brand-mark" set:html={icon('tag',18)}></span><b class="rf-h3">Value my car</b></div>
+        <div class="rf-grid-2" style="gap:16px">
+          <div><label class="rf-lab">Make</label><input class="rf-field" placeholder="e.g. Ford" /></div>
+          <div><label class="rf-lab">Model</label><input class="rf-field" placeholder="e.g. Ranger" /></div>
+          <div><label class="rf-lab">Year</label><input class="rf-field" placeholder="e.g. 2019" /></div>
+          <div><label class="rf-lab">Odometer (km)</label><input class="rf-field" placeholder="e.g. 84,000" /></div>
+          <div style="grid-column:1 / -1"><label class="rf-lab">Condition</label>
+            <div class="rf-quick"><span class="chip chip-teal">Excellent</span><span class="chip">Good</span><span class="chip">Fair</span></div>
+          </div>
+        </div>
+        <a href={`${BASE}/rebi`} class="btn btn-primary" style="margin-top:22px; justify-content:center; width:100%"><span class="spark" set:html={icon('spark',15)}></span> Get my indicative figure</a>
+        <p class="faint" style="font-size:11px; margin-top:10px">Indicative only — final offer subject to inspection. Demo form.</p>
+      </div>
+
+      <!-- SELL VS TRADE explainer (the overlap, folded in) -->
+      <div class="ai-summary" style="padding:26px 28px">
+        <div class="rf-row" style="gap:7px; margin-bottom:10px"><span class="spark" set:html={icon('spark',14)} style="color:var(--indigo)"></span><b style="font-size:13px; color:var(--indigo-deep)">Sell outright vs trade-in</b></div>
+        <p class="muted" style="font-size:14px; line-height:1.6">Selling <b>outright</b> usually nets a little more cash, and you walk away clean. A <b>trade-in</b> is simpler and can reduce the GST on your next car — often the better deal if you're buying from us the same day.</p>
+        <p class="muted" style="font-size:14px; line-height:1.6; margin-top:10px">Not sure which wins for you? Rebi runs both numbers side by side.</p>
+        <div class="rf-quick" style="margin-top:14px">
+          <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Put it toward finance</a>
+          <a class="rf-action" href={`${BASE}/#inventory`}><span class="spark" set:html={icon('car',13)}></span> Shop your next car</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="What's my 2019 Ranger worth if I sell it outright?"
+      reply="For a 2019 Ranger in good condition around 84,000km, an indicative outright figure is roughly $34k–$38k, or a touch less as a trade-in that lowers the GST on your next car. Want me to run both against a specific vehicle?"
+      actions={[
+        { label: 'Apply to a purchase', href: `${BASE}/finance`, icon: 'calc' },
+        { label: 'Browse the yard', href: `${BASE}/#inventory`, icon: 'car' },
+        { label: 'Talk to a buyer', href: `${BASE}/contact`, icon: 'phone' },
+      ]}
+    />
+  </section>
+</Shell>

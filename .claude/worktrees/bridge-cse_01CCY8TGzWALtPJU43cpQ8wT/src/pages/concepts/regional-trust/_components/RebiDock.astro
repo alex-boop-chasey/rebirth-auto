@@ -1,0 +1,33 @@
+---
+// Persistent Rebi launcher — the warm local advisor, present on every page.
+const base = '/concepts/regional-trust';
+---
+<a href={`${base}/rebi`} class="rt-dock" aria-label="Chat with Rebi">
+  <span class="rt-dock-orb">
+    <span class="rt-dock-ring"></span>
+    <span class="rt-rebi-orb xl"></span>
+  </span>
+  <span class="rt-dock-copy">
+    <strong>G’day, I’m Rebi 👋</strong>
+    <em>Your local car guide — ask me anything</em>
+  </span>
+</a>
+
+<style>
+  .rt-dock {
+    position: fixed; right: 28px; bottom: 28px; z-index: 60;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--white); border: 1px solid var(--green-line);
+    border-radius: 999px; padding: 12px 22px 12px 12px; box-shadow: var(--shadow-lg);
+    transition: transform .18s ease;
+  }
+  .rt-dock:hover { transform: translateY(-2px); }
+  .rt-dock-orb { position: relative; display: grid; place-items: center; animation: rt-float 4s ease-in-out infinite; }
+  .rt-dock-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: var(--green); animation: rt-pulse 2.6s ease-out infinite;
+  }
+  .rt-dock-copy { display: flex; flex-direction: column; line-height: 1.2; }
+  .rt-dock-copy strong { font-size: 15px; color: var(--ink); }
+  .rt-dock-copy em { font-style: normal; font-size: 12.5px; color: var(--muted); }
+</style>

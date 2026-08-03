@@ -1,0 +1,173 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+
+const featured = [
+  { title: "Isuzu D-MAX X-Terrain", sub: "2024 · 4dr Ute · Auto", price: "$62,990", km: "12,400 km", trans: "6-sp Auto", fuel: "Diesel", drive: "4x4", flag: "DEMO", glyph: "🛻", ai: "Rebi: strong tow rating for your brief" },
+  { title: "Hyundai Kona Electric", sub: "2024 · SUV · Single-speed", price: "$54,500", km: "New", trans: "Reduction", fuel: "Electric", drive: "FWD", flag: "EV", flagAmber:false, glyph: "⚡", ai: "Rebi: 505km range — fits daily loop" },
+  { title: "Subaru Outback AWD", sub: "2023 · Wagon · CVT", price: "$47,880", km: "22,010 km", trans: "CVT", fuel: "Petrol", drive: "AWD", flag: "USED", glyph: "🚙", ai: "Rebi: full service history verified" },
+  { title: "Kia Sportage GT-Line", sub: "2024 · SUV · Auto", price: "$46,250", km: "New", trans: "8-sp Auto", fuel: "Petrol", drive: "AWD", flag: "NEW", glyph: "🚗", ai: "Rebi: best-value trim in class" },
+];
+---
+<Layout title="Rebirth Auto — Dark Precision" current="index" dockHint="Tell me your budget and I'll shortlist the yard">
+
+  <!-- ===================== HERO ===================== -->
+  <section style="position:relative;border-bottom:1px solid var(--line);overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(80% 120% at 78% -10%, rgba(62,230,203,0.10), transparent 55%);pointer-events:none"></div>
+    <div class="dp-wrap dp-section" style="position:relative;display:grid;grid-template-columns:1.15fr 0.85fr;gap:56px;align-items:center">
+      <div>
+        <span class="dp-eyebrow">AI-native dealership · Bundaberg region</span>
+        <h1 class="dp-display" style="margin-top:22px">The yard,<br/>read by an <span style="color:var(--signal)">expert</span>.</h1>
+        <p class="dp-lead" style="margin-top:22px;max-width:46ch">
+          Every vehicle on the lot decoded by Rebi — specs, finance, history and fit,
+          reasoned in plain language. Precision buying for regional Australia.
+        </p>
+
+        <!-- AI SEARCH BAR — prominent -->
+        <div class="dp-ai" style="margin-top:34px">
+          <div class="dp-ai__head">
+            <span class="dp-rebi-avatar" style="width:24px;height:24px"></span>
+            <span style="color:var(--ink-dim)">REBI SEARCH</span>
+            <span class="dp-chip dp-chip--signal" style="margin-left:auto"><span class="dp-dot dp-dot--live"></span>NL QUERY</span>
+          </div>
+          <div style="padding:16px 18px;display:grid;gap:14px">
+            <div style="display:flex;align-items:center;gap:12px;background:var(--base);border:1px solid var(--line-bright);border-radius:4px;padding:14px 16px">
+              <span style="color:var(--signal);font-size:18px">◈</span>
+              <span style="font-size:15px;color:var(--ink)">Family 7-seater, diesel, under $55k, low kms<span class="dp-caret"></span></span>
+              <span class="dp-btn dp-btn--primary dp-btn--sm" style="margin-left:auto">Ask →</span>
+            </div>
+            <div class="dp-pillrow">
+              <span class="dp-chip">First car under $20k</span>
+              <span class="dp-chip">Best EV for towing</span>
+              <span class="dp-chip">Trade my Ranger</span>
+              <span class="dp-chip">Cheapest to run</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:14px;margin-top:26px">
+          <a class="dp-btn dp-btn--primary" href={`${base}/listings`}>Browse inventory</a>
+          <a class="dp-btn" href={`${base}/rebi`}>Open Rebi console</a>
+        </div>
+      </div>
+
+      <!-- instrument-cluster hero panel -->
+      <div class="dp-panel dp-tick" style="padding:24px;background:linear-gradient(180deg,var(--raised),var(--base))">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <span class="dp-eyebrow--mute dp-eyebrow">Live lot telemetry</span>
+          <span class="dp-mono dp-mute" style="font-size:11px">SYNC 00:04 AGO</span>
+        </div>
+        <div class="dp-grid dp-cols-3" style="gap:16px;margin-bottom:20px">
+          <div class="dp-stat"><b style="color:var(--signal)">312</b><span>In stock</span></div>
+          <div class="dp-stat"><b>28</b><span>EV / hybrid</span></div>
+          <div class="dp-stat"><b>13</b><span>Franchises</span></div>
+        </div>
+        <hr class="dp-hr" style="margin-block:14px"/>
+        <div class="dp-readout"><span class="dp-readout__k">Petrol</span><span class="dp-readout__bar"><i style="width:62%"></i></span><span class="dp-readout__v">62%</span></div>
+        <div class="dp-readout"><span class="dp-readout__k">Diesel</span><span class="dp-readout__bar"><i style="width:24%"></i></span><span class="dp-readout__v">24%</span></div>
+        <div class="dp-readout"><span class="dp-readout__k">Electric</span><span class="dp-readout__bar"><i style="width:9%"></i></span><span class="dp-readout__v">9%</span></div>
+        <div class="dp-readout"><span class="dp-readout__k">Hybrid</span><span class="dp-readout__bar"><i style="width:5%"></i></span><span class="dp-readout__v">5%</span></div>
+        <div class="dp-insight" style="margin-top:18px">
+          <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI INSIGHT</span>
+          <p>Diesel utes are moving fastest this week. <strong>3 X-Terrains</strong> arrived Tuesday — priced to clear.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VEHICLE TYPE ENTRY ===================== -->
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-grid dp-cols-4">
+      {[["New","274 vehicles","Latest model-year stock"],["Demo","57 vehicles","Ex-demo, big savings"],["Used","305 vehicles","Inspected & verified"],["Electric","28 vehicles","EV & hybrid hub"]].map(([t,n,d]) => (
+        <a href={`${base}/listings`} class="dp-panel dp-tick" style="padding:22px;display:grid;gap:8px;transition:border-color .18s">
+          <span class="dp-eyebrow">{t}</span>
+          <b class="dp-mono" style="font-size:20px">{n}</b>
+          <span class="dp-mute" style="font-size:13px">{d}</span>
+          <span style="color:var(--signal);font-family:var(--font-mono);font-size:12px;margin-top:4px">Enter →</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ===================== FEATURED ===================== -->
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:26px">
+      <div>
+        <span class="dp-eyebrow">Curated by Rebi</span>
+        <h2 class="dp-h2" style="margin-top:14px">This week's precision picks</h2>
+      </div>
+      <a class="dp-btn dp-btn--ghost dp-btn--sm" href={`${base}/listings`}>All inventory →</a>
+    </div>
+    <div class="dp-grid dp-cols-4">
+      {featured.map((v) => <VehicleCard {...v} />)}
+    </div>
+  </section>
+
+  <!-- ===================== AI CAPABILITY STRIP ===================== -->
+  <section style="border-block:1px solid var(--line);background:linear-gradient(180deg,var(--base),var(--void))">
+    <div class="dp-wrap dp-section">
+      <div style="text-align:center;max-width:60ch;margin:0 auto 44px">
+        <span class="dp-eyebrow" style="justify-content:center">The Rebi engine</span>
+        <h2 class="dp-h2" style="margin-top:16px">An expert in every panel, not a widget in the corner</h2>
+      </div>
+      <div class="dp-grid dp-cols-3">
+        {[
+          ["◈","Natural-language search","Describe the car in your own words — budget, life, terrain. Rebi maps it to the exact lot."],
+          ["⊚","Grounded summaries","Every listing carries an AI readout built only from verified spec — never marketing fluff."],
+          ["◇","Smart lead capture","Rebi qualifies intent as you browse and hands the dealer a warm, contextual brief."],
+        ].map(([g,t,d]) => (
+          <div class="dp-ai" style="padding:26px;display:grid;gap:12px">
+            <span style="font-size:26px;color:var(--signal)">{g}</span>
+            <h3 class="dp-h3">{t}</h3>
+            <p class="dp-dim" style="font-size:14px;line-height:1.6">{d}</p>
+            <div class="dp-insight" style="margin-top:6px">
+              <span class="dp-insight__tag">EXAMPLE</span>
+              <p class="dp-mono" style="font-size:12px">"low-km diesel wagon, dog-friendly boot"</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LEAD CAPTURE ===================== -->
+  <section class="dp-wrap dp-section">
+    <div class="dp-panel dp-tick" style="padding:0;display:grid;grid-template-columns:1fr 1fr;overflow:hidden">
+      <div style="padding:44px;border-right:1px solid var(--line)">
+        <span class="dp-eyebrow">Warm handoff</span>
+        <h2 class="dp-h2" style="margin-top:16px;max-width:20ch">Rebi found your car. A human closes it.</h2>
+        <p class="dp-dim" style="margin-top:16px;font-size:15px;line-height:1.65;max-width:42ch">
+          Tell us where you're at and Rebi briefs the right specialist — with your shortlist,
+          budget and finance context already attached.
+        </p>
+        <div class="dp-grid dp-cols-3" style="margin-top:30px;gap:14px">
+          <div class="dp-stat"><b style="font-size:26px">0.4s</b><span>Avg reply</span></div>
+          <div class="dp-stat"><b style="font-size:26px">24/7</b><span>Rebi online</span></div>
+          <div class="dp-stat"><b style="font-size:26px">4.9★</b><span>Buyer rating</span></div>
+        </div>
+      </div>
+      <div style="padding:44px;background:var(--base)">
+        <div class="dp-ai__head" style="border:1px solid var(--line-glow);border-radius:5px 5px 0 0">
+          <span class="dp-rebi-avatar" style="width:24px;height:24px"></span>
+          <span style="color:var(--ink-dim)">REBI IS DRAFTING YOUR ENQUIRY</span>
+        </div>
+        <div style="border:1px solid var(--line-glow);border-top:0;border-radius:0 0 5px 5px;padding:22px;display:grid;gap:16px">
+          <label class="dp-field"><span class="dp-label">Name</span><input class="dp-input" placeholder="Your name" /></label>
+          <label class="dp-field"><span class="dp-label">Mobile</span><input class="dp-input" placeholder="04__ ___ ___" /></label>
+          <label class="dp-field"><span class="dp-label">Rebi has attached</span>
+            <div class="dp-pillrow" style="margin-top:4px">
+              <span class="dp-chip dp-chip--signal">Shortlist ×3</span>
+              <span class="dp-chip dp-chip--signal">Budget $55k</span>
+              <span class="dp-chip dp-chip--signal">Finance pre-check</span>
+            </div>
+          </label>
+          <button class="dp-btn dp-btn--primary" style="justify-content:center">Send to a specialist</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</Layout>

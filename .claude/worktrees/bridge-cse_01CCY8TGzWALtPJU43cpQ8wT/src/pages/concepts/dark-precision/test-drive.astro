@@ -1,0 +1,61 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+const slots = ["09:00","10:30","12:00","13:30","15:00","16:30"];
+---
+<Layout title="Book a test drive — Dark Precision" current="" dockHint="Ask me to book the right car for the road you drive">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Test drive</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px">Book the drive. We'll have it charged and ready.</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">Pick a car, pick a time. Rebi confirms availability and briefs the consultant on what you want to test.</p>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start">
+      <div class="dp-panel dp-tick" style="padding:30px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:20px">Your booking</span>
+
+        <span class="dp-label">Selected vehicle</span>
+        <div style="display:flex;align-items:center;gap:14px;border:1px solid var(--line-glow);border-radius:4px;padding:14px;margin-bottom:20px;background:var(--base)">
+          <span style="font-size:32px">🛻</span>
+          <div style="flex:1"><div style="font-family:var(--font-display);font-weight:600">Isuzu D-MAX X-Terrain</div><div class="dp-mono dp-mute" style="font-size:11px">2024 · Stock #DX-4471</div></div>
+          <a class="dp-mono" href={`${base}/listings`} style="font-size:11px;color:var(--signal)">Change</a>
+        </div>
+
+        <span class="dp-label">Preferred day</span>
+        <div class="dp-seg" style="margin-bottom:20px">
+          {["Thu 31","Fri 01","Sat 02"].map((d,i) => <button aria-pressed={i===2?"true":"false"}>{d}</button>)}
+        </div>
+
+        <span class="dp-label">Time</span>
+        <div class="dp-pillrow" style="margin-bottom:22px">
+          {slots.map((s,i) => <span class={`dp-chip ${i===3?"dp-chip--active":""}`}>{s}</span>)}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <label class="dp-field"><span class="dp-label">Name</span><input class="dp-input" placeholder="Your name" /></label>
+          <label class="dp-field"><span class="dp-label">Mobile</span><input class="dp-input" placeholder="04__ ___ ___" /></label>
+        </div>
+        <button class="dp-btn dp-btn--primary" style="justify-content:center;width:100%">Confirm test drive</button>
+      </div>
+
+      <div style="display:grid;gap:16px">
+        <div class="dp-insight">
+          <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI · PREPPED FOR YOU</span>
+          <p>I've told the consultant you care about <strong>tow capacity and ride comfort</strong>. We'll route the drive over some rougher road so you can feel it.</p>
+        </div>
+        <div class="dp-panel" style="padding:22px">
+          <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:14px">What to bring</span>
+          {[["Licence","Full or provisional, current"],["Time","Allow ~45 minutes"],["Questions","Or let Rebi ask them for you"]].map(([k,v]) => (
+            <div class="dp-readout" style="grid-template-columns:1fr 1.4fr"><span class="dp-readout__k">{k}</span><span class="dp-readout__v" style="font-size:12.5px">{v}</span></div>
+          ))}
+        </div>
+        <a class="dp-btn" href={`${base}/rebi`} style="justify-content:center">Add a second car to compare</a>
+      </div>
+    </div>
+  </section>
+</Layout>

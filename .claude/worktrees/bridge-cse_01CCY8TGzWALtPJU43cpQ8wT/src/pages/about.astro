@@ -1,0 +1,198 @@
+---
+// SSR (not prerendered): reads the dealer config feature flag + the live
+// businessInfo document at request time. Ported from
+// concepts2/inline-contextual/about.astro onto the REAL shell + REAL config.
+//
+// DETERMINISM: every dealer-specific FACT on this page (established year, years in
+// business, brands, stock count) comes from the businessInfo Sanity document or
+// live inventory and is placeholder-GATED — a stat only renders when its real
+// value exists. The team section renders only when `about.team` is non-empty.
+// Nothing here invents a statistic, a person, or a claim.
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+import { client } from '../sanity/lib/client';
+
+const cfg = dealerConfig.about;
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+
+// Live facts — read from the businessInfo document (the existing source of truth,
+// reused not duplicated) and the live inventory count. Fail-open: any fetch error
+// leaves every derived stat unset, so the page degrades to generic copy.
+interface BusinessFacts {
+  established?: number;
+  yearsInBusiness?: number;
+  brandsStocked?: string[];
+  stockCount?: number;
+}
+let facts: BusinessFacts = {};
+try {
+  const data = await client.fetch<BusinessFacts | null>(
+    `{
+      "established": *[_type == "businessInfo"][0].established,
+      "yearsInBusiness": *[_type == "businessInfo"][0].yearsInBusiness,
+      "brandsStocked": *[_type == "businessInfo"][0].brandsStocked,
+      "stockCount": count(*[_type == "listing" && category == "automotive" && status == "active"])
+    }`,
+  );
+  if (data) facts = data;
+} catch (err) {
+  console.error('[about] business facts fetch failed (using generic copy)', err);
+}
+
+const established =
+  typeof facts.established === 'number' && facts.established > 1900 ? facts.established : null;
+const years =
+  typeof facts.yearsInBusiness === 'number' && facts.yearsInBusiness > 0
+    ? facts.yearsInBusiness
+    : established
+      ? Math.max(0, new Date().getFullYear() - established)
+      : null;
+const brandsCount =
+  Array.isArray(facts.brandsStocked) && facts.brandsStocked.length
+    ? facts.brandsStocked.length
+    : null;
+const stockCount =
+  typeof facts.stockCount === 'number' && facts.stockCount > 0 ? facts.stockCount : null;
+
+// Each stat renders ONLY when its real value exists — never a fabricated figure.
+const stats: { value: string; label: string }[] = [];
+if (established) stats.push({ value: String(established), label: 'Established' });
+if (years) stats.push({ value: `${years}`, label: 'Years in business' });
+if (stockCount) stats.push({ value: String(stockCount), label: 'Cars in stock' });
+if (brandsCount) stats.push({ value: `${brandsCount}`, label: 'Brands stocked' });
+
+const team = cfg.team ?? [];
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    star: '<path d="M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9 6.7 19l1-5.8L3.5 9.2l5.9-.9z"/>',
+    users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 5.5a3 3 0 010 5.5M21 20a6 6 0 00-4-5.6"/>',
+    shield: '<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>',
+    heart: '<path d="M12 20s-7-4.4-7-9a4 4 0 017-2.6A4 4 0 0119 11c0 4.6-7 9-7 9z"/>',
+    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 13h18"/>',
+    pin: '<path d="M12 21s7-5.4 7-11a7 7 0 10-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.lead;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from the footer · Contact · Rebi ("tell me about you")</div>
+        <span class="eyebrow"><span set:html={icon('star', 13)} /> {copy.eyebrow}</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">{copy.heading}</h1>
+        <p class="lead mt-3 max-w-2xl">{copy.lead}</p>
+      </section>
+
+      {stats.length > 0 && (
+        <section class="site-container section-tight">
+          <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,11rem),1fr))">
+            {stats.map((s) => (
+              <div class="card" style="padding:20px; text-align:center">
+                <div style="font-family:var(--font-display); font-weight:700; font-size:28px; color:var(--teal-deep)">{s.value}</div>
+                <div class="faint" style="font-size:12px; margin-top:4px">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section class="site-container section-tight" style="display:grid; grid-template-columns:1fr; gap:14px; max-width:52rem">
+        <h2 style="font-family:var(--font-display); font-size:20px">{copy.storyHeading}</h2>
+        {established && (
+          <p class="muted" style="font-size:14.5px; line-height:1.65">
+            Serving the local community since {established}.
+          </p>
+        )}
+        {copy.story.map((para) => (
+          <p class="muted" style="font-size:14.5px; line-height:1.65">{para}</p>
+        ))}
+      </section>
+
+      <section class="site-container section-tight">
+        <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:14px">{copy.valuesHeading}</h2>
+        <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))">
+          {cfg.values.map((v) => (
+            <div class="card" style="padding:20px">
+              <span style="color:var(--teal-deep)" set:html={icon(v.icon, 22)} />
+              <b style="display:block; font-size:16px; margin:10px 0 5px">{v.title}</b>
+              <p class="muted" style="font-size:13.5px">{v.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {team.length > 0 && (
+        <section class="site-container section-tight">
+          <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:14px">{copy.teamHeading}</h2>
+          <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+            {team.map((m) => (
+              <div class="card" style="padding:20px">
+                <b style="display:block; font-size:15.5px">{m.name}</b>
+                <div class="faint" style="font-size:12.5px; margin-top:2px">{m.role}</div>
+                {m.blurb && <p class="muted" style="font-size:13px; margin-top:8px">{m.blurb}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section class="site-container section">
+        <div class="entry-rail">
+          <a href="/careers" class="entry">
+            <span class="entry-ic" set:html={icon('briefcase', 18)} />
+            <span class="entry-tx"><b>Join the team</b><span>open roles</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+          <a href="/contact" class="entry">
+            <span class="entry-ic" set:html={icon('pin', 18)} />
+            <span class="entry-tx"><b>Find &amp; visit us</b><span>hours &amp; departments</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+          <a href="/fleet" class="entry">
+            <span class="entry-ic" set:html={icon('briefcase', 18)} />
+            <span class="entry-tx"><b>Business &amp; fleet</b><span>ABN buyers</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+  </body>
+</html>

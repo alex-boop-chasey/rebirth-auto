@@ -1,0 +1,54 @@
+{
+  "name": "rebirth-auto",
+  "comment": "Pro/commercial demo, forked from astro-listings-demo.",
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "seed": "tsx scripts/seed.ts",
+    "seed:clean": "tsx scripts/seed.ts --clean",
+    "import:bundaberg": "tsx scripts/import-bundaberg.ts",
+    "import:migrate-specs": "tsx scripts/migrate-details-to-specs.ts",
+    "deps:report": "tsx scripts/deps-report.ts",
+    "seed:business-info": "tsx scripts/seed-business-info.ts",
+    "reconcile:brands": "tsx scripts/reconcile-brands.ts",
+    "generate-types": "wrangler types",
+    "check:ai-imports": "bash scripts/check-ai-imports.sh"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.1.3",
+    "@astrojs/react": "^6.0.1",
+    "@astrojs/sitemap": "^3.7.3",
+    "@sanity/astro": "^3.4.2",
+    "@sanity/client": "^7.23.2",
+    "@sanity/image-url": "^2.1.1",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.9",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^7.1.0",
+    "astro-portabletext": "^0.13.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "sanity": "^6.5.0",
+    "tailwindcss": "^4.3.3",
+    "wrangler": "^4.112.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^26.1.1",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3"
+  }
+}

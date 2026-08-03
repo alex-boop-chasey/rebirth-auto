@@ -1,0 +1,91 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+const perks = [
+  { h: 'Priority ordering', p: 'Skip the queue on high-demand utes and vans — we hold stock for our fleet clients.' },
+  { h: 'Fleet pricing', p: 'Volume discounts and capped-price servicing that keep your running costs predictable.' },
+  { h: 'One point of contact', p: 'A dedicated local fleet manager who knows your business and your vehicles.' },
+  { h: 'Servicing that fits work', p: 'After-hours and on-site servicing so your vehicles keep earning.' },
+];
+const sectors = ['Trades & construction', 'Agriculture', 'Councils & government', 'Mining services', 'Small business', 'Not-for-profit'];
+---
+<Layout title="Fleet & business" active="">
+  <section class="rt-fleet-hero">
+    <div class="rt-wrap rt-fleet-grid">
+      <div>
+        <span class="rt-eyebrow rt-eyebrow-light">Fleet &amp; business solutions</span>
+        <h1>Vehicles that keep your business moving.</h1>
+        <p>From a second work ute to a whole fleet, we make it easy — sharp pricing, servicing that works around you,
+          and a local who actually picks up the phone.</p>
+        <a href="#enquire" class="rt-btn rt-btn-clay"><span class="rt-rebi-orb"></span> Ask Rebi about fleet</a>
+      </div>
+      <div class="rt-fleet-stats">
+        <div><strong>3.5t</strong><span>towing utes in stock</span></div>
+        <div><strong>Capped</strong><span>price servicing</span></div>
+        <div><strong>Local</strong><span>fleet manager</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">Why fleets choose us</span><h2>Built for business</h2></div></div>
+    <div class="rt-fleet-perks">
+      {perks.map((p) => <div class="rt-fleet-perk rt-card"><h3>{p.h}</h3><p>{p.p}</p></div>)}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-fleet-sectors">
+      <h3>Trusted by local</h3>
+      <div class="rt-fleet-sector-tags">{sectors.map((s) => <span class="rt-pill rt-pill-sand">{s}</span>)}</div>
+    </div>
+  </section>
+
+  <section id="enquire" class="rt-wrap rt-section">
+    <div class="rt-card rt-fleet-form">
+      <div class="rt-fleet-form-l">
+        <span class="rt-rebi-orb xl"></span>
+        <h2>Tell us what your business needs</h2>
+        <p>Rebi will scope the right vehicles and pricing, then a local fleet manager follows up with a proper quote.</p>
+      </div>
+      <div class="rt-fleet-form-r">
+        <div class="rt-fleet-form-row">
+          <div class="rt-field"><label>Business name</label><input class="rt-input" placeholder="ACME Pty Ltd" /></div>
+          <div class="rt-field"><label>Contact</label><input class="rt-input" placeholder="Your name" /></div>
+        </div>
+        <div class="rt-fleet-form-row">
+          <div class="rt-field"><label>Fleet size</label><select class="rt-select"><option>1–3 vehicles</option><option>4–10 vehicles</option><option>10+ vehicles</option></select></div>
+          <div class="rt-field"><label>Vehicle type</label><select class="rt-select"><option>Utes</option><option>Vans</option><option>SUVs</option><option>Mixed</option></select></div>
+        </div>
+        <div class="rt-field"><label>What are you after?</label><textarea class="rt-input" rows="2" placeholder="e.g. Three 4x4 utes with tow packs by end of quarter"></textarea></div>
+        <button class="rt-btn rt-btn-primary rt-fleet-cta">Request a fleet quote</button>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-fleet-hero { background: var(--green-deep); color: #dbe5df; }
+  .rt-fleet-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 48px; padding-block: 60px; align-items: center; }
+  .rt-fleet-hero h1 { color: #f4f0e6; font-size: 44px; margin: 16px 0; }
+  .rt-fleet-hero p { font-size: 17px; color: #b8c7bf; max-width: 480px; margin-bottom: 24px; }
+  .rt-eyebrow-light { color: #a9cbbc; } .rt-eyebrow-light::before { background: var(--clay); }
+  .rt-fleet-stats { display: flex; flex-direction: column; gap: 14px; }
+  .rt-fleet-stats div { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: var(--r); padding: 18px 22px; }
+  .rt-fleet-stats strong { font-family: var(--ff-display); font-size: 26px; color: #f4f0e6; display: block; }
+  .rt-fleet-stats span { font-size: 13px; color: #b8c7bf; }
+  .rt-fleet-perks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .rt-fleet-perk { padding: 24px; }
+  .rt-fleet-perk h3 { font-size: 18px; margin-bottom: 8px; color: var(--green-deep); }
+  .rt-fleet-perk p { font-size: 14px; color: var(--ink-70); }
+  .rt-fleet-sectors { text-align: center; }
+  .rt-fleet-sectors h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: var(--ff-body); font-weight: 800; margin-bottom: 16px; }
+  .rt-fleet-sector-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .rt-fleet-form { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; padding: 36px; align-items: start; }
+  .rt-fleet-form-l h2 { font-size: 28px; margin: 14px 0 10px; }
+  .rt-fleet-form-l p { font-size: 15px; color: var(--ink-70); }
+  .rt-fleet-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .rt-fleet-form-r .rt-field { margin-bottom: 14px; }
+  .rt-fleet-cta { width: 100%; }
+</style>

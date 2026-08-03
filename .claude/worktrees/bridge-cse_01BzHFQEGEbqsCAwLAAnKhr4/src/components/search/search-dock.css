@@ -1,0 +1,87 @@
+/* ================= SmartSearch dock — static structural styles =================
+   Moved out of SearchDock.astro's scoped <style> when the dock became a React
+   island (SmartSearch.tsx). Every selector is namespaced under `.search-dock` /
+   `#search-dock` chrome, so it is safe as a plain GLOBAL stylesheet imported from
+   the island. The old focus-stage carousel chrome (stage viewport / glass shelf /
+   receding card column / sound toggle) was retired when the AI search moved its
+   CONVERSATION into the Rebi drawer — only the composer + hint remain here. */
+
+/* Brand tokens live LOCALLY on the dock (not :root) so nothing leaks; the composer
+   inherits them down the cascade. */
+.search-dock {
+  --rebi-blue: rgb(1 97 239);
+  --rebi-blue-hover: rgb(1 84 207);
+  --rebi-grad: linear-gradient(135deg, rgb(1 97 239), rgb(109 40 217));
+  --ink: rgb(15 23 42);
+  --muted: rgb(100 116 139);
+
+  margin: 1.75rem auto 0;
+  max-width: 40rem;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+}
+.search-dock[hidden] { display: none; }
+
+/* ---------- minimal underline entry (the composer) ---------- */
+.entry {
+  margin-top: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.4rem 0.55rem 0.9rem;
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 0.7);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  border: 1px solid transparent;
+  border-bottom: 2px solid rgb(1 97 239 / 0.3);
+  transition: border-color 200ms ease, background 200ms ease;
+}
+.entry:focus-within {
+  border-bottom-color: var(--rebi-blue);
+  background: rgb(255 255 255 / 0.92);
+}
+.entry .mag { flex: none; color: var(--muted); display: grid; place-items: center; }
+.entry .mag svg { width: 1.15rem; height: 1.15rem; }
+.search-dock-input {
+  flex: 1; border: 0; background: transparent; outline: none;
+  font-family: inherit; font-size: 1.02rem; color: var(--ink);
+  min-width: 0; padding: 0.35rem 0;
+}
+.search-dock-input::placeholder { color: var(--muted); }
+.search-dock-submit {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  border: 0; cursor: pointer;
+  font-family: inherit; font-weight: 700; font-size: 0.9rem; color: #fff;
+  background: var(--rebi-blue);
+  padding: 0.5rem 0.95rem; border-radius: 9999px;
+  transition: background 160ms ease, transform 120ms ease;
+}
+.search-dock-submit:hover { background: var(--rebi-blue-hover); }
+.search-dock-submit:active { transform: scale(0.96); }
+.search-dock-submit:focus-visible { outline: 2px solid #0f172a; outline-offset: 2px; }
+.search-dock-submit svg { width: 0.95rem; height: 0.95rem; }
+
+.hint {
+  margin: 0.65rem 0 0; text-align: center;
+  font-size: 0.78rem; color: var(--muted);
+}
+.search-dock-manual {
+  background: none; border: none; padding: 0;
+  color: var(--rebi-blue); font: inherit; font-weight: 600; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* Visually-hidden live region (announces the complete reply once). */
+.sd-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); border: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .search-dock-submit span { display: none; }
+  .search-dock-submit { padding: 0.5rem 0.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry, .search-dock-submit { transition: none; }
+}

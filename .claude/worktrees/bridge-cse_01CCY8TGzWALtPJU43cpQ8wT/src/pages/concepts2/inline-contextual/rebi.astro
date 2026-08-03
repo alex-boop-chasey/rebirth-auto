@@ -1,0 +1,79 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, fmt, BASE } from './_shell/data';
+export const prerender = false;
+const picks = [vehicles[0], vehicles[3]];
+---
+<Layout title="Rebi — your AI navigator">
+  <section class="site-container" style="display:grid; grid-template-columns:260px 1fr; gap:24px; padding-block:26px 60px; align-items:start; min-height:80vh">
+    <!-- LEFT: what Rebi can navigate to -->
+    <aside class="stack" style="gap:14px; position:sticky; top:92px">
+      <div class="card" style="padding:18px">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px"><span class="orb orb-halo" style="width:36px;height:36px"></span><div><b style="font-size:16px">Rebi</b><div style="font-size:11.5px; color:var(--teal-deep)">Your AI navigator</div></div></div>
+        <p class="muted" style="font-size:12.5px">Rebi doesn't just answer — it takes you there. Ask "where do I…" and it navigates.</p>
+      </div>
+      <div class="glass" style="padding:16px 18px">
+        <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Rebi can take you to</div>
+        {[['car','Any car','vehicle'],['calc','Repayments','finance'],['tag','Trade or sell','trade-in'],['play','A test drive','test-drive'],['bolt','The EV hub','electric'],['phone','The right person','contact']].map(([ic,t]) => (
+          <div style="display:flex; gap:10px; align-items:center; font-size:13px; color:var(--ink-soft); padding:6px 0"><span style="color:var(--teal-deep)" set:html={icon(ic as string,15)}></span> {t}</div>
+        ))}
+      </div>
+    </aside>
+
+    <!-- CENTRE: the conversation with clickable cards + action buttons -->
+    <div class="card" style="display:flex; flex-direction:column; overflow:hidden; min-height:72vh">
+      <div style="display:flex; gap:11px; align-items:center; padding:15px 20px; border-bottom:1px solid var(--line); background:linear-gradient(120deg, rgba(15,181,166,.06), rgba(85,102,240,.06))">
+        <span class="orb orb-halo" style="width:28px;height:28px"></span>
+        <div style="flex:1"><b style="font-size:14.5px">Chat with Rebi</b><div style="font-size:11.5px; color:var(--ink-faint)">Grounded on public listing data — never private dealer notes</div></div>
+        <span class="chip chip-teal"><span set:html={icon('shield',13)}></span> Private &amp; honest</span>
+      </div>
+
+      <div style="flex:1; padding:24px 22px; display:flex; flex-direction:column; gap:18px">
+        <div style="align-self:flex-end; max-width:76%"><div style="background:var(--ink); color:#fff; padding:12px 16px; border-radius:16px 16px 4px 16px; font-size:14px">Where do I work out repayments for a family AWD around $55k?</div></div>
+
+        <div style="max-width:88%">
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px"><span class="orb" style="width:22px;height:22px"></span><b style="font-size:12.5px; color:var(--indigo-deep)">Rebi</b></div>
+          <div class="ai-summary scan" style="padding:16px 18px"><p style="font-size:14.5px; line-height:1.6">Two AWDs fit that brief. Tap either to open it — or jump straight to the repayment calculator, already prefilled to the price.</p></div>
+        </div>
+
+        <!-- clickable listing cards in-thread -->
+        <div style="max-width:92%; display:flex; flex-direction:column; gap:11px">
+          {picks.map((p,i) => (
+            <a href={`${BASE}/vehicle?id=${p.id}`} class="card card-lift" style="display:flex; gap:14px; padding:11px; text-decoration:none; color:inherit; align-items:center">
+              <span style={`width:96px;height:64px;border-radius:11px;flex:none;background:${p.hue}`}></span>
+              <span style="flex:1"><span style="display:flex; gap:7px; margin-bottom:3px"><span class="chip chip-ai" style="padding:2px 8px">{i===0?'Top match':'EV option'}</span><span class="faint" style="font-size:11px">{p.condition}</span></span><b style="font-size:14.5px">{p.year} {p.make} {p.model}</b><span class="muted" style="display:block; font-size:12px">{p.aiLine.slice(0,54)}…</span></span>
+              <span style="text-align:right"><b style="font-size:16px">{fmt(p.price)}</b><span class="faint" style="display:block; font-size:10.5px">drive away</span></span>
+            </a>
+          ))}
+        </div>
+
+        <!-- in-response action buttons: DO/GO -->
+        <div style="max-width:92%; display:flex; flex-wrap:wrap; gap:8px">
+          <a href={`${BASE}/finance?price=52990`} class="rb-act-lg"><span set:html={icon('calc',15)}></span> Work out repayments</a>
+          <a href={`${BASE}/listings?seats=7`} class="rb-act-lg"><span set:html={icon('filter',15)}></span> See all 7-seaters</a>
+          <a href={`${BASE}/test-drive?id=ry-01`} class="rb-act-lg"><span set:html={icon('play',15)}></span> Book a test drive</a>
+          <a href={`${BASE}/trade-in`} class="rb-act-lg"><span set:html={icon('tag',15)}></span> Add my trade-in</a>
+          <a href={`${BASE}/contact`} class="rb-act-lg"><span set:html={icon('phone',15)}></span> Talk to Sales</a>
+        </div>
+
+        <div style="display:flex; gap:9px; align-items:center; color:var(--ink-faint)"><span class="orb" style="width:20px;height:20px"></span><span class="dots"><i></i><i></i><i></i></span></div>
+      </div>
+
+      <div style="padding:14px 18px; border-top:1px solid var(--line)">
+        <div class="aisearch" style="box-shadow:none">
+          <span set:html={icon('chat',18)} style="color:var(--ink-faint)"></span>
+          <input type="text" placeholder="Try “take me to the EV hub” or “book a service”…" readonly />
+          <button class="btn btn-primary btn-sm" style="pointer-events:none"><span set:html={icon('send',15)}></span></button>
+        </div>
+        <p class="faint" style="font-size:11px; text-align:center; margin-top:8px">Rebi can make mistakes — confirm details with our team. Demo interface.</p>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .rb-act-lg { display:inline-flex; align-items:center; gap:7px; text-decoration:none; font-size:13.5px; font-weight:600;
+      color:var(--indigo-deep); background:var(--indigo-glow); border:1px solid rgba(85,102,240,.22);
+      padding:9px 15px; border-radius:var(--r-pill); transition:background .15s, transform .15s; }
+    .rb-act-lg:hover { background:rgba(85,102,240,.16); transform:translateY(-1px); }
+  </style>
+</Layout>

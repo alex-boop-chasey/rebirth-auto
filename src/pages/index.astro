@@ -1,63 +1,72 @@
 ---
-// Home — the inline-contextual FRONT DOOR (Wave 1 remodel). The full inventory
-// grid + filters + SearchDock moved to `/listings`; the home page no longer owns
-// a grid. Instead it is a lightweight wayfinding surface: a plain-English search
-// that NAVIGATES to `/listings` carrying the query, facet chips that deep-link
-// into `/listings?<param>`, a strip of REAL featured stock, an offers teaser and
-// the Rebi band. Real data only (featured + count come from Sanity).
+// Home — the browse experience IS the front door. Typing the bare domain lands
+// on the grid: intro + SearchDock island + facet sidebar + Filters drawer + the
+// swappable `#inventory-results` region. This page owns the grid + filter
+// contract; `/listings` is now a 301 that forwards its query string here so
+// saved searches and Rebi deep-links keep resolving.
 //
-// SSR (not prerendered) so the featured strip + live count stay fresh and the
-// page is edge-cacheable (no per-user state on this surface).
+// SSR (not prerendered): it reads filter/pagination params from the URL and
+// filters server-side, so it can't be baked at build time. The grid-swap /
+// SearchDock / query-planner code path is preserved verbatim from the previous
+// `/listings` page — byte-for-byte the same components and props.
 export const prerender = false;
 
 import '../styles/global.css';
 import { client } from '../sanity/lib/client';
 import CompareTray from '../components/CompareTray.astro';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
-import ListingCard from '../components/ListingCard.astro';
+import SearchDock from '../components/search/SearchDock.astro';
 import SiteNav from '../components/site/SiteNav.astro';
 import SiteFooter from '../components/site/SiteFooter.astro';
-import { LISTING_FIELDS, type Listing } from '../lib/listing';
+import FilterDrawer from '../components/filters/FilterDrawer.astro';
+import InventoryResults from '../components/filters/InventoryResults.astro';
+import { dealerConfig } from '../config/dealer';
+import { iconSvg } from '../lib/listing';
+import {
+  parseFilters,
+  buildListingsQuery,
+  activeChips,
+  type InventoryResult,
+} from '../lib/listings-query';
 import { priceDropsFor } from '../lib/price-history-data';
 
-// Edge caching (DECISION.md Decision 5): the front door has no per-user state, so
-// serve it from Cloudflare's cache.
+// Edge caching (DECISION.md Decision 5): anonymous/unfiltered hits get served
+// from Cloudflare's cache and feel static; each unique filter URL caches
+// separately. Recovers most of the TTFB we'd otherwise lose by dropping
+// prerender.
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
 
-// Real featured stock + a real total count (determinism: no fabricated numbers).
-const { items: featured, total } = await client.fetch<{ items: Listing[]; total: number }>(
-  `{
-    "items": *[_type == "listing" && category == "automotive" && status == "active"]{ ${LISTING_FIELDS} } | order(listingDate desc, _id asc)[0...4],
-    "total": count(*[_type == "listing" && category == "automotive" && status == "active"])
-  }`,
-);
-const featuredDrops = priceDropsFor(featured, Date.now());
+// URL is the single source of truth. Parse the filter state, then filter +
+// paginate server-side via the shared query builder (reused by the partial).
+const filterState = parseFilters(Astro.url.searchParams);
+const { query, params } = buildListingsQuery(filterState);
+const { items: listings, total } = await client.fetch<InventoryResult>(query, params);
+
+// Resolve each card's honest price drop once (the STUB_PRICE_HISTORY demo flag is
+// read inside priceDropsFor, at this data layer — never in the card). Request-time
+// clock passed in (no module-level new Date()).
+const priceDrops = priceDropsFor(listings, Date.now());
+
+const activeCount = activeChips(filterState).length;
 
 // Presentation-layer icon set (stroke, 24-grid) for the inline-contextual look —
-// self-contained, no dealer data (mirrors the pattern in SiteNav.astro).
+// self-contained, no dealer data (mirrors the pattern in SiteNav.astro). The
+// shared `iconSvg` (16-grid) is used only for the Filters-button glyph so it
+// matches the drawer.
 const icon = (name: string, size = 16): string => {
   const a = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
   const p: Record<string, string> = {
-    send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
-    seat: '<path d="M6 4h4a3 3 0 013 3v6H6z"/><path d="M6 13l-2 7M13 13h3a2 2 0 012 2v5"/>',
-    truck: '<path d="M3 6h11v9H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/>',
     bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
-    tag: '<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.3"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
-    calc: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h.01M8 15h2M12 15h2M16 15h.01M8 19h6"/>',
-    swap: '<path d="M7 4v13M7 4L4 7M7 4l3 3M17 20V7M17 20l3-3M17 20l-3-3"/>',
-    doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
-    wrench: '<path d="M14 7a4 4 0 01-5 5l-6 6 2 2 6-6a4 4 0 005-5l-2 2-2-2 2-2z"/>',
+    filter: '<path d="M3 5h18l-7 8v6l-4-2v-4z"/>',
   };
   return `<svg ${a}>${p[name] ?? ''}</svg>`;
 };
 
-const countLabel = total > 0 ? `${total.toLocaleString('en-AU')} cars in stock` : 'In stock now';
-
-const title = 'Rebirth Auto — tell Rebi what you need';
-const description =
-  'Bundaberg & the Wide Bay. Describe your life and Rebi points you at the right stock, the right tools and the right people — no mega-menu maze.';
+// Dealer name is config-as-data (never a literal in a page).
+const title = `${dealerConfig.identity.name} — every car, one list`;
+const description = `Browse the full range at ${dealerConfig.identity.name}. New, Demo and Used are filter facets, not separate pages — one list, sliced how you like, with Rebi on hand to refine.`;
 const canonicalURL = new URL(
   Astro.url.pathname,
   Astro.site ?? 'https://rebirth-listings-auto.pages.dev',
@@ -92,128 +101,148 @@ const canonicalURL = new URL(
       Skip to content
     </a>
 
-    <SiteNav active="home" />
+    <!-- Reusable sticky glass nav (smart-hubs). "Ask Rebi" carries data-rebi-open. -->
+    <SiteNav active="browse" />
 
     <main id="main-content" tabindex="-1">
-      <!-- HERO: the home is the one true hub. Wayfinding radiates from here, inline. -->
-      <section class="site-container hero-wrap">
-        <div style="max-width:60rem">
-          <span class="eyebrow">Bundaberg &amp; the Wide Bay</span>
-          <h1 class="mt-4 text-ink" style="font-family:var(--font-display); font-size:clamp(34px,5vw,54px); line-height:1.05; letter-spacing:-.02em; margin-bottom:16px">
-            Tell Rebi what you need.<br />Skip the menu maze.
-          </h1>
-          <p class="lead">
-            {countLabel}. No mega-menu — describe your life and Rebi points you at the right
-            stock, the right tools, the right people.
-          </p>
-
-          <!-- AI search: a plain <form> GET that routes the query to /listings, where
-               the real SearchDock / query-planner picks it up and runs the search.
-               Works with no JS (SSR full grid + query in the URL). -->
-          <form action="/listings" method="GET" role="search" class="aisearch mt-6" style="max-width:44rem">
-            <span class="orb" style="width:26px;height:26px"></span>
-            <input
-              type="text"
-              name="q"
-              maxlength="200"
-              aria-label="Describe the car you're after"
-              placeholder="e.g. 7-seater under $45k for gravel roads"
+      <!-- FULL-BLEED HERO — the front door. The photograph spans the viewport
+           edge-to-edge (this section is a direct child of <main>, which is no
+           longer the container; the inner .site-container keeps copy on the same
+           gutter as every other surface). Copy is left-weighted so it never sits
+           on the busiest part of the frame (the car is dead-centre); a two-axis
+           scrim guarantees AA contrast over the photo. -->
+      <section class="home-hero">
+        <div class="home-hero-media" aria-hidden="true">
+          <picture>
+            <source
+              type="image/webp"
+              srcset="/images/home/hero-800.webp 800w, /images/home/hero-1200.webp 1200w, /images/home/hero-1600.webp 1600w, /images/home/hero-2400.webp 2400w"
+              sizes="100vw"
             />
-            <button type="submit" class="btn btn-primary btn-sm">
-              <span set:html={icon('send', 15)}></span> Search
-            </button>
-          </form>
-
-          <!-- inline facet chips: New/Demo/Used are FACETS not pages; each deep-links
-               into /listings with a real filter param. -->
-          <div class="entry-origin" style="margin-top:22px">Jump straight in</div>
-          <div style="display:flex; flex-wrap:wrap; gap:9px">
-            <a class="facet" href="/listings?condition=new">New</a>
-            <a class="facet" href="/listings?condition=demo">Demo</a>
-            <a class="facet" href="/listings?condition=used">Used</a>
-            <a class="facet" href="/listings?seats=7"><span set:html={icon('seat', 14)}></span> 7 seats</a>
-            <a class="facet" href="/listings?bodyType=ute"><span set:html={icon('truck', 14)}></span> Utes</a>
-            <a class="facet" href="/listings?fuelType=electric,hybrid"><span set:html={icon('bolt', 14)}></span> Electric &amp; hybrid</a>
-            <a class="facet" href="/offers"><span set:html={icon('tag', 14)}></span> Offers</a>
-          </div>
+            <img
+              src="/images/home/hero-1600.jpg"
+              srcset="/images/home/hero-800.jpg 800w, /images/home/hero-1200.jpg 1200w, /images/home/hero-1600.jpg 1600w, /images/home/hero-2400.jpg 2400w"
+              sizes="100vw"
+              width="2400"
+              height="1350"
+              alt=""
+              fetchpriority="high"
+              decoding="async"
+            />
+          </picture>
         </div>
-      </section>
 
-      <!-- FEATURED STOCK: real listings (compare + price-drop seams intact via ListingCard) -->
-      {featured.length > 0 && (
-        <section class="site-container section-tight">
-          <div style="display:flex; align-items:end; justify-content:space-between; margin-bottom:18px">
-            <div>
-              <span class="eyebrow">In stock now</span>
-              <h2 class="mt-2 text-ink" style="font-family:var(--font-display); font-size:26px">Featured stock</h2>
-            </div>
-            <a href="/listings" class="btn btn-ghost btn-sm">
-              {total > 0 ? `All ${total.toLocaleString('en-AU')} cars` : 'All stock'} <span set:html={icon('arrow', 15)}></span>
-            </a>
-          </div>
-          <div class="inventory-grid" style="--result-cols:4">
-            {featured.map((v) => (
-              <ListingCard listing={v} priceDrop={featuredDrops[v._id] ?? null} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <!-- OFFERS teaser → offers page (finance ↔ offers fold hinted). No fabricated
-           deals: a single honest teaser that links to the offers surface. -->
-      <section class="site-container section-tight">
-        <div
-          class="card"
-          style="padding:26px; display:grid; grid-template-columns:1.4fr 1fr; gap:26px; align-items:center; background:linear-gradient(120deg, rgba(224,129,59,.07), rgba(85,102,240,.05))"
-        >
-          <div>
-            <span class="eyebrow"><span set:html={icon('tag', 13)}></span> This month</span>
-            <h2 class="text-ink" style="font-family:var(--font-display); font-size:24px; margin:10px 0 8px">Drive-away offers</h2>
-            <p class="muted" style="font-size:14.5px">
-              Current specials across the yard — drive-away pricing, finance rates and trade
-              bonuses, gathered in one place.
+        <div class="home-hero-inner site-container">
+          <div class="home-hero-copy">
+            <span class="eyebrow">
+              <Fragment set:html={icon('spark', 15)} />
+              Browse the yard
+            </span>
+            <h1 class="home-hero-title">
+              Every car we have.<br />One list.
+            </h1>
+            <p class="home-hero-lead">
+              New, Demo and Used are <b>filter facets</b> here — not separate pages. Slice
+              the list how you like, or just tell Rebi what you're after.
             </p>
-          </div>
-          <div style="justify-self:end">
-            <a href="/offers" class="btn btn-primary">See all offers <span set:html={icon('arrow', 15)}></span></a>
-          </div>
-        </div>
-      </section>
 
-      <!-- SELL/TRADE + service + finance, contextual entries -->
-      <section class="site-container section">
-        <div class="entry-origin">Everything else — reached in context, no menu maze</div>
-        <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))">
-          <a href="/trade-in" class="entry entry--amber"><span class="entry-ic" set:html={icon('swap', 18)}></span><span class="entry-tx"><b>Value my trade-in</b><span>put it toward a car here</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
-          <a href="/sell" class="entry entry--amber"><span class="entry-ic" set:html={icon('doc', 18)}></span><span class="entry-tx"><b>Sell outright</b><span>not trading? sell to us</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
-          <a href="/service" class="entry"><span class="entry-ic" set:html={icon('wrench', 18)}></span><span class="entry-tx"><b>Book a service</b><span>keep it running sweet</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
-          <a href="/finance" class="entry entry--ai"><span class="entry-ic" set:html={icon('calc', 18)}></span><span class="entry-tx"><b>Finance &amp; pre-approval</b><span>know your budget first</span></span><span class="entry-go" set:html={icon('arrow', 15)}></span></a>
-        </div>
-      </section>
+            <p class="home-hero-count mono">
+              {activeCount === 0
+                ? `${total} vehicles on the lot right now`
+                : `${total} vehicles match your current filters`}
+            </p>
 
-      <!-- REBI band -->
-      <section class="site-container section-tight">
-        <div
-          class="ai-summary scan"
-          style="display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center; padding:26px 28px"
-        >
-          <div style="display:flex; gap:16px; align-items:center">
-            <span class="orb orb-halo" style="width:40px;height:40px;flex:none"></span>
-            <div>
-              <b style="font-family:var(--font-display); font-size:18px; color:var(--indigo-deep)">Not sure where to start?</b>
-              <p class="muted" style="font-size:14.5px; margin-top:4px; max-width:52ch">
-                Rebi reads the whole yard and grounds every answer in real stock. Ask for a
-                budget, a body type, a tow rating — anything.
-              </p>
+            {/* Rebi-fronted plain-English search — the SAME SearchDock island,
+                unmodified. On submit it POSTs /api/search, drives the ONE filter
+                URL via applyFilterUrl, and swaps #inventory-results below. Only
+                page-level scoped CSS below adapts it to sit on a photograph. */}
+            <div class="home-hero-search">
+              <SearchDock />
             </div>
           </div>
-          <button type="button" class="btn btn-primary" data-rebi-open data-rebi-kind="nav">
-            <span set:html={icon('spark', 16)}></span> Ask Rebi
-          </button>
         </div>
       </section>
+
+      <div class="site-container">
+      <div class="grid grid-cols-1 gap-8 pt-10 pb-16 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start">
+        <!-- FACET SIDEBAR — quick wayfinding via real filter URLs (SSR-navigate;
+             the drawer + AI search do the in-place swaps). Plus an inline .entry
+             jump to the EV hub, in context of the Fuel facet. -->
+        <aside class="lg:sticky lg:top-[92px]">
+          <div class="card p-5">
+            <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Condition</div>
+            <div class="mb-5 flex flex-wrap gap-2">
+              <a class:list={['facet', { 'is-on': filterState.condition.length === 0 }]} href="/">All</a>
+              <a class:list={['facet', { 'is-on': filterState.condition.includes('new') }]} href="/?condition=new">New</a>
+              <a class:list={['facet', { 'is-on': filterState.condition.includes('demo') }]} href="/?condition=demo">Demo</a>
+              <a class:list={['facet', { 'is-on': filterState.condition.includes('used') }]} href="/?condition=used">Used</a>
+            </div>
+
+            <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Fuel</div>
+            <div class="mb-3 flex flex-wrap gap-2">
+              <a class:list={['facet', { 'is-on': filterState.fuelType.includes('petrol') }]} href="/?fuelType=petrol">Petrol</a>
+              <a class:list={['facet', { 'is-on': filterState.fuelType.includes('diesel') }]} href="/?fuelType=diesel">Diesel</a>
+              <a class:list={['facet', { 'is-on': filterState.fuelType.includes('hybrid') }]} href="/?fuelType=hybrid">Hybrid</a>
+              <a class:list={['facet', { 'is-on': filterState.fuelType.includes('electric') }]} href="/?fuelType=electric">Electric</a>
+            </div>
+            <!-- fuel facet surfaces the EV hub, in context (hub ships in a later wave) -->
+            <a href="/electric" class="entry mb-5 w-full" style="box-shadow:none">
+              <span class="entry-ic" set:html={icon('bolt', 16)}></span>
+              <span class="entry-tx"><b>New to EVs?</b><span>Open the electric hub</span></span>
+              <span class="entry-go" set:html={icon('arrow', 15)}></span>
+            </a>
+
+            <hr class="divider" style="margin:4px 0 16px" />
+            <div class="site-foot-h" style="color:var(--ink-faint); margin-bottom:10px">Body</div>
+            <div class="flex flex-wrap gap-2">
+              {[['suv', 'SUV'], ['ute', 'Ute'], ['wagon', 'Wagon'], ['hatchback', 'Hatch'], ['van', 'Van']].map(([code, label]) => (
+                <a class:list={['facet', { 'is-on': filterState.bodyType.includes(code) }]} href={`/?bodyType=${code}`}>{label}</a>
+              ))}
+            </div>
+            <p class="faint mt-3 text-[11px]">Quick jumps. For price, year, odometer &amp; more, open <b>Filters</b>.</p>
+          </div>
+        </aside>
+
+        <!-- RESULTS COLUMN -->
+        <div>
+          {/* Inventory heading + Filters button (the drawer's trigger, id="filters-trigger"). */}
+          <div id="inventory" class="flex items-end justify-between border-b border-line pb-4">
+            <div>
+              <span class="eyebrow">Live inventory</span>
+              <h2 id="inventory-heading" class="mt-2 text-2xl font-bold tracking-tight text-ink">
+                Current inventory
+              </h2>
+            </div>
+            <button type="button" id="filters-trigger" class="btn btn-ghost btn-sm">
+              <Fragment set:html={iconSvg('filter', 'h-4 w-4')} />
+              Filters
+              <span
+                data-filter-count
+                hidden={activeCount === 0}
+                class="inline-flex min-w-5 items-center justify-center rounded-full bg-ink px-1.5 py-0.5 text-xs font-semibold text-white"
+              >
+                {activeCount}
+              </span>
+            </button>
+          </div>
+
+          <!-- Filter drawer (persistent; lives outside the swappable results) -->
+          <FilterDrawer state={filterState} triggerId="filters-trigger" />
+
+          <!-- Swappable inventory results (chips + grid + pagination) -->
+          <InventoryResults listings={listings} total={total} state={filterState} priceDrops={priceDrops} />
+        </div>
+      </div>
+
+      {dealerConfig.capture.enabled && (
+        <p class="mt-8 mb-4 text-center text-xs text-ink-faint">
+          <a href="/capture" class="underline underline-offset-2 hover:text-ink-soft">Dealer: add a vehicle</a>
+        </p>
+      )}
+      </div>
     </main>
 
+    <!-- Reusable dark footer (full directory) -->
     <SiteFooter />
 
     <!-- Floating comparison tray (self-contained, appears when ≥1 selected) -->
@@ -221,5 +250,254 @@ const canonicalURL = new URL(
 
     <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
     <ChatWidget />
+
+    <!-- `?q=` handoff: any surface that routes a raw plain-English query here
+         (an external link, a legacy `/listings?q=…` redirect, a search box on
+         another page) gets fed into the SAME SearchDock flow (the island's own
+         onSubmit → /api/search → applyFilterUrl → grid swap). This is page-level
+         wiring only; the island's internals are untouched. No-JS degrades
+         gracefully to the full SSR grid. -->
+    <script is:inline>
+      (function () {
+        var q = new URL(window.location.href).searchParams.get('q');
+        if (!q) return;
+        var fired = false;
+        function tryRun() {
+          if (fired) return true;
+          var form = document.getElementById('search-dock-form');
+          var input = document.getElementById('search-dock-input');
+          var dock = document.getElementById('search-dock');
+          if (form && input && dock && !dock.hasAttribute('hidden')) {
+            fired = true;
+            input.value = q;
+            if (typeof form.requestSubmit === 'function') form.requestSubmit();
+            else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            return true;
+          }
+          return false;
+        }
+        if (tryRun()) return;
+        var obs = new MutationObserver(function () {
+          if (tryRun()) obs.disconnect();
+        });
+        obs.observe(document.body, { subtree: true, childList: true, attributes: true });
+        setTimeout(function () { obs.disconnect(); }, 8000);
+      })();
+    </script>
+
+    <!-- Page-level hero styling ONLY. Nothing here reaches into the SearchDock /
+         FilterDrawer / InventoryResults contracts — the few :global() rules are
+         cosmetic overrides scoped under `.home-hero-search`, so the island's own
+         stylesheet, ids and behaviour are untouched. -->
+    <style>
+      /* ------------------------------------------------------------------
+         FULL-BLEED HERO
+         `<main>` is no longer the container — this section spans the viewport
+         and the inner `.site-container` re-applies the ONE shared gutter
+         (--site-gutter / --site-max in global.css). No 100vw/negative-margin
+         tricks, so no horizontal-overflow or sticky-nav side effects.
+         ------------------------------------------------------------------ */
+      .home-hero {
+        position: relative;
+        isolation: isolate;
+        display: flex;
+        align-items: flex-end;
+        /* A contained band, never a 100vh splash — this is a browse-first page,
+           so the inventory grid stays near the fold. The `24vw` term only bites
+           past ~2100px, where a pure vh band would crop the photo to a sliver. */
+        min-height: clamp(430px, max(56vh, 24vw), 620px);
+        overflow: hidden;
+        background: #060B14; /* fallback until the photo paints */
+      }
+
+      .home-hero-media {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+      }
+      .home-hero-media picture,
+      .home-hero-media img {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .home-hero-media img {
+        object-fit: cover;
+        /* The car sits centre-frame; bias the crop DOWN so the nose + bumper
+           stay in shot on a wide, short band instead of being clipped. */
+        object-position: 50% 62%;
+        animation: hero-drift 9s cubic-bezier(0.16, 0.8, 0.24, 1) both;
+      }
+
+      /* Two-axis scrim. The horizontal pass is weighted hard to the left so the
+         copy column never fights the (bright red, dead-centre) car; the vertical
+         pass darkens the bottom where the composer sits and keeps the top edge
+         from clashing with the light glass nav. */
+      .home-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background:
+          linear-gradient(
+            100deg,
+            rgba(6, 11, 20, 0.93) 0%,
+            rgba(6, 11, 20, 0.88) 24%,
+            rgba(6, 11, 20, 0.6) 50%,
+            rgba(6, 11, 20, 0.24) 76%,
+            rgba(6, 11, 20, 0.12) 100%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(6, 11, 20, 0.5) 0%,
+            rgba(6, 11, 20, 0.1) 32%,
+            rgba(6, 11, 20, 0.34) 72%,
+            rgba(6, 11, 20, 0.6) 100%
+          );
+      }
+
+      /* Aurora hairline: crisp band edge into the page mist below. */
+      .home-hero::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        height: 3px;
+        background: var(--aurora);
+      }
+
+      .home-hero-inner {
+        position: relative;
+        padding-block: clamp(2.25rem, 5.5vh, 4rem);
+      }
+      .home-hero-copy {
+        max-width: 36rem;
+      }
+
+      /* Lift the teal toward white: the shipped --teal-deep fails AA on a dark
+         photo, and on mobile this line can land on the (bright) red bonnet. */
+      .home-hero .eyebrow {
+        color: var(--teal);
+        color: color-mix(in srgb, var(--teal) 58%, #fff);
+        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.65);
+      }
+
+      .home-hero-title {
+        margin: 16px 0 0;
+        font-family: var(--font-display);
+        font-size: clamp(2.05rem, 5.1vw, 3.5rem);
+        font-weight: 800;
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        color: #fff;
+        text-shadow: 0 2px 26px rgba(0, 0, 0, 0.5);
+      }
+
+      .home-hero-lead {
+        margin: 14px 0 0;
+        max-width: 34rem;
+        font-size: clamp(15.5px, 1.15vw, 18px);
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.84);
+        text-shadow: 0 1px 14px rgba(0, 0, 0, 0.55);
+      }
+      .home-hero-lead b {
+        color: #fff;
+        font-weight: 650;
+      }
+
+      .home-hero-count {
+        margin: 18px 0 0;
+        font-size: 11.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+      }
+
+      /* ---- the AI search bar, on the photograph ------------------------
+         The dock renders a composer + hint only (its old carousel "stage"
+         chrome was retired upstream), so the whole island sits happily in
+         the hero. These overrides just make the glass read as solid enough
+         over a photo and left-align it with the copy column. */
+      .home-hero-search {
+        margin-top: 14px;
+      }
+      .home-hero-search :global(.search-dock) {
+        margin: 0;
+        max-width: 100%;
+      }
+      .home-hero-search :global(.search-dock .entry) {
+        margin-top: 0;
+        padding: 0.7rem 0.5rem 0.7rem 1.05rem;
+        border-radius: 0.9rem;
+        background: rgba(255, 255, 255, 0.97);
+        border-bottom-color: rgba(1, 97, 239, 0.55);
+        box-shadow: 0 22px 45px -20px rgba(0, 0, 0, 0.85);
+      }
+      .home-hero-search :global(.search-dock .entry:focus-within) {
+        background: #fff;
+      }
+      .home-hero-search :global(.search-dock .hint) {
+        text-align: left;
+        color: rgba(255, 255, 255, 0.78);
+        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+      }
+      .home-hero-search :global(.search-dock-manual) {
+        color: #8ED4FF;
+      }
+
+      /* ---- motion ------------------------------------------------------ */
+      @keyframes hero-drift {
+        from { transform: scale(1.07); }
+        to   { transform: scale(1); }
+      }
+      @keyframes hero-rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: none; }
+      }
+      .home-hero-copy > * {
+        animation: hero-rise 0.65s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+      }
+      .home-hero-copy > *:nth-child(2) { animation-delay: 0.06s; }
+      .home-hero-copy > *:nth-child(3) { animation-delay: 0.12s; }
+      .home-hero-copy > *:nth-child(4) { animation-delay: 0.18s; }
+      .home-hero-copy > *:nth-child(5) { animation-delay: 0.24s; }
+
+      /* ---- narrow viewports -------------------------------------------
+         The band crops horizontally on a phone, so the car fills the frame;
+         swap to a purely vertical scrim and let the copy sit on the dark
+         lower third rather than trying to dodge the subject sideways. */
+      @media (max-width: 767px) {
+        .home-hero {
+          min-height: clamp(500px, 64vh, 640px);
+        }
+        .home-hero::before {
+          background: linear-gradient(
+            180deg,
+            rgba(6, 11, 20, 0.5) 0%,
+            rgba(6, 11, 20, 0.14) 20%,
+            rgba(6, 11, 20, 0.45) 42%,
+            rgba(6, 11, 20, 0.92) 62%,
+            rgba(6, 11, 20, 1) 70%,
+            rgba(6, 11, 20, 1) 100%
+          );
+        }
+        .home-hero-media {
+          bottom: auto;
+          height: 66%;
+        }
+        .home-hero-media img {
+          object-position: 50% 45%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .home-hero-media img,
+        .home-hero-copy > * {
+          animation: none;
+        }
+      }
+    </style>
   </body>
 </html>

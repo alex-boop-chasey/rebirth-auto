@@ -9,10 +9,12 @@
  * needs no edit here; reshaping the IA itself is a deliberate edit to this file.
  *
  * Hrefs are wired to what works TODAY:
- *  - Browse-hub links resolve to the `/listings` inventory grid via filter URLs
- *    that `/listings` SSR-filters through `parseFilters` (e.g.
- *    `/listings?condition=used`). Wave 1 moved the grid off the home page — `/`
- *    is now the front-door and owns no grid — so these point at `/listings`.
+ *  - Browse-hub links resolve to the inventory grid, which IS the home page `/`
+ *    (it owns the grid + filter contract — see `LISTINGS_PATH` in
+ *    `~/lib/listings-query`). They are filter URLs that `/` SSR-filters through
+ *    `parseFilters` (e.g. `/?condition=used`). The old `/listings` base is a 301
+ *    that preserves the query string, so any stale link still resolves.
+ *  - `/listings/<slug>` (vehicle detail) is unaffected and still the card target.
  *  - `/trade-in` and `/service` are live routes.
  *  - `/finance /offers /sell /test-drive /parts /fleet` (+ `/about /contact
  *    /careers`) are built in later remodel waves — they 404 until then, and are
@@ -62,12 +64,12 @@ export const navHubs: NavHub[] = [
     key: 'browse',
     label: 'Browse',
     tagline: 'Every car, one place — New, Demo, Used, EV and by brand are filters, not pages.',
-    href: '/listings',
+    href: '/',
     items: [
-      { label: 'All inventory', href: '/listings', icon: 'grid', blurb: 'Filter by condition, body, fuel and price.' },
-      { label: 'New & Demo', href: '/listings?condition=new,demo', icon: 'car', blurb: 'Latest stock and near-new demos.' },
-      { label: 'Used', href: '/listings?condition=used', icon: 'gauge', blurb: 'Inspected pre-owned with history.' },
-      { label: 'Electric & hybrid', href: '/listings?fuelType=electric,hybrid', icon: 'plug', blurb: 'EVs and hybrids — range and running-cost help.' },
+      { label: 'All inventory', href: '/', icon: 'grid', blurb: 'Filter by condition, body, fuel and price.' },
+      { label: 'New & Demo', href: '/?condition=new,demo', icon: 'car', blurb: 'Latest stock and near-new demos.' },
+      { label: 'Used', href: '/?condition=used', icon: 'gauge', blurb: 'Inspected pre-owned with history.' },
+      { label: 'Electric & hybrid', href: '/?fuelType=electric,hybrid', icon: 'plug', blurb: 'EVs and hybrids — range and running-cost help.' },
       { label: 'Shop by brand', href: '/brand', icon: 'tag', blurb: 'Jump straight to a brand you know.' },
     ],
   },
@@ -96,7 +98,7 @@ export const navHubs: NavHub[] = [
 ];
 
 /** The primary "Browse inventory" call-to-action shared by nav + drawer. */
-export const primaryCta = { label: 'Browse inventory', href: '/listings' } as const;
+export const primaryCta = { label: 'Browse inventory', href: '/' } as const;
 
 /** One directory column of the full-directory footer. */
 export interface FooterColumn {
@@ -116,10 +118,10 @@ export const footerColumns: FooterColumn[] = [
   {
     heading: 'Shop',
     links: [
-      { label: 'Browse all stock', href: '/listings' },
-      { label: 'New & Demo', href: '/listings?condition=new,demo' },
-      { label: 'Used', href: '/listings?condition=used' },
-      { label: 'Electric & hybrid', href: '/listings?fuelType=electric,hybrid' },
+      { label: 'Browse all stock', href: '/' },
+      { label: 'New & Demo', href: '/?condition=new,demo' },
+      { label: 'Used', href: '/?condition=used' },
+      { label: 'Electric & hybrid', href: '/?fuelType=electric,hybrid' },
       { label: 'Offers & specials', href: '/offers' },
       { label: 'Shop by brand', href: '/brand' },
     ],

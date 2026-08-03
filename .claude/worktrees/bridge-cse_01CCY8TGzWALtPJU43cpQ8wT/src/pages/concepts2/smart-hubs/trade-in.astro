@@ -1,0 +1,49 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import { icon, base } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Trade-in valuation — Smart Hubs" active="buy-own" dockPrompt="Tell me your car and I’ll value it against a new one.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Buy & Own', base + '/buy-own'], ['Trade-in']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="buy-own" current={base + '/trade-in'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow"><span set:html={icon('swap',13)}></span> Trade-in valuation</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Trade in and drive out.</h1>
+    <p class="sh-sub">Roll your current car’s value straight into your next one — less stamp duty, less
+      paperwork. Just want cash? <a href={base + '/sell'} style="color:var(--teal-deep)">Sell outright instead →</a></p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid" style="grid-template-columns:1.2fr 1fr; gap:22px">
+      <div class="card sh-panel">
+        <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px"><span class="sh-tile-ic" style="margin:0; width:38px; height:38px" set:html={icon('swap',18)}></span><b style="font-size:16px">Value your trade-in</b></div>
+        <div class="sh-grid sh-cols-2" style="gap:0 14px">
+          <div class="sh-field"><label>Make</label><input placeholder="e.g. Mazda" /></div>
+          <div class="sh-field"><label>Model</label><input placeholder="e.g. CX-5" /></div>
+          <div class="sh-field"><label>Year</label><select><option>2023</option><option>2022</option><option>2021</option></select></div>
+          <div class="sh-field"><label>Odometer (km)</label><input placeholder="e.g. 58,000" /></div>
+        </div>
+        <div class="sh-field"><label>Condition</label><select><option>Excellent</option><option>Good</option><option>Fair</option></select></div>
+        <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center"><span set:html={icon('spark',15)}></span> Value it with Rebi</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:18px">
+        <div class="ai-summary sh-panel">
+          <div class="chip chip-ai" style="margin-bottom:10px"><span set:html={icon('spark',13)}></span> Indicative trade-in</div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:34px; color:var(--ink)">$22,500<span style="font-size:15px; color:var(--ink-faint)"> – $24,800</span></div>
+          <p class="sh-note" style="margin-top:6px">Range only. Confirmed after a physical appraisal.</p>
+        </div>
+        <div class="card sh-panel">
+          <div class="eyebrow" style="margin-bottom:10px">Put it to work</div>
+          <div class="sh-jumprow" style="flex-direction:column; align-items:stretch">
+            <a href={base + '/finance'} class="sh-jump"><span class="sh-jic" set:html={icon('calc',15)}></span> Use it as a deposit — recalc repayments</a>
+            <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('grid',15)}></span> Find your next car</a>
+            <a href={base + '/sell'} class="sh-jump"><span class="sh-jic" set:html={icon('dollar',15)}></span> Compare with an outright sale</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

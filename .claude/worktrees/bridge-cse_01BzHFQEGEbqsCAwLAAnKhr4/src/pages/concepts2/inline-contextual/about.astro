@@ -1,0 +1,37 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="About us — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from the footer · Contact · Rebi ("tell me about you")</div>
+    <span class="eyebrow"><span set:html={icon('star',13)}></span> Our story</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">A Wide Bay car yard, rebuilt around you</h1>
+    <p class="lead">Serving Bundaberg since 1998 (demo). Local people, honest tools, and an AI that works for the buyer — not the upsell.</p>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,11rem),1fr))">
+      {[['Since','1998*'],['Cars in stock','305'],['Brands','12+'],['Team','40 locals']].map(([k,v]) => (
+        <div class="card" style="padding:20px; text-align:center"><div style="font-family:var(--font-display); font-weight:700; font-size:28px; color:var(--teal-deep)">{v}</div><div class="faint" style="font-size:12px; margin-top:4px">{k}</div></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))">
+      {[['users','Our team','Sales, service and parts people who live locally.'],['shield','Why us','No pressure, transparent pricing, Rebi on your side.'],['heart','Community','Proud sponsors of local sport and events (demo).']].map(([ic,t,d]) => (
+        <div class="card" style="padding:20px"><span style="color:var(--teal-deep)" set:html={icon(ic as string,22)}></span><b style="display:block; font-size:16px; margin:10px 0 5px">{t}</b><p class="muted" style="font-size:13.5px">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container section">
+    <div class="entry-rail">
+      <a href={`${BASE}/careers`} class="entry"><span class="entry-ic" set:html={icon('briefcase',18)}></span><span class="entry-tx"><b>Join the team</b><span>open roles</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/contact`} class="entry"><span class="entry-ic" set:html={icon('pin',18)}></span><span class="entry-tx"><b>Find &amp; visit us</b><span>hours & departments</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      <a href={`${BASE}/fleet`} class="entry"><span class="entry-ic" set:html={icon('briefcase',18)}></span><span class="entry-tx"><b>Business &amp; fleet</b><span>ABN buyers</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+    </div>
+  </section>
+</Layout>

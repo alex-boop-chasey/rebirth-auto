@@ -1,0 +1,97 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+import VehicleCard from './_components/VehicleCard.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+
+const evs = [
+  { title: "Hyundai Kona Electric", sub: "2024 · SUV · 505km range", price: "$54,500", km: "New", trans: "Single-sp", fuel: "Electric", drive: "FWD", flag: "505km", glyph:"⚡", ai:"Rebi: fits your 60km daily loop" },
+  { title: "BYD Atto 3", sub: "2024 · SUV · 480km range", price: "$44,990", km: "New", trans: "Single-sp", fuel: "Electric", drive: "FWD", flag: "480km", glyph:"⚡", ai:"Rebi: cheapest to run in class" },
+  { title: "Kia EV5 Air", sub: "2024 · SUV · 555km range", price: "$56,770", km: "New", trans: "Single-sp", fuel: "Electric", drive: "FWD", flag: "555km", glyph:"⚡", ai:"Rebi: longest range on lot" },
+  { title: "LDV eDeliver 7", sub: "2024 · Van · 375km range", price: "$61,300", km: "New", trans: "Single-sp", fuel: "Electric", drive: "RWD", flag: "375km", glyph:"🚐", ai:"Rebi: 0% BEV road tax" },
+];
+---
+<Layout title="Electric — Dark Precision" current="electric" dockHint="Ask me if an EV actually suits your driving">
+
+  <!-- hero -->
+  <section style="position:relative;border-bottom:1px solid var(--line);overflow:hidden">
+    <div style="position:absolute;inset:0;background:radial-gradient(70% 120% at 85% -20%, rgba(62,230,203,0.12), transparent 55%)"></div>
+    <div class="dp-wrap dp-section" style="position:relative;display:grid;grid-template-columns:1fr 0.8fr;gap:48px;align-items:center">
+      <div>
+        <span class="dp-eyebrow">Electric hub</span>
+        <h1 class="dp-display" style="margin-top:20px;font-size:58px">Charged for<br/>the <span style="color:var(--signal)">regions</span>.</h1>
+        <p class="dp-lead" style="margin-top:20px;max-width:46ch">Range anxiety is a data problem. Tell Rebi your weekly driving and it tells you — honestly — whether an EV works for you, and which one.</p>
+        <div style="display:flex;gap:14px;margin-top:28px">
+          <a class="dp-btn dp-btn--primary" href="#ev-stock">Browse EV stock</a>
+          <a class="dp-btn" href={`${base}/rebi`}>Is an EV right for me?</a>
+        </div>
+      </div>
+      <div class="dp-ai" style="padding:26px">
+        <div class="dp-ai__head" style="border:0;padding:0 0 16px">
+          <span class="dp-rebi-avatar" style="width:24px;height:24px"></span>
+          <span style="color:var(--ink-dim)">REBI · RANGE CHECK</span>
+        </div>
+        <div style="display:grid;gap:14px">
+          <label class="dp-field"><span class="dp-label">Weekly driving</span><input class="dp-input dp-mono" value="~420 km" /></label>
+          <label class="dp-field"><span class="dp-label">Home charging?</span>
+            <div class="dp-seg" style="margin-top:4px"><button aria-pressed="true">Yes</button><button aria-pressed="false">No</button></div>
+          </label>
+          <div class="dp-insight">
+            <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>VERDICT</span>
+            <p>A single home charge covers your week with <strong>range to spare</strong>. You'd rarely touch a public charger. Est. running cost: <strong>$18/wk</strong> vs $74 on diesel.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- education strip -->
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-grid dp-cols-4">
+      {[["◐","Home charging","Wall boxes fully charge overnight on off-peak tariffs."],["◈","Public network","Growing fast-charge coverage along the Bruce Highway."],["◇","Servicing","Fewer moving parts — lower scheduled maintenance."],["◎","Incentives","Reduced stamp duty & rego on eligible BEVs (state-dependent)."]].map(([g,t,d]) => (
+        <div class="dp-panel dp-tick" style="padding:22px;display:grid;gap:10px">
+          <span style="font-size:26px;color:var(--signal)">{g}</span>
+          <h3 style="font-family:var(--font-display);font-size:17px;font-weight:600">{t}</h3>
+          <p class="dp-mute" style="font-size:13px;line-height:1.55">{d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- cost comparison instrument -->
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-panel dp-tick" style="padding:32px;display:grid;grid-template-columns:1fr 1.2fr;gap:40px;align-items:center">
+      <div>
+        <span class="dp-eyebrow">Rebi · 5-year cost model</span>
+        <h2 class="dp-h2" style="margin-top:14px;max-width:16ch">EV vs diesel, on your numbers</h2>
+        <p class="dp-dim" style="margin-top:14px;font-size:14px;line-height:1.6;max-width:40ch">Based on 420km/week and current QLD tariffs. Rebi shows the crossover point where the EV pulls ahead.</p>
+      </div>
+      <div style="display:grid;gap:18px">
+        <div>
+          <div style="display:flex;justify-content:space-between"><span class="dp-readout__k">Electric · Kona</span><span class="dp-mono" style="color:var(--signal)">$18,200</span></div>
+          <div class="dp-readout__bar" style="margin-top:8px;height:8px"><i style="width:46%"></i></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between"><span class="dp-readout__k">Diesel · equivalent SUV</span><span class="dp-mono" style="color:var(--amber)">$39,600</span></div>
+          <div class="dp-readout__bar" style="margin-top:8px;height:8px"><i style="width:100%;background:var(--amber)"></i></div>
+        </div>
+        <div class="dp-insight">
+          <span class="dp-insight__tag">REBI</span>
+          <p>The EV pays back its price premium in <strong>~2.4 years</strong>. Over 5 years you'd keep roughly <strong>$21,400</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EV inventory teaser -->
+  <section id="ev-stock" class="dp-wrap dp-section--tight">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px">
+      <div><span class="dp-eyebrow">In stock now</span><h2 class="dp-h2" style="margin-top:14px">28 electric vehicles</h2></div>
+      <a class="dp-btn dp-btn--ghost dp-btn--sm" href={`${base}/listings`}>All EV stock →</a>
+    </div>
+    <div class="dp-grid dp-cols-4">
+      {evs.map((v) => <VehicleCard {...v} />)}
+    </div>
+  </section>
+</Layout>

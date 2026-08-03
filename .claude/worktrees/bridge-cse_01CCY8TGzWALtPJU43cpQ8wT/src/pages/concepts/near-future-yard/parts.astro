@@ -1,0 +1,58 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Genuine parts — Rebirth Auto" active="" dockPrompt="Tell me your rego and the part — I’ll check fitment.">
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-block:44px 28px">
+      <span class="nfy-eyebrow"><span set:html={icon('wrench',14)}></span> Genuine parts</span>
+      <h1 class="nfy-h1" style="font-size:44px; margin-top:14px">The right part, first time.</h1>
+      <p class="nfy-lead" style="margin-top:16px">Genuine and quality-approved parts across all our brands. Rebi checks fitment against your exact build before you order — no guesswork, no wrong boxes.</p>
+    </div>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:14px 40px; display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:start">
+    <div>
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px">
+        {[
+          ['gear','Servicing & wear','Filters, brake pads, wipers, belts — genuine fitment.'],
+          ['drive','Tyres & wheels','Brand-matched tyres, alloys and TPMS sensors.'],
+          ['bolt','Batteries & electrical','12V and EV auxiliary batteries, globes, sensors.'],
+          ['shield','Accessories','Tow bars, roof racks, floor mats, protection packs.'],
+        ].map(([ic,h,p]) => (
+          <div class="nfy-card nfy-card--lift" style="padding:22px">
+            <span class="nfy-logo-mark" set:html={icon(ic as string,18)} style="color:#fff; margin-bottom:12px"></span>
+            <h3 style="font-family:var(--font-display); font-size:16px; font-weight:600">{h}</h3>
+            <p class="nfy-muted" style="font-size:13.5px; margin-top:6px">{p}</p>
+          </div>
+        ))}
+      </div>
+      <div class="nfy-ai-summary nfy-scan" style="margin-top:16px; display:flex; gap:14px; align-items:center; padding:20px 22px">
+        <span class="nfy-orb nfy-orb--halo" style="width:38px;height:38px"></span>
+        <p style="font-size:14px; color:var(--ink-soft); flex:1"><b style="color:var(--indigo-deep)">Fitment, verified.</b> Give Rebi your rego or VIN and it confirms the part matches your exact variant and build date before we order it in.</p>
+      </div>
+    </div>
+
+    <!-- enquiry -->
+    <div class="nfy-card" style="padding:26px; position:sticky; top:92px">
+      <h3 style="font-family:var(--font-display); font-size:18px; font-weight:600; margin-bottom:16px">Parts enquiry</h3>
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="nfy-field"><span class="nfy-label">Rego or VIN</span>
+          <div class="nfy-aisearch" style="box-shadow:var(--sh-1); padding:6px 6px 6px 14px">
+            <span class="nfy-spark" set:html={icon('spark',15)} style="color:var(--indigo)"></span>
+            <input placeholder="Rebi checks fitment" readonly />
+          </div>
+        </div>
+        <input class="nfy-input" placeholder="Part you need" readonly />
+        <input class="nfy-input" placeholder="Name" readonly />
+        <input class="nfy-input" placeholder="Contact (demo)" readonly />
+        <textarea class="nfy-textarea" placeholder="Anything else?" readonly></textarea>
+        <button class="nfy-btn nfy-btn-primary" style="justify-content:center; pointer-events:none"><span set:html={icon('send',15)}></span> Send parts enquiry</button>
+      </div>
+      <p class="nfy-faint" style="font-size:11.5px; margin-top:10px">Demo form — nothing is submitted.</p>
+    </div>
+  </section>
+</Layout>

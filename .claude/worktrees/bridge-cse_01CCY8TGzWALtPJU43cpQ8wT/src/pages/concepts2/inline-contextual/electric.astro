@@ -1,0 +1,66 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, fmt, BASE } from './_shell/data';
+export const prerender = false;
+const evs = vehicles.filter((v) => v.fuel === 'Electric' || v.fuel === 'Hybrid');
+---
+<Layout title="Electric & hybrid hub — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from the fuel facet (listings) · home fuel strip · Rebi</div>
+    <span class="eyebrow"><span set:html={icon('bolt',13)}></span> Electric &amp; hybrid</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">EV, simply explained — with the stock to match</h1>
+    <p class="lead">Not a marketing silo: this hub lives one tap off the <b>fuel = electric</b> filter, and every car here is real stock you can open.</p>
+  </section>
+
+  <!-- why EV + running-cost compare -->
+  <section class="site-container section-tight">
+    <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+      {[['plug','Charge at home','Wake up full. ~$0.04/km on off-peak power.'],['range','Real range','Most trips are under 50km — range anxiety is mostly a myth.'],['leaf','Lower running cost','Fewer moving parts, no oil changes, cheaper "fuel".'],['shield','Incentives','Stamp-duty and rego concessions may apply* (state-dependent).']].map(([ic,t,d]) => (
+        <div class="card" style="padding:18px"><span style="color:var(--teal-deep)" set:html={icon(ic as string,22)}></span><b style="display:block; font-size:15px; margin:10px 0 4px">{t}</b><p class="muted" style="font-size:13px">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <div class="card" style="padding:26px; display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:center">
+      <div>
+        <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:8px">Running cost: EV vs petrol</h2>
+        <p class="muted" style="font-size:14px">Illustrative, 15,000km/yr.</p>
+        <div style="margin-top:16px">
+          {[['Electric','$620/yr','width:22%','var(--teal)'],['Petrol','$2,850/yr','width:100%','var(--amber)']].map(([label,val,w,c]) => (
+            <div style="margin-bottom:14px">
+              <div style="display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:5px"><b>{label}</b><span class="muted">{val}</span></div>
+              <div style="height:12px; background:var(--bg-2); border-radius:999px; overflow:hidden"><div style={`height:100%; ${w}; background:${c}; border-radius:999px`}></div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="ai-summary scan" style="padding:22px">
+        <div style="display:flex; gap:9px; align-items:center; margin-bottom:8px"><span class="orb orb-halo" style="width:24px;height:24px"></span><b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b></div>
+        <p style="font-size:14.5px; line-height:1.55">"I drive 60km a day and park on the street — is an EV right for me?" Rebi weighs your drive and points you at the right stock.</p>
+        <button class="btn btn-primary btn-sm" data-rebi-open style="margin-top:12px"><span set:html={icon('spark',14)}></span> Is an EV right for my drive?</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- EV/hybrid stock teaser (real inventory) -->
+  <section class="site-container section-tight">
+    <div style="display:flex; align-items:end; justify-content:space-between; margin-bottom:16px">
+      <h2 style="font-family:var(--font-display); font-size:22px">Electrified stock</h2>
+      <a href={`${BASE}/listings?fuel=electric`} class="btn btn-ghost btn-sm">All EV &amp; hybrid <span set:html={icon('arrow',15)}></span></a>
+    </div>
+    <div class="grid-auto">
+      {evs.map((v) => (
+        <a href={`${BASE}/vehicle?id=${v.id}`} class="card card-lift" style="overflow:hidden; text-decoration:none; color:inherit">
+          <div style={`height:130px; background:${v.hue}`}></div>
+          <div style="padding:13px 14px">
+            <span class="chip chip-teal" style="padding:3px 8px">{v.badge}</span>
+            <b style="display:block; font-family:var(--font-display); font-size:15px; margin-top:8px">{v.year} {v.make} {v.model}</b>
+            <div style="font-family:var(--font-display); font-weight:700; font-size:17px; margin-top:6px">{fmt(v.price)}</div>
+          </div>
+        </a>
+      ))}
+    </div>
+    <p class="faint" style="font-size:11.5px; margin-top:14px">*Incentives vary by state and change over time — confirm current eligibility before purchase.</p>
+  </section>
+</Layout>

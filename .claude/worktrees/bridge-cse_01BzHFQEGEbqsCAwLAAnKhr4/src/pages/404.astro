@@ -1,0 +1,51 @@
+---
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Page not found · Rebirth Auto</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav />
+
+    <main id="main-content" tabindex="-1" class="site-container">
+      <section class="mx-auto max-w-2xl py-24 text-center md:py-32">
+        <span class="eyebrow">404 — off the lot</span>
+        <h1 class="mt-6 text-4xl font-bold tracking-tight text-ink md:text-5xl">
+          This one's left the lot.
+        </h1>
+        <p class="lead mx-auto mt-5">
+          The page you're looking for isn't here — the vehicle may have been sold, removed, or
+          never existed.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a href="/listings" class="btn btn-primary">Browse our inventory</a>
+          <button type="button" class="ai-badge" data-rebi-open data-rebi-kind="nav" aria-label="Ask Rebi">
+            <svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path></svg>
+            Ask Rebi for help
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter />
+
+    <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
+    <ChatWidget />
+  </body>
+</html>

@@ -1,0 +1,182 @@
+---
+import { urlFor } from '../sanity/lib/image';
+import {
+  iconSvg as svg,
+  detailIconName,
+  categoryIconName,
+  detailDisplay,
+  buildSpecRows,
+  statusConfig,
+  formatPrice,
+  categoryLabel as categoryLabelFn,
+} from '../lib/listing';
+import type { Listing, PriceDrop } from '../lib/listing';
+import { dealerConfig } from '../config/dealer';
+
+// Re-export so existing importers (e.g. index.astro) keep working.
+export type { Listing, ListingDetail } from '../lib/listing';
+
+interface Props {
+  listing: Listing;
+  /**
+   * Pre-computed, ALREADY-RESOLVED price drop for this listing (honest data or,
+   * in dev/demo, the flag-gated synthesizer — resolved at the data layer). The
+   * card is pure: it reads this prop + config only, and NEVER reads env, so a
+   * synthesized drop is impossible unless the data layer put one here. Optional.
+   */
+  priceDrop?: PriceDrop | null;
+}
+
+const { listing, priceDrop = null } = Astro.props;
+
+// --- Derived view data -------------------------------------------------------
+const priceLabel = formatPrice(listing.price, listing.currency);
+
+// "Just Reduced": only when the feature is enabled AND the (already-resolved)
+// drop says so. No env, no synthesis here.
+const showDrop = dealerConfig.priceHistory.enabled && priceDrop?.dropped === true;
+const previousLabel = showDrop ? formatPrice(priceDrop!.previous, listing.currency) : null;
+
+const heroUrl = listing.images?.[0]
+  ? urlFor(listing.images[0]).width(800).height(450).fit('crop').auto('format').url()
+  : null;
+
+const href = `/listings/${listing.slug?.current ?? ''}`;
+// Curated 4-chip summary from the unified spec rows (typed fields, with
+// details[] fallback), in a fixed order. Missing rows drop out silently.
+const specRows = buildSpecRows(listing);
+const visibleDetails = ['Odometer', 'Transmission', 'Fuel', 'Body']
+  .map((label) => specRows.find((r) => r.label === label))
+  .filter((r): r is (typeof specRows)[number] => Boolean(r));
+const categoryLabel = categoryLabelFn(listing.category);
+const status = statusConfig[listing.status] ?? statusConfig.draft;
+---
+
+<a
+  href={href}
+  aria-label={`View listing: ${listing.title}`}
+  class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+>
+  {/* Hero */}
+  <div class="relative aspect-video overflow-hidden bg-slate-100">
+    {
+      heroUrl ? (
+        <img
+          src={heroUrl}
+          alt={listing.title}
+          loading="lazy"
+          class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+        />
+      ) : (
+        <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+          <Fragment set:html={svg(categoryIconName(listing.category), 'h-12 w-12')} />
+        </div>
+      )
+    }
+
+    {/* Status badge */}
+    <span
+      class:list={[
+        'absolute right-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow',
+        status.badge,
+      ]}
+    >
+      {status.label}
+    </span>
+
+    {/* Add-to-compare toggle. All behaviour is handled by CompareTray's
+        delegated listener (this card root is an <a>, so the handler calls
+        preventDefault). data-* carries everything the tray needs. */}
+    <button
+      type="button"
+      data-compare-toggle
+      data-id={listing._id}
+      data-category={listing.category}
+      data-title={listing.title}
+      data-thumb={heroUrl ?? ''}
+      aria-pressed="false"
+      aria-label="Add to compare"
+      class="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-slate-700 shadow ring-1 ring-inset ring-slate-200 backdrop-blur transition hover:bg-white aria-pressed:bg-slate-900 aria-pressed:text-white aria-pressed:ring-slate-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
+    >
+      <span data-compare-icon class="inline-flex"><Fragment set:html={svg('check', 'h-3.5 w-3.5')} /></span>
+      <span data-compare-label>Compare</span>
+    </button>
+
+    {/* "Just Reduced" badge — honest drop, resolved upstream. Sits bottom-left so
+        it doesn't collide with the Compare toggle (top-left) or status (top-right). */}
+    {
+      showDrop && (
+        <span class="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white shadow">
+          <Fragment set:html={svg('tag', 'h-3.5 w-3.5')} />
+          Just Reduced
+        </span>
+      )
+    }
+
+    {/* SOLD banner */}
+    {
+      listing.status === 'sold' && (
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 bg-red-600/95 px-16 py-1.5 text-center text-lg font-extrabold uppercase tracking-[0.3em] text-white shadow-lg"
+        >
+          Sold
+        </div>
+      )
+    }
+  </div>
+
+  {/* Body */}
+  <div class="flex flex-1 flex-col gap-3 p-4">
+    <div class="flex items-baseline gap-2">
+      <p class="text-2xl font-bold text-slate-900">{priceLabel}</p>
+      {
+        showDrop && previousLabel && (
+          <span class="text-sm font-medium text-slate-400 line-through" aria-label={`Was ${previousLabel}`}>
+            {previousLabel}
+          </span>
+        )
+      }
+    </div>
+
+    <h3 class="line-clamp-2 text-base font-semibold text-slate-700">{listing.title}</h3>
+
+    {
+      visibleDetails.length > 0 && (
+        <ul class="flex flex-wrap gap-2">
+          {visibleDetails.map((d) => (
+            <li class="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+              {d.valueType === 'boolean' ? (
+                <Fragment set:html={svg(d.valueBoolean ? 'check' : 'cross', 'h-3.5 w-3.5 ' + (d.valueBoolean ? 'text-emerald-600' : 'text-red-500'))} />
+              ) : (
+                <span class="text-slate-400">
+                  <Fragment set:html={svg(detailIconName(d.label))} />
+                </span>
+              )}
+              <span class="text-slate-500">{d.label}</span>
+              <span class="font-semibold text-slate-700">{detailDisplay(d)}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {/* Footer */}
+    <div class="mt-auto flex items-center justify-between pt-2">
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+        <span class="text-slate-400">
+          <Fragment set:html={svg(categoryIconName(listing.category), 'h-3.5 w-3.5')} />
+        </span>
+        {categoryLabel || 'Listing'}
+      </span>
+
+      <span
+        aria-hidden="true"
+        class="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition group-hover:bg-slate-700"
+      >
+        View listing
+        <Fragment set:html={svg('arrow', 'h-3.5 w-3.5')} />
+      </span>
+    </div>
+  </div>
+</a>

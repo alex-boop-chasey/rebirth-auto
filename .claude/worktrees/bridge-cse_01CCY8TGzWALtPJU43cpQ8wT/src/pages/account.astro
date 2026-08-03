@@ -1,0 +1,244 @@
+---
+/**
+ * /account — the authenticated customer dashboard (real Supabase auth).
+ *
+ * Replaces the former DEMO stub (the mock-profile /account + /api/account, now
+ * removed). Protected by src/middleware.ts: an unauthenticated visitor is
+ * redirected to /login before this page runs, and the resolved user is on
+ * Astro.locals.user. Gated by the accounts.enabled feature flag.
+ *
+ * SECURITY: real customer accounts still require the paid human security review
+ * DECISIONS.md mandates before real customer PII flows in production — see the
+ * TODO_KEYS marker below and TODO_KEYS.md.
+ */
+// TODO_KEYS: Supabase auth — production hardening + security review before real customer PII
+export const prerender = false;
+
+import { env as cfEnv } from 'cloudflare:workers';
+import AuthLayout from '../layouts/AuthLayout.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+import { getSavedSearchesByEmail } from '../lib/saved-search';
+import { getBookingsByEmail } from '../lib/service-booking';
+import { parseFilters, activeChips } from '../lib/listings-query';
+import type { D1Like } from '../chatbot/state';
+
+const cfg = dealerConfig.accounts;
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+// Middleware guarantees a user here; guard defensively regardless.
+const user = Astro.locals.user;
+if (!user) return Astro.redirect('/login', 302);
+
+const copy = cfg.copy;
+const userName = (user.user_metadata?.name as string | undefined)?.trim() || 'there';
+const userEmail = user.email || '';
+const initial = (userName === 'there' ? userEmail || '?' : userName).charAt(0).toUpperCase();
+const joinDate = user.created_at
+  ? new Date(user.created_at).toLocaleDateString(dealerConfig.locale.locale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : '—';
+const provider = (user.app_metadata?.provider as string | undefined) || 'email';
+
+// D1 handle — read straight from the worker env (mirrors src/chatbot/get-env.ts
+// and the /api/saved-search route). The saved-search / service-booking read
+// helpers are fully fail-open, so a missing binding or table degrades silently
+// to an empty list (no error surfaces to the customer).
+const CHAT_DB = (cfEnv as unknown as Record<string, unknown>).CHAT_DB as D1Like | undefined;
+
+// Per-user data, keyed by the logged-in EMAIL (these tables carry an anonymous
+// visitor_id + an email column, not the Supabase user id — email is the correct
+// per-user key). Fetched in parallel; both fail open to [].
+const [savedSearches, bookings] = await Promise.all([
+  getSavedSearchesByEmail(CHAT_DB, userEmail, 10),
+  getBookingsByEmail(CHAT_DB, userEmail, 10),
+]);
+
+/**
+ * Build the inventory re-run href for a saved filter query. The stored `query`
+ * is the canonical serialized filter string (serializeFilters → URLSearchParams
+ * .toString()), which `/listings` parses via parseFilters(Astro.url.searchParams)
+ * — so `/listings?<query>` is exactly the URL that reproduces the search. Wave 1
+ * moved the grid off the home page to `/listings`; this mirrors LISTINGS_PATH.
+ * (applyFilterUrl is client-only; this matches its query-param convention.)
+ */
+function rerunHref(query: string): string {
+  const qs = (query || '').trim();
+  return qs ? `/listings?${qs}` : '/listings';
+}
+
+/** Human summary of a saved query for link text when no label was stored. */
+function summarize(query: string): string {
+  try {
+    const chips = activeChips(parseFilters(new URLSearchParams(query || '')));
+    if (!chips.length) return 'All vehicles';
+    return chips.map((c) => `${c.label}: ${c.value}`).join(' · ');
+  } catch {
+    return 'Saved search';
+  }
+}
+
+const dateFmt = new Intl.DateTimeFormat(dealerConfig.locale.locale, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+/** Format a unix-seconds `created_at` as a short local date. */
+function fmtCreated(createdAt: number): string {
+  if (!Number.isFinite(createdAt)) return '';
+  return dateFmt.format(new Date(createdAt * 1000));
+}
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+---
+
+<AuthLayout title={title} description={copy.subheading} noindex navActive="account">
+  <section class="mx-auto max-w-4xl py-10 md:py-14">
+    <!-- Welcome header -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white"
+          style="background:var(--aurora); box-shadow: var(--sh-glow)"
+          aria-hidden="true"
+        >
+          {initial}
+        </div>
+        <div>
+          <span class="chip chip-teal">
+            <span class="h-1.5 w-1.5 rounded-full bg-teal"></span>
+            {copy.eyebrow}
+          </span>
+          <h1 class="mt-2 text-2xl font-bold tracking-tight text-ink md:text-3xl">
+            Welcome, {userName}
+          </h1>
+        </div>
+      </div>
+      <button type="button" id="btn-signout" class="btn btn-ghost btn-sm disabled:cursor-not-allowed disabled:opacity-60">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="h-4 w-4"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Sign out
+      </button>
+    </div>
+
+    <!-- Account details -->
+    <div class="card mt-8 p-6 md:p-8">
+      <h2 class="text-sm font-semibold text-ink">Account details</h2>
+      <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-ink-faint">Email</dt>
+          <dd class="mt-1 truncate text-sm font-semibold text-ink">{userEmail}</dd>
+        </div>
+        <div class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-ink-faint">Member since</dt>
+          <dd class="mt-1 text-sm font-semibold text-ink">{joinDate}</dd>
+        </div>
+        <div class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+          <dt class="text-xs font-medium uppercase tracking-wide text-ink-faint">Sign-in method</dt>
+          <dd class="mt-1 text-sm font-semibold capitalize text-ink">{provider}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Service history + saved searches (real per-user data, keyed by email) -->
+    <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div class="card p-6">
+        <h2 class="text-sm font-semibold text-ink">{copy.serviceHistoryHeading}</h2>
+        {
+          bookings.length === 0 ? (
+            <p class="mt-2 text-sm text-ink-soft">
+              Your service history will appear here once your vehicle records are linked to your account.
+            </p>
+          ) : (
+            <ul class="mt-4 space-y-3">
+              {bookings.map((b) => (
+                <li class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-sm font-semibold text-ink">{b.service_type}</span>
+                    <span class="text-xs font-medium text-ink-faint">{fmtCreated(b.created_at)}</span>
+                  </div>
+                  <p class="mt-1 truncate text-sm text-ink-soft">{b.vehicle}</p>
+                  {b.preferred_date && (
+                    <p class="mt-0.5 text-xs text-ink-soft">Preferred: {b.preferred_date}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+      <div class="card p-6">
+        <h2 class="text-sm font-semibold text-ink">Saved searches</h2>
+        {
+          savedSearches.length === 0 ? (
+            <Fragment>
+              <p class="mt-2 text-sm text-ink-soft">
+                Save a search from the inventory and get an email when new matches arrive.
+              </p>
+              <a
+                href="/listings"
+                class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-ink underline decoration-indigo/40 underline-offset-4 transition hover:decoration-indigo"
+              >
+                {copy.savedSearchesLabel}
+              </a>
+            </Fragment>
+          ) : (
+            <ul class="mt-4 space-y-3">
+              {savedSearches.map((s) => (
+                <li class="rounded-sm border border-line bg-bg-2 px-4 py-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <a
+                      href={rerunHref(s.query)}
+                      class="text-sm font-semibold text-ink underline decoration-indigo/40 underline-offset-4 transition hover:decoration-indigo"
+                    >
+                      {s.label?.trim() || summarize(s.query)}
+                    </a>
+                    <span class="text-xs font-medium text-ink-faint">{fmtCreated(s.created_at)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <ChatWidget slot="after" />
+
+  <script>
+    import { actions } from 'astro:actions';
+
+    const btn = document.getElementById('btn-signout') as HTMLButtonElement | null;
+    btn?.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const { error } = await actions.signOut();
+        if (!error) {
+          window.location.href = '/login';
+        } else {
+          console.error('Failed to sign out:', error.message);
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Sign out error:', err);
+        btn.disabled = false;
+      }
+    });
+  </script>
+</AuthLayout>

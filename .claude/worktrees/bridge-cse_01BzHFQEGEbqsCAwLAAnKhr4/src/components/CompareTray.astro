@@ -1,0 +1,253 @@
+---
+/**
+ * Floating comparison tray.
+ *
+ * Self-contained global overlay (mirrors ContactModal): drop <CompareTray /> in
+ * once near the end of <body> on any page that renders ListingCards. Owns ALL
+ * client-side compare behaviour via a delegated document click listener, so
+ * cards themselves stay declarative (they only carry data-* attributes).
+ *
+ * Selection lives in two localStorage keys, always written together:
+ *   - astro-listings-compare       → string[] of listing _ids (source of truth)
+ *   - astro-listings-compare-meta  → { [id]: { title, thumb, category } }
+ * The sidecar meta cache lets the tray render thumbnails on pages where the
+ * card isn't present. Cap: 4. Same-category only.
+ */
+import AskRebiButton from './AskRebiButton.astro';
+---
+
+<div id="compare-tray" class="compare-tray hidden">
+  <div class="compare-tray-inner">
+    <span class="compare-tray-lbl">Compare</span>
+    <div id="compare-thumbs" class="compare-tray-thumbs"></div>
+    <div class="compare-tray-actions">
+      <button type="button" data-compare-clear class="compare-tray-clear">Clear</button>
+      <AskRebiButton id="compare-ask-ai" data-rebi-open data-rebi-kind="compare" label="Ask Rebi" />
+      <a id="compare-go" href="/compare" class="btn btn-dark btn-sm compare-tray-go">
+        Compare (<span id="compare-count">0</span>)
+      </a>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .compare-tray {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 40;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.96));
+    backdrop-filter: blur(14px) saturate(1.15);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 26px rgba(13, 22, 38, 0.08);
+  }
+  .compare-tray.hidden { display: none; }
+  .compare-tray-inner {
+    max-width: var(--site-max); margin: 0 auto;
+    padding: 12px var(--site-gutter);
+    display: flex; align-items: center; gap: 16px;
+  }
+  .compare-tray-lbl {
+    flex: none; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  @media (max-width: 560px) { .compare-tray-lbl { display: none; } }
+  .compare-tray-thumbs { display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+  .compare-tray-actions { margin-left: auto; display: flex; flex: none; align-items: center; gap: 12px; }
+  .compare-tray-clear {
+    border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px;
+    font-weight: 500; color: var(--ink-faint); text-decoration: underline; transition: color 0.16s;
+  }
+  .compare-tray-clear:hover { color: var(--ink); }
+  .compare-tray-go { text-decoration: none; }
+</style>
+
+<script>
+  import { iconSvg } from '../lib/listing';
+
+  const COMPARE_KEY = 'astro-listings-compare';
+  const META_KEY = 'astro-listings-compare-meta';
+  const MAX = 4;
+
+  type Meta = { title: string; thumb: string; category: string };
+
+  function getIds(): string[] {
+    try {
+      const raw = localStorage.getItem(COMPARE_KEY);
+      const v = raw ? JSON.parse(raw) : [];
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function getMeta(): Record<string, Meta> {
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      const v = raw ? JSON.parse(raw) : {};
+      return v && typeof v === 'object' ? (v as Record<string, Meta>) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  // Both keys are always written together so the meta cache can't drift from
+  // the id array.
+  function writeState(ids: string[], meta: Record<string, Meta>) {
+    try {
+      localStorage.setItem(COMPARE_KEY, JSON.stringify(ids));
+      localStorage.setItem(META_KEY, JSON.stringify(meta));
+    } catch {
+      /* localStorage unavailable — no-op */
+    }
+  }
+
+  function activeCategory(ids: string[], meta: Record<string, Meta>): string | null {
+    for (const id of ids) if (meta[id]) return meta[id].category;
+    return null;
+  }
+
+  const tray = document.getElementById('compare-tray');
+  const thumbsEl = document.getElementById('compare-thumbs');
+  const countEl = document.getElementById('compare-count');
+  const goEl = document.getElementById('compare-go') as HTMLAnchorElement | null;
+  const askAiEl = document.getElementById('compare-ask-ai');
+  const removeIcon = iconSvg('cross', 'h-3 w-3');
+
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function render() {
+    const ids = getIds();
+    const meta = getMeta();
+    const cat = activeCategory(ids, meta);
+
+    // Reflect state on every compare toggle currently on the page. Styling is
+    // driven by aria-pressed / disabled Tailwind variants — we only flip the
+    // attributes here.
+    document.querySelectorAll<HTMLButtonElement>('[data-compare-toggle]').forEach((btn) => {
+      const id = btn.dataset.id ?? '';
+      const active = ids.includes(id);
+      btn.setAttribute('aria-pressed', String(active));
+
+      const label = btn.querySelector('[data-compare-label]');
+      if (label) label.textContent = active ? 'Comparing' : 'Compare';
+
+      const differentCat = !active && cat !== null && btn.dataset.category !== cat;
+      const full = !active && ids.length >= MAX;
+      const disabled = differentCat || full;
+      btn.toggleAttribute('disabled', disabled);
+      btn.title = differentCat
+        ? 'You can only compare listings in the same category'
+        : full
+          ? 'You can compare up to 4 listings'
+          : '';
+    });
+
+    if (!tray) return;
+    if (ids.length === 0) {
+      tray.classList.add('hidden');
+      return;
+    }
+    tray.classList.remove('hidden');
+    if (countEl) countEl.textContent = String(ids.length);
+    if (goEl) goEl.href = `/compare?ids=${ids.map(encodeURIComponent).join(',')}`;
+
+    // The tray is JS-rendered, so the "Ask AI" trigger's refs are set live from
+    // the current selection. The ChatWidget's delegated listener reads these
+    // declarative attributes — no chat logic lives here. `data-rebi-refs` is the
+    // comma-joined ids; the title is a neutral "these N vehicles" (no free text
+    // on the wire — only the refs are sent; the title is client-display-only).
+    if (askAiEl) {
+      askAiEl.setAttribute('data-rebi-refs', ids.join(','));
+      askAiEl.setAttribute(
+        'data-rebi-title',
+        `these ${ids.length} ${ids.length === 1 ? 'vehicle' : 'vehicles'}`,
+      );
+    }
+
+    if (thumbsEl) {
+      thumbsEl.innerHTML = ids
+        .map((id) => {
+          const m = meta[id];
+          const title = esc(m?.title ?? 'Listing');
+          const inner = m?.thumb
+            ? `<img src="${esc(m.thumb)}" alt="" class="h-full w-full object-cover" />`
+            : `<div class="flex h-full w-full items-center justify-center bg-bg-2 text-ink-faint">${iconSvg('image', 'h-4 w-4')}</div>`;
+          return `<div class="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg ring-1 ring-inset ring-line" title="${title}">
+              ${inner}
+              <button type="button" data-compare-remove="${esc(id)}" aria-label="Remove ${title} from compare"
+                class="absolute right-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-ink/80 text-white transition hover:bg-ink">
+                ${removeIcon}
+              </button>
+            </div>`;
+        })
+        .join('');
+    }
+  }
+
+  function toggle(btn: HTMLButtonElement) {
+    const id = btn.dataset.id ?? '';
+    if (!id) return;
+    const ids = getIds();
+    const meta = getMeta();
+    const idx = ids.indexOf(id);
+    if (idx >= 0) {
+      ids.splice(idx, 1);
+      delete meta[id];
+    } else {
+      if (ids.length >= MAX) return;
+      const cat = activeCategory(ids, meta);
+      if (cat !== null && btn.dataset.category !== cat) return;
+      ids.push(id);
+      meta[id] = {
+        title: btn.dataset.title ?? '',
+        thumb: btn.dataset.thumb ?? '',
+        category: btn.dataset.category ?? '',
+      };
+    }
+    writeState(ids, meta);
+    render();
+  }
+
+  function removeId(id: string) {
+    const ids = getIds();
+    const meta = getMeta();
+    const idx = ids.indexOf(id);
+    if (idx >= 0) ids.splice(idx, 1);
+    delete meta[id];
+    writeState(ids, meta);
+    render();
+  }
+
+  // Delegated: the card root is an <a>, so preventDefault stops navigation.
+  document.addEventListener('click', (event) => {
+    const el = event.target as HTMLElement;
+
+    const toggleBtn = el.closest<HTMLButtonElement>('[data-compare-toggle]');
+    if (toggleBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!toggleBtn.hasAttribute('disabled')) toggle(toggleBtn);
+      return;
+    }
+
+    const removeBtn = el.closest<HTMLElement>('[data-compare-remove]');
+    if (removeBtn) {
+      event.preventDefault();
+      removeId(removeBtn.getAttribute('data-compare-remove') ?? '');
+      return;
+    }
+
+    if (el.closest('[data-compare-clear]')) {
+      event.preventDefault();
+      writeState([], {}); // clear BOTH keys
+      render();
+    }
+  });
+
+  // Keep tabs in sync.
+  window.addEventListener('storage', (event) => {
+    if (event.key === COMPARE_KEY || event.key === META_KEY) render();
+  });
+
+  render();
+</script>

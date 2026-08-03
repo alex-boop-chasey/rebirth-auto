@@ -1,0 +1,51 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import { icon, base } from './_shell/data';
+export const prerender = false;
+const roles = [['Vehicle sales consultant','Sales · Full-time','Bundaberg'],['Qualified technician','Service · Full-time','Bundaberg'],['Parts interpreter','Parts · Full-time','Regional'],['Detailer','Preparation · Casual','Bundaberg']];
+---
+<Layout title="Careers — Smart Hubs" active="" dockPrompt="Curious about a role? Ask me what it involves.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Careers']]} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow">Careers</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Build the future car yard with us.</h1>
+    <p class="sh-sub">We back our people with real tools (Rebi included), fair pay and a team that has each
+      other’s backs.</p>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-3">
+      {[['heart','Our culture','Local, low-ego, and genuinely helpful.'],['shield','Looked after','Ongoing training and clear progression.'],['star','Modern tools','AI does the busywork so you do the good work.']].map(([ic,t,d]) => (
+        <div class="card sh-panel"><span set:html={icon(ic,20)} style="color:var(--teal-deep)"></span><b style="display:block; margin:10px 0 4px; font-size:16px">{t}</b><p style="font-size:14px; color:var(--ink-soft)">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="eyebrow" style="margin-bottom:12px">Open roles (demo)</div>
+    <div style="display:flex; flex-direction:column; gap:10px">
+      {roles.map(([t,d,loc]) => (
+        <div class="card sh-panel" style="display:flex; align-items:center; gap:16px; padding:18px 22px">
+          <div style="flex:1"><b style="font-size:15.5px">{t}</b><div style="font-size:13px; color:var(--ink-faint)">{d} · {loc}</div></div>
+          <a href="#apply" class="btn btn-ghost btn-sm">View role</a>
+          <a href="#apply" class="btn btn-primary btn-sm"><span set:html={icon('arrow',15)}></span> Apply</a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="sh-wrap section-tight" style="padding-top:0" id="apply">
+    <div class="glass sh-panel" style="max-width:620px">
+      <b style="font-size:16px">Register your interest</b>
+      <p style="font-size:13.5px; color:var(--ink-soft); margin:4px 0 14px">No role a fit right now? Send us your details and we’ll keep you in mind.</p>
+      <div class="sh-grid sh-cols-2" style="gap:0 14px">
+        <div class="sh-field"><label>Name</label><input placeholder="Your name" /></div>
+        <div class="sh-field"><label>Email</label><input placeholder="you@email.com" /></div>
+      </div>
+      <div class="sh-field"><label>Tell us about you</label><textarea rows="3" placeholder="A line or two"></textarea></div>
+      <button class="btn btn-primary btn-sm"><span set:html={icon('send',15)}></span> Send application</button>
+    </div>
+  </section>
+</Layout>

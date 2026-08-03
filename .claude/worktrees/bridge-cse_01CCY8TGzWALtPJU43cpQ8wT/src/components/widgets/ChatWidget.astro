@@ -1,0 +1,1484 @@
+---
+/**
+ * Rebirth Auto — Floating Chat Widget
+ * ------------------------------------------------------------------
+ * Site-wide launcher bubble (bottom-right) that opens an AI chat panel.
+ * Talks to /api/chat (send) and /api/chat-poll (live handoff updates). Pure
+ * vanilla JS — no framework. Supports streaming replies (SSE), an AI-triggered
+ * human handoff (Rebi → Team over Telegram) with live polling, optional contact
+ * capture, and a Cloudflare Turnstile gate on the first message.
+ */
+import { POLL_INTERVAL_MS, ESCALATION_TIMEOUT_MS, TURNSTILE_SITE_KEY, TURNSTILE_ENABLED } from '~/chatbot/config';
+// Rebi's styles + layout + the "dreaming" backdrop live in ONE editable place.
+// Side-effect import from the frontmatter → Astro bundles it into the page <head>
+// globally, exactly as the former inline <style is:global> block did.
+import '../../styles/rebi.css';
+
+const turnstileEnabled = TURNSTILE_ENABLED && Boolean(TURNSTILE_SITE_KEY);
+const turnstileSiteKey = turnstileEnabled ? TURNSTILE_SITE_KEY : '';
+---
+
+<div
+  id="reb-chat"
+  class="reb-chat"
+  data-poll-interval={String(POLL_INTERVAL_MS)}
+  data-escalation-timeout={String(ESCALATION_TIMEOUT_MS)}
+  data-turnstile-key={turnstileSiteKey}
+  data-stream="true"
+>
+  <!-- Soft feathered spotlight glow: sits BEHIND the floating bubbles/input and
+       ABOVE the greyed+blurred page, gently masking the busy background so the
+       cards read clearly. Fades in/out with the .reb-open state. -->
+  <div id="reb-glow" aria-hidden="true"></div>
+
+  <!-- Launcher bubble -->
+  <button
+    id="reb-launcher"
+    class="reb-launcher"
+    type="button"
+    aria-label="Open chat with Rebirth Auto"
+    aria-expanded="false"
+    aria-controls="reb-panel"
+  >
+    <!-- Rebi orb — faithful copy of the Experience Mode <Orb>
+         (src/components/experience-alt/ShowroomTour.tsx <Orb>): a filled circle
+         with a smaller centred circle at 0.34× its diameter. Copied, not imported,
+         so this widget stays self-contained. Recoloured for the WHITE launcher: a
+         BLACK main circle carrying the source's gentle breathe pulse, a white
+         centre dot inside it, and a slowly-spinning thin grey outer ring. Keeps the
+         `reb-ico-chat` class so rebi.css still swaps it for the ✕ when chat opens. -->
+    <span class="reb-ico-chat reb-orb" aria-hidden="true">
+      <span class="reb-orb-ring"></span>
+      <span class="reb-orb-core">
+        <span class="reb-orb-dot"></span>
+      </span>
+    </span>
+    <svg class="reb-ico-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+    <span id="reb-badge" class="reb-badge" hidden aria-hidden="true"></span>
+  </button>
+
+  <!-- Chat panel -->
+  <div
+    id="reb-panel"
+    class="reb-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Chat with Rebirth Auto"
+    hidden
+  >
+    <!-- Minimal floating controls (top-right of the stage) — no header bar/box. -->
+    <header class="reb-head">
+      <div class="reb-head-actions">
+        <button id="reb-minimise" class="reb-close" type="button" aria-label="Minimise chat" title="Minimise">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button id="reb-close" class="reb-close" type="button" aria-label="Close chat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- The shared Focus Stage: the conversation renders as receding focus cards
+         (identical to the homepage search bar), built entirely at runtime. The
+         card column carries NO aria-live (that would spam every reveal frame) — a
+         single visually-hidden polite region below announces each landed message
+         once. -->
+    <div class="reb-stage-viewport">
+      <div class="reb-card-column focus-stage" id="reb-column"></div>
+    </div>
+    <p id="reb-live" class="reb-sr-only" aria-live="polite"></p>
+
+    <!-- Dev fallback log — kept in the DOM but hidden (a later phase removes it).
+         aria-live intentionally removed so cards don't double-announce. -->
+    <div id="reb-log" class="reb-log" hidden></div>
+
+    {turnstileEnabled && (
+      <div id="reb-turnstile" class="reb-turnstile" hidden>
+        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="light" data-size="flexible" data-callback="rebTurnstileVerified" data-expired-callback="rebTurnstileExpired"></div>
+      </div>
+    )}
+
+    <!-- Contact capture (shown during a handoff) -->
+    <form id="reb-contact" class="reb-contact" hidden>
+      <label class="reb-contact-label" for="reb-contact-input">How can our team reach you? (optional)</label>
+      <div class="reb-contact-row">
+        <input
+          id="reb-contact-input"
+          class="reb-contact-input"
+          type="text"
+          inputmode="email"
+          placeholder="Email or phone"
+          autocomplete="email"
+          maxlength="200"
+        />
+        <button type="submit" class="reb-contact-send">Send</button>
+      </div>
+    </form>
+
+    <form id="reb-form" class="reb-form reb-entry">
+      <textarea
+        id="reb-input"
+        class="reb-input"
+        rows="1"
+        placeholder="Type your message…"
+        aria-label="Type your message"
+        autocomplete="off"
+        maxlength="2000"
+      ></textarea>
+      <button id="reb-speaker" class="reb-icon-btn reb-speaker" type="button" aria-pressed="false" aria-label="Mute message tones" title="Mute message tones">
+        <svg class="reb-ico-sound-on" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+          <path d="M16.5 8.5a5 5 0 0 1 0 7"></path>
+          <path d="M19 6a8 8 0 0 1 0 12"></path>
+        </svg>
+        <svg class="reb-ico-sound-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+          <path d="M17 9l4 6M21 9l-4 6"></path>
+        </svg>
+      </button>
+      <button id="reb-mic" class="reb-icon-btn reb-mic" type="button" aria-label="Dictate a message" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </button>
+      <button id="reb-send" class="reb-send" type="submit" aria-label="Send message">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </form>
+    <p class="reb-foot">Rebi is an AI assistant and can make mistakes. For anything important, <a href="/contact">contact our team</a>.</p>
+
+    <!-- End-chat confirmation (opened by the header X; copy swapped in JS during a handoff) -->
+    <div id="reb-confirm" class="reb-confirm" role="dialog" aria-modal="true" aria-labelledby="reb-confirm-title" hidden>
+      <div class="reb-confirm-card">
+        <button id="reb-confirm-x" class="reb-close reb-confirm-x" type="button" aria-label="Dismiss">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+        <h2 id="reb-confirm-title" class="reb-confirm-title">End this chat?</h2>
+        <p id="reb-confirm-sub" class="reb-confirm-sub">This will clear the conversation and start fresh next time.</p>
+        <div class="reb-actions reb-confirm-actions">
+          <button id="reb-confirm-primary" class="reb-action-btn reb-action-primary" type="button">Download &amp; end chat</button>
+          <button id="reb-confirm-secondary" class="reb-action-btn reb-action-secondary" type="button">End chat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── White launcher ────────────────────────────────────────────────────────
+     rebi.css paints #reb-launcher with the blue --reb-primary disc. The owner
+     wants a WHITE button instead, so override it here. A white button on a
+     near-white page would vanish, so give it a hairline slate border + a soft
+     drop shadow so it still reads as a tappable target. These selectors carry
+     Astro's scoped-cid attribute on top of the id+class, so they out-specify the
+     rebi.css `.reb-launcher` rules without touching that shared file. The size,
+     shape, badge anchor and the ✕-swap all stay in rebi.css, untouched. */
+  #reb-launcher.reb-launcher {
+    background: var(--surface, #fff);
+    color: var(--ink, #0d1626); /* the ✕ stroke (currentColor) reads dark on white */
+    border: 1px solid var(--line, rgb(13 22 38 / 9%)); /* NFY hairline */
+    box-shadow: var(--sh-2, 0 6px 22px rgb(13 22 38 / 9%));
+  }
+  /* Keep rebi.css's -2px hover lift (transform is left to it); add an aurora glow
+     bloom on hover so the white button reads as Rebi's living presence. */
+  #reb-launcher.reb-launcher:hover {
+    background: var(--surface, #fff);
+    box-shadow: var(--sh-3, 0 20px 50px rgb(13 22 38 / 14%)), var(--sh-glow, 0 10px 40px -12px rgb(15 181 166 / 45%));
+  }
+  /* rebi.css focuses with a WHITE outline — invisible on a white button. Swap it
+     for an indigo ring so the focus-visible affordance is preserved + visible. */
+  #reb-launcher.reb-launcher:focus-visible {
+    outline: 2px solid var(--indigo, #5566f0);
+    outline-offset: 2px;
+  }
+  /* The waiting-conversation badge ringed itself in blue to sit on the old disc;
+     ring it in white now so it reads as a dot on the white button. */
+  #reb-badge.reb-badge { border-color: #fff; }
+
+  /* ── Rebi orb ──────────────────────────────────────────────────────────────
+     The NFY "living aurora bead": a filled MAIN circle painted with the aurora
+     gradient and a smaller white centre dot at 0.34× its diameter, wrapped in a
+     soft blurred aurora halo. Structure kept from the Experience Mode <Orb>; only
+     recoloured to the NFY aurora skin. The `reb-ico-chat` class on the wrapper
+     lets rebi.css hide the orb on `.reb-open` and reveal the ✕ — open/close is
+     untouched. */
+  .reb-orb {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  /* Soft AURORA HALO. A blurred aurora bloom behind the core (mirrors theme.css's
+     .orb-halo::before) that gently pulses — the "living aurora bead" mark. */
+  .reb-orb-ring {
+    position: absolute;
+    inset: -5px;
+    border-radius: 9999px;
+    background: var(--aurora);
+    opacity: 0.32;
+    filter: blur(8px);
+    z-index: -1;
+    animation: reb-orb-halo 2.8s ease-in-out infinite;
+  }
+  /* The MAIN circle — the aurora bead, a slow-shifting gradient carrying a gentle
+     breathe pulse (mirrors theme.css .orb). Inset from the halo so it reads sharp. */
+  .reb-orb-core {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 9999px;
+    background: var(--aurora);
+    background-size: 180% 180%;
+    animation: reb-orb-breathe 3.6s ease-in-out infinite,
+      reb-orb-aurora 6s ease infinite;
+  }
+  /* The centre dot — white, at 0.34× the main circle (1.35rem × 0.34 ≈ 0.459rem),
+     centred inside the aurora bead, softly pulsing (the .orb::after motif). */
+  .reb-orb-dot {
+    width: 0.459rem;
+    height: 0.459rem;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.92);
+    animation: reb-orb-dot 2.6s ease-in-out infinite;
+  }
+  /* Aurora drift across the bead. */
+  @keyframes reb-orb-aurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  /* Halo pulse. */
+  @keyframes reb-orb-halo {
+    0%, 100% { opacity: 0.22; transform: scale(0.92); }
+    50% { opacity: 0.4; transform: scale(1.06); }
+  }
+  /* Centre-dot pulse. */
+  @keyframes reb-orb-dot {
+    0%, 100% { transform: scale(0.82); opacity: 0.9; }
+    50% { transform: scale(1); opacity: 1; }
+  }
+  /* Breathe — a gentle scale + expanding-then-fading indigo halo on the bead. */
+  @keyframes reb-orb-breathe {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35), 0 0 0 0 rgb(85 102 240 / 0.18);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35), 0 0 0 12px rgb(85 102 240 / 0);
+    }
+  }
+  /* Reduced motion: freeze the halo, bead and dot. A calm static aurora mark remains. */
+  @media (prefers-reduced-motion: reduce) {
+    .reb-orb-ring,
+    .reb-orb-core,
+    .reb-orb-dot { animation: none; }
+  }
+</style>
+
+<script>
+  // Shared filter-URL driver + URL contract helpers — the "type it to Rebi"
+  // search refine drives the ONE filter URL client-side (Decision 5), NEVER
+  // touching the chatbot streaming core. The refine now routes through the SAME
+  // /api/search LLM the hero SearchDock uses (deterministic pre-pass → enum-locked
+  // structured extraction), so soft phrases ("cheap and low fuel") actually move
+  // the grid — the client-side keyword matcher couldn't.
+  import { applyFilterUrl } from '../../lib/client/filter-url';
+  import {
+    parseFilters,
+    serializeFilters,
+    hrefFor,
+    hasActiveFilters,
+    type FilterState,
+  } from '../../lib/listings-query';
+  // Shared Focus Stage: the conversation now renders on the same cinematic
+  // receding-card stage as the homepage search bar (render layer only — the chat
+  // brains, escalation/handoff and streaming core are untouched).
+  import '../search/stage.css';
+  import { createFocusStage } from '../search/stage-engine';
+  // Rebi's message tones (Web Audio) — see ./rebi-sounds.ts.
+  import { createRebiSounds } from './rebi-sounds';
+
+  const GREETING =
+    "Hi! I'm Rebi, the Rebirth Auto assistant. Ask me about our vehicles, financing, servicing, or trade-ins — I'm happy to help.";
+
+  // Rebi's (robot) and the Team's (person) avatars now live inside the Focus Stage
+  // engine, which builds the rebi/human cards — see src/components/search/stage-engine.ts.
+
+  type WidgetRole = 'user' | 'assistant' | 'human' | 'system' | 'error';
+  type Msg = { role: 'user' | 'assistant'; content: string; ts?: number };
+  type ServerMsg = { id: number; role: 'visitor' | 'ai' | 'human' | 'system'; content: string; created_at?: number };
+
+  const root = document.getElementById('reb-chat');
+  const launcher = document.getElementById('reb-launcher');
+  const panel = document.getElementById('reb-panel');
+  const closeBtn = document.getElementById('reb-close');
+  const log = document.getElementById('reb-log');
+  const column = document.getElementById('reb-column');
+  const live = document.getElementById('reb-live');
+  const form = document.getElementById('reb-form') as HTMLFormElement | null;
+  const input = document.getElementById('reb-input') as HTMLTextAreaElement | null;
+  const sendBtn = document.getElementById('reb-send') as HTMLButtonElement | null;
+  const turnstileBox = document.getElementById('reb-turnstile');
+  const contactForm = document.getElementById('reb-contact') as HTMLFormElement | null;
+  const contactInput = document.getElementById('reb-contact-input') as HTMLInputElement | null;
+  // Minimise/badge/end-chat-dialog elements — optional-chained (not in the hard
+  // guard below) so a markup slip degrades gracefully instead of killing the widget.
+  const minimiseBtn = document.getElementById('reb-minimise');
+  const micBtn = document.getElementById('reb-mic');
+  const badge = document.getElementById('reb-badge');
+  const confirmEl = document.getElementById('reb-confirm');
+  const confirmTitle = document.getElementById('reb-confirm-title');
+  const confirmSub = document.getElementById('reb-confirm-sub');
+  const confirmPrimary = document.getElementById('reb-confirm-primary') as HTMLButtonElement | null;
+  const confirmSecondary = document.getElementById('reb-confirm-secondary') as HTMLButtonElement | null;
+  const confirmX = document.getElementById('reb-confirm-x');
+
+  if (root && launcher && panel && closeBtn && log && form && input && sendBtn && column && live) {
+    const STORAGE_KEY = 'reb-chat-history';
+    const SESSION_KEY = 'reb-session-id';
+    // Per-tab priming context (e.g. "Ask about this car"). Mirrored to
+    // sessionStorage so a reopen/rehydrate in the same tab keeps the focus.
+    const CONTEXT_KEY = 'reb-active-context';
+
+    const POLL_MS = Number(root.dataset.pollInterval) || 3000;
+    const ESC_TIMEOUT_MS = Number(root.dataset.escalationTimeout) || 300000;
+    // Turnstile can't issue a token on localhost (not in the widget's allowed
+    // hostnames), so bypass it there — the server bypasses localhost too.
+    const IS_LOCALHOST = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    const TURNSTILE_KEY = IS_LOCALHOST ? '' : (root.dataset.turnstileKey || '');
+    const USE_STREAM = root.dataset.stream === 'true';
+
+    // Active priming context. `refs` + `kind` are sent to the server each turn;
+    // `opening` is the client-only primed greeting (never sent — no injection).
+    type ActiveContext = { kind: string; refs: string[]; opening: string };
+    let activeContext: ActiveContext | null = null;
+
+    let history: Msg[] = [];
+    let busy = false;
+    // Pending "Rebi is typing… → greeting" reveal on a fresh/primed open. Held so
+    // it can be cancelled if the panel closes (or resets) before it fires — see
+    // renderGreetingWithTyping / closePanel / newChat.
+    let greetingTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearGreetingTimer = () => {
+      if (greetingTimer) { clearTimeout(greetingTimer); greetingTimer = null; }
+    };
+    // Assigned by the voice-dictation feature block below when the Web Speech API
+    // is available; a no-op otherwise so close/submit paths can always call it.
+    let stopDictation: () => void = () => {};
+    // Message-tone players, assigned by the Web Audio module appended at the end of
+    // this block. No-ops until then so the tone-call insertions are always safe.
+    let soundSend: () => void = () => {};
+    let soundRebi: () => void = () => {};
+
+    const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+    // The shared Focus Stage instance. `retire:false` → the whole conversation
+    // stacks (nothing is destroyed; scroll-back is a later phase). The sound + new
+    // conversation hooks are wrapped so they resolve the (later-assigned) `soundRebi`
+    // and `newChat` at click time, never the no-op stubs captured here.
+    const stage = createFocusStage({
+      column,
+      live,
+      reducedMotion: REDUCED_MOTION,
+      retire: false,
+      newSearchLabel: 'New chat',
+      onNewSearch: () => newChat(),
+      onReply: () => soundRebi(),
+    });
+    // The typing-dots card currently on the stage (null when none), so showTyping /
+    // hideTyping can retire exactly one indicator regardless of what added it.
+    let typingCard: HTMLElement | null = null;
+    // The inline wrap-up card is offered once per conversation; cleared with the stack.
+    let resolvedShown = false;
+    // Clear the stage AND reset the render bookkeeping that tracks its cards.
+    const clearStage = () => {
+      stage.clearStack();
+      typingCard = null;
+      resolvedShown = false;
+    };
+
+    // Handoff state.
+    type Status = 'ai_active' | 'escalated' | 'human_active' | 'closed' | null;
+    let status: Status = 'ai_active';
+    let lastId = 0; // poll cursor — the highest server message id we've rendered
+    const seen = new Set<number>();
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let escDeadline = 0; // when the "no human yet" fallback should fire (0 = off)
+    let humanArrived = false;
+    let turnstileLoaded = false;
+
+    // --- Persistence ---
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) history = JSON.parse(saved);
+    } catch { /* ignore */ }
+
+    let sessionId: string | null = null;
+    try { sessionId = localStorage.getItem(SESSION_KEY); } catch { /* ignore */ }
+
+    try {
+      const savedCtx = sessionStorage.getItem(CONTEXT_KEY);
+      if (savedCtx) {
+        const parsed = JSON.parse(savedCtx);
+        if (parsed && typeof parsed.opening === 'string' && Array.isArray(parsed.refs)) {
+          activeContext = parsed;
+        }
+      }
+    } catch { /* ignore */ }
+
+    // The greeting shown at the top of the log: the primed opening when a context
+    // is active, otherwise Rebi's default greeting. Naming the car only (no price)
+    // avoids contradicting live figures the server will supply on the first reply.
+    const currentGreeting = () => activeContext?.opening || GREETING;
+
+    // The primed opening, varied by kind. `listing` names the single car (no
+    // price — avoids contradicting live figures); `compare` frames the decision
+    // without naming figures the server will supply on the first real reply.
+    const buildOpening = (kind: string, title: string) => {
+      if (kind === 'compare') {
+        return 'Happy to help you compare these — what matters most: price, running costs, space, or features?';
+      }
+      // `search`: the SearchDock composes the whole opening (interpretation +
+      // optional clarifying question) and passes it in as `title`. Fall back to a
+      // generic line if it's empty.
+      if (kind === 'search') {
+        return title ||
+          "Here are the matches — ask me anything about them, or tell me how to narrow things down.";
+      }
+      return title
+        ? `Happy to help with the ${title} — want to know about its price, kilometres, features, or booking a look?`
+        : 'Happy to help with this vehicle — want to know about its price, kilometres, features, or booking a look?';
+    };
+
+    const setActiveContext = (kind: string, refs: string[], title: string) => {
+      if (!refs.length) return;
+      const k = kind || 'listing';
+      activeContext = { kind: k, refs, opening: buildOpening(k, title) };
+      try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+    };
+
+    const save = () => {
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(history)); } catch { /* ignore */ }
+    };
+    const storeSession = (id: string) => {
+      sessionId = id;
+      try { localStorage.setItem(SESSION_KEY, id); } catch { /* ignore */ }
+    };
+
+    // --- Rendering ---
+    const escapeHtml = (s: string) =>
+      s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const format = (text: string) => {
+      let html = escapeHtml(text);
+      html = html.replace(/\bhttps?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+      html = html.replace(/(^|\s)(\/(?:contact|blog|about)\b)/g, (_m, pre, path) => `${pre}<a href="${path}">${path}</a>`);
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    };
+
+
+    const scroll = () => { log.scrollTop = log.scrollHeight; };
+
+    // System notices → a centered, avatarless system card on the stage.
+    const addSystem = (text: string) => {
+      stage.addSystemCard(escapeHtml(text));
+    };
+
+    // Route a message to the right Focus Stage card. Returns the card's mutable
+    // body element (the `ts` argument is retained for signature compatibility; the
+    // stage has no per-message timestamps). Streaming does NOT flow through here —
+    // it uses stage.openStreamingRebiCard() directly (see handleStream).
+    const addBubble = (role: WidgetRole, html: string, _ts = Date.now()): HTMLElement => {
+      if (role === 'user') {
+        const el = stage.addUserTurn('');
+        el.innerHTML = html;
+        return el;
+      }
+      if (role === 'human') return stage.addHumanCard(html);
+      if (role === 'system') return stage.addSystemCard(html);
+      if (role === 'error') return stage.addRebiCard(html, true);
+      return stage.addRebiCard(html); // 'assistant'
+    };
+
+    const showTyping = () => {
+      if (typingCard) return; // one indicator at a time
+      typingCard = stage.showTyping();
+    };
+    const hideTyping = () => {
+      if (typingCard) { stage.retire(typingCard); typingCard = null; }
+    };
+
+    const serverRole = (r: ServerMsg['role']): WidgetRole =>
+      r === 'visitor' ? 'user' : r === 'human' ? 'human' : r === 'system' ? 'system' : 'assistant';
+
+    // Render from client history (the AI-only phase — has nice timestamps).
+    const renderHistory = () => {
+      clearGreetingTimer(); // an immediate render supersedes any pending typing→greeting
+      clearStage();
+      // Always render exactly ONE greeting — the log was just cleared, so it
+      // can't duplicate, and gating on a "greeted" flag left the panel blank on
+      // any reopen with empty history (e.g. after end-chat reset while
+      // minimised). When a context is active this is the primed opening, which
+      // REPLACES the default greeting (never stacks a second bubble on top).
+      addBubble('assistant', format(currentGreeting()), history[0]?.ts);
+      for (const m of history) addBubble(m.role, format(m.content), m.ts);
+    };
+
+    // Render authoritatively from the server (once a human is involved).
+    const renderFromServer = (messages: ServerMsg[]) => {
+      clearGreetingTimer(); // an authoritative server render supersedes any pending typing→greeting
+      clearStage();
+      seen.clear();
+      // Same single-greeting rule as renderHistory: the primed opening replaces
+      // the default greeting so a rehydrate never doubles it.
+      addBubble('assistant', format(currentGreeting()));
+      for (const m of messages) {
+        addBubble(serverRole(m.role), format(m.content));
+        seen.add(m.id);
+        if (m.id > lastId) lastId = m.id;
+        if (m.role === 'human') humanArrived = true;
+      }
+    };
+
+    // Fresh/primed open with no conversation yet: make Rebi feel like it's
+    // composing a unique message. Clear the log, show the pulsing-dots typing
+    // indicator, then after a short, slightly-randomised beat reveal the greeting
+    // (the primed opening when a context is active, else the default). Cancelled by
+    // clearGreetingTimer() if the panel closes/resets before it fires.
+    const renderGreetingWithTyping = () => {
+      clearGreetingTimer();
+      clearStage();
+      showTyping();
+      // ~1.5–2.5s so it feels alive, not fixed; near-instant under reduced motion.
+      const delay = REDUCED_MOTION ? 0 : 1500 + Math.random() * 1000;
+      greetingTimer = setTimeout(() => {
+        greetingTimer = null;
+        if (panel.hidden) { hideTyping(); return; } // never pop a greeting into a closed panel
+        hideTyping();
+        addBubble('assistant', format(currentGreeting()));
+      }, delay);
+    };
+
+    // --- Networking helpers ---
+    const getTurnstileToken = (): string => {
+      const el = turnstileBox?.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement | null;
+      return el?.value || '';
+    };
+    const ensureTurnstile = () => {
+      if (!TURNSTILE_KEY || turnstileLoaded) return;
+      turnstileLoaded = true;
+      if (turnstileBox) turnstileBox.hidden = false;
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      s.async = true;
+      s.defer = true;
+      document.head.appendChild(s);
+    };
+    // Implicit-render callbacks (referenced by data-callback / data-expired-callback
+    // on the .cf-turnstile div): tuck the box away once a token is issued, and
+    // bring it back if the token expires before the first message is sent.
+    (window as unknown as Record<string, unknown>).rebTurnstileVerified = () => {
+      if (turnstileBox) turnstileBox.hidden = true;
+    };
+    (window as unknown as Record<string, unknown>).rebTurnstileExpired = () => {
+      // The token only gates the first message — once a session exists, stay hidden.
+      if (!sessionId && turnstileBox) turnstileBox.hidden = false;
+    };
+
+    const pollUrl = (after: number) => `/api/chat-poll?sessionId=${encodeURIComponent(sessionId || '')}&afterId=${after}`;
+
+    const pollFetch = async (after: number) => {
+      try {
+        const res = await fetch(pollUrl(after));
+        return (await res.json()) as { status: Status; messages: ServerMsg[]; lastId: number };
+      } catch {
+        return null;
+      }
+    };
+
+    // --- Transcript download ---
+    const SPEAKER: Record<string, string> = { visitor: 'You', ai: 'Rebi', human: 'Team', system: 'System' };
+    const fmtTs = (secs?: number) => (secs ? new Date(secs * 1000).toLocaleString() : '');
+
+    const buildTranscript = (msgs: ServerMsg[]) => {
+      const rule = '='.repeat(44);
+      const out = ['Rebirth Auto — Chat transcript', rule, ''];
+      for (const m of msgs) {
+        if (m.role === 'system') {
+          out.push(`— ${m.content}`, '');
+          continue;
+        }
+        const when = fmtTs(m.created_at);
+        out.push(`${SPEAKER[m.role] || m.role}${when ? ' · ' + when : ''}:`, m.content, '');
+      }
+      out.push(
+        rule,
+        'Rebirth Auto',
+        'Phone: (07) 5550 0100',
+        'Contact: https://rebirthauto.com.au/contact',
+        `Saved: ${new Date().toLocaleString()}`
+      );
+      return out.join('\n');
+    };
+
+    const downloadTranscript = async () => {
+      let msgs: ServerMsg[] = [];
+      if (sessionId) {
+        const data = await pollFetch(0); // afterId=0 → full server transcript
+        if (data && data.messages && data.messages.length) msgs = data.messages;
+      }
+      if (!msgs.length) {
+        // Fallback: build from the client-side history (no server memory).
+        msgs = history.map((m, i) => ({
+          id: i,
+          role: m.role === 'user' ? 'visitor' : 'ai',
+          content: m.content,
+          created_at: m.ts ? Math.floor(m.ts / 1000) : undefined,
+        }));
+      }
+      if (!msgs.length) { addSystem('There’s no conversation to download yet.'); return; }
+
+      const blob = new Blob([buildTranscript(msgs)], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rebirth-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    // Rebi signalled the enquiry looks resolved — offer a Rebi bubble + actions (once).
+    // Inline wrap-up card — same visual language as the end-chat dialog (heading /
+    // subtitle / stacked primary+secondary), but it lives inline at the bottom of
+    // the log and scrolls with the conversation rather than being a modal overlay.
+    const showResolvedPrompt = () => {
+      if (resolvedShown) return; // offered once per conversation (cleared with the stack)
+      resolvedShown = true;
+      // Inline wrap-up card on the stage — the action buttons auto-disable while the
+      // download await runs (the engine guards the double-tap). Handlers unchanged.
+      stage.addActionCard({
+        title: "That's everything for now",
+        sub: 'Download a copy of the chat, or start fresh next time.',
+        actions: [
+          {
+            label: 'Download & end chat',
+            primary: true,
+            onClick: async () => {
+              try { await downloadTranscript(); } catch { /* still end the chat */ }
+              endChat(); // must run AFTER the download — newChat() nulls the sessionId it needs
+            },
+          },
+          { label: 'End chat', onClick: () => { endChat(); } },
+        ],
+      });
+    };
+
+    // Start a fresh conversation — clears the client session so the next message
+    // mints a new one. (Old session is left in D1 and lazily cleaned up.)
+    const newChat = () => {
+      clearGreetingTimer(); // tearing down — cancel any pending typing→greeting reveal
+      stopPolling();
+      try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+      // Clear the priming context too — a fresh chat is unprimed, so the next
+      // plain launcher open is byte-identical to today (default greeting, no focus).
+      try { sessionStorage.removeItem(CONTEXT_KEY); } catch { /* ignore */ }
+      activeContext = null;
+      sessionId = null;
+      history = [];
+      status = 'ai_active';
+      lastId = 0;
+      seen.clear();
+      humanArrived = false;
+      escDeadline = 0;
+      hideContactPrompt();
+      renderHistory(); // clears the log and shows a fresh greeting
+      // A new conversation is a new "first message" — reset Turnstile for a fresh token.
+      if (TURNSTILE_KEY) {
+        if (turnstileBox) turnstileBox.hidden = false;
+        try { (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset(); } catch { /* ignore */ }
+      }
+      // Skip the refocus when the panel is hidden (end-chat resets while closing).
+      setTimeout(() => { if (!panel.hidden) input.focus(); }, 30);
+    };
+
+    // --- Handoff: escalation, polling, contact ---
+    const stopPolling = () => {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    };
+
+    const showTimeoutFallback = () => {
+      escDeadline = 0;
+      addSystem("Our team hasn't jumped in yet — someone will follow up with you as soon as they can. You can also reach us on (07) 5550 0100 or via /contact.");
+    };
+
+    const pollOnce = async () => {
+      if (document.hidden || !sessionId) return;
+      const data = await pollFetch(lastId);
+      if (!data) return;
+      if (data.status) status = data.status;
+      for (const m of data.messages) {
+        if (seen.has(m.id)) continue;
+        seen.add(m.id);
+        if (m.id > lastId) lastId = m.id;
+        if (m.role === 'human') { humanArrived = true; escDeadline = 0; }
+        addBubble(serverRole(m.role), format(m.content));
+        if (m.role === 'human' || m.role === 'ai') soundRebi(); // incoming message tone (team/AI only)
+      }
+      if (status === 'closed') {
+        addSystem('This chat has been closed. Send a message to start a new one.');
+        stopPolling();
+        return;
+      }
+      if (escDeadline && !humanArrived && Date.now() > escDeadline) showTimeoutFallback();
+    };
+
+    const startPolling = () => {
+      stopPolling();
+      pollTimer = setInterval(pollOnce, POLL_MS);
+    };
+
+    // Present the (frozen) contact form as a PINNED focal stage card — it holds the
+    // front slot and does not recede while active; it recedes (is removed) on
+    // submit/hide. Only the markup moves onto the stage; the submit handler and the
+    // rest of the handoff logic are untouched.
+    const showContactPrompt = () => {
+      if (!contactForm) return;
+      contactForm.hidden = false;
+      stage.addPinnedCard(contactForm);
+      setTimeout(() => { if (!panel.hidden) contactInput?.focus(); }, 30);
+    };
+    const hideContactPrompt = () => {
+      if (!contactForm) return;
+      contactForm.hidden = true;
+      stage.unpinCard();
+    };
+
+    // Enter the handoff UI. `sysId` is the server id of the connecting message.
+    const onEscalated = async () => {
+      status = 'escalated';
+      humanArrived = false;
+      escDeadline = Date.now() + ESC_TIMEOUT_MS;
+      const data = await pollFetch(0); // authoritative hydrate
+      if (data && data.messages) renderFromServer(data.messages);
+      if (data && data.status) status = data.status;
+      showContactPrompt();
+      startPolling();
+    };
+
+    // --- Result handling shared by JSON + stream-done ---
+    const applySession = (id?: string) => {
+      if (id && id !== sessionId) storeSession(id);
+    };
+
+    // --- Sending ---
+    const postChat = (payload: Record<string, unknown>) =>
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+    const basePayload = (): Record<string, unknown> => {
+      const p: Record<string, unknown> = { messages: history };
+      if (sessionId) p.sessionId = sessionId;
+      // Turnstile token only matters on the very first message.
+      if (TURNSTILE_KEY && !sessionId) p.turnstileToken = getTurnstileToken();
+      // Re-send the priming context each turn (server resolves it live). Only
+      // `{ kind, refs }` — the opening greeting stays client-side.
+      if (activeContext) {
+        let refs = activeContext.refs;
+        // For a search context on the homepage, ground Rebi on the LIVE URL state
+        // (the single source of truth) — so a chip removal or manual-drawer change
+        // is reflected without re-searching. Off-homepage, keep the stored ref.
+        if (activeContext.kind === 'search' && gridPresent()) {
+          refs = [serializeFilters(parseFilters(new URLSearchParams(location.search)))];
+        }
+        p.context = { kind: activeContext.kind, refs };
+      }
+      return p;
+    };
+
+    // Handle a non-streaming JSON reply.
+    const handleJson = (data: any) => {
+      applySession(data.sessionId);
+      if (typeof data.lastId === 'number') { lastId = Math.max(lastId, data.lastId); seen.add(data.lastId); }
+      if (data.status) status = data.status;
+
+      if (data.status === 'escalated') { onEscalated(); return; }
+      if (data.status === 'human_active') { startPolling(); return; }
+
+      if (data.reply) {
+        const ts = Date.now();
+        history.push({ role: 'assistant', content: data.reply, ts });
+        addBubble('assistant', format(data.reply), ts);
+        soundRebi(); // assistant reply arrival tone
+        save();
+        if (data.resolved) showResolvedPrompt();
+      } else if (data.error) {
+        addBubble('error', escapeHtml(data.error));
+      }
+    };
+
+    // Handle a streamed (SSE) reply. Falls back to a JSON re-request on error.
+    const handleStream = async (res: Response, retryPayload: Record<string, unknown>) => {
+      const reader = res.body?.getReader();
+      if (!reader) { hideTyping(); return; }
+      const decoder = new TextDecoder();
+      let buf = '';
+      let bubble: HTMLElement | null = null;
+      let acc = '';
+      let started = false;
+      let finished = false;
+
+      const ensureBubble = () => {
+        // Stream onto the shared Focus Stage: openStreamingRebiCard() seats an empty
+        // Rebi card and returns its `.body` element, so the per-delta
+        // `bubble.innerHTML = format(acc)` below is unchanged. The engine mirrors the
+        // settled text into the aria-live region once (no per-delta announce spam).
+        if (!started) { hideTyping(); bubble = stage.openStreamingRebiCard().el; started = true; }
+      };
+
+      const handleEvent = (evt: any) => {
+        if (evt.type === 'delta') {
+          ensureBubble();
+          // `replace:true` = the grounding firewall substituted the reply after it
+          // had already streamed live (a pure-chat turn) — overwrite, don't append.
+          if (evt.replace) acc = evt.text; else acc += evt.text;
+          if (bubble) { bubble.innerHTML = format(acc); scroll(); }
+        } else if (evt.type === 'done') {
+          finished = true;
+          applySession(evt.sessionId);
+          if (typeof evt.lastId === 'number') { lastId = Math.max(lastId, evt.lastId); seen.add(evt.lastId); }
+          if (evt.status) status = evt.status;
+          if (acc) { history.push({ role: 'assistant', content: acc, ts: Date.now() }); save(); soundRebi(); } // reply-complete tone (once, not per-delta)
+          if (evt.resolved) showResolvedPrompt();
+        } else if (evt.type === 'escalate') {
+          finished = true;
+          applySession(evt.sessionId);
+          hideTyping();
+          onEscalated();
+        }
+      };
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split('\n\n');
+        buf = parts.pop() ?? '';
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith('data:')) continue;
+          try { handleEvent(JSON.parse(line.slice(5).trim())); } catch { /* ignore */ }
+          if (started && !bubble) { /* noop */ }
+        }
+      }
+
+      if (!finished) {
+        // Stream ended without a terminal event (primary error) → retry as JSON
+        // so the server-side failsafe (primary → fallback) runs.
+        hideTyping();
+        if (!started) {
+          showTyping();
+          try {
+            const jr = await postChat({ ...retryPayload, stream: false });
+            const ct = jr.headers.get('Content-Type') || '';
+            hideTyping();
+            if (ct.includes('application/json')) handleJson(await jr.json());
+            else addBubble('error', 'Sorry, something went wrong. Please try again.');
+          } catch { hideTyping(); addBubble('error', 'Network error — please try again.'); }
+        }
+      }
+    };
+
+    // "Type it to Rebi" refine helpers (§C). A message is treated as a REFINE
+    // (drives the grid) only when it looks like a filter command, NOT a question —
+    // so "is the diesel reliable?" answers from the results without moving the grid,
+    // while "actually under $30k" re-drives it. Deterministic; an LLM intent
+    // classifier is a later refinement.
+    const QUESTION_STARTERS =
+      /^(is|are|am|do|does|did|can|could|would|will|should|has|have|had|what|whats|why|how|which|who|whom|whose|when|where|was|were|may|might)\b/i;
+    const looksLikeQuestion = (t: string) => {
+      const s = t.trim();
+      return s.includes('?') || QUESTION_STARTERS.test(s);
+    };
+
+    // Inventory search / filter intent, available from ANY entry point.
+    // ------------------------------------------------------------------
+    // Rebi is not locked to the surface it was primed from: the compare drawer's
+    // "Ask AI", a listing's "Ask about this car", the homepage search, or a plain
+    // launcher chat can all drive/open the inventory. A filter-y (non-question)
+    // message is interpreted via the SAME /api/search LLM the hero SearchDock uses
+    // (deterministic pre-pass → enum-locked structured extraction) and applied to
+    // the ONE filter URL — reusing applyFilterUrl end-to-end, NEVER touching the
+    // chatbot streaming core or forking the filter logic.
+    //
+    //   - 'applied'   — on the inventory grid (homepage): #inventory-results is
+    //                   swapped in place. The conversation is transitioned to a
+    //                   `search` context so the follow-up chat turn grounds on the
+    //                   results now on screen, regardless of what primed the chat.
+    //   - 'navigated' — off the grid (a listing/compare page has no
+    //                   #inventory-results): navigate to the inventory with the
+    //                   filters applied. The grid the visitor asked for IS the
+    //                   answer; same-tab sessionStorage carries the search context
+    //                   + history across the navigation.
+    //   - 'none'      — nothing confident to apply (a soft/non-filter message):
+    //                   leaves the grid untouched so the normal grounded chat turn
+    //                   answers it. Best-effort: any failure also returns 'none'.
+    type SearchOutcome = 'applied' | 'navigated' | 'none';
+    const applyInventorySearch = async (text: string): Promise<SearchOutcome> => {
+      try {
+        const onGrid = gridPresent();
+        // On the grid, carry the current filters forward so the interpreter can
+        // refine/remove ("actually not diesel"). Off the grid there's no filter
+        // state to carry (the page's query, e.g. ?ids=…, isn't filter state).
+        const current = onGrid
+          ? parseFilters(new URLSearchParams(location.search))
+          : parseFilters(new URLSearchParams());
+        const refine = onGrid && hasActiveFilters(current);
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: text, filters: current, refine }),
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json().catch(() => null);
+        const filters: FilterState | null =
+          data && data.filters ? (data.filters as FilterState) : null;
+        const confidence: string = data?.confidence ?? 'low';
+        // Apply only a confident, NON-EMPTY extraction — a low/empty result must
+        // NOT wipe an existing grid or hijack an ordinary chat message.
+        if (!filters || confidence === 'low' || !hasActiveFilters(filters)) return 'none';
+
+        const next: FilterState = { ...filters, page: 1 };
+        // Transition the conversation to a `search` context so the grounded reply
+        // (or the widget rehydrated after navigation) grounds on THESE results —
+        // whatever entry point (listing/compare/none) primed the chat. Persisted
+        // before any navigation so same-tab sessionStorage carries it across.
+        activeContext = { kind: 'search', refs: [serializeFilters(next)], opening: activeContext?.opening || '' };
+        try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+
+        if (onGrid) {
+          applyFilterUrl(hrefFor(next)); // pushState → new location.search BEFORE basePayload reads it
+          return 'applied';
+        }
+        // Off-grid: the inventory grid lives on the homepage — go there with the
+        // filters applied. The visitor asked to SEE cars; the filtered grid answers it.
+        window.location.href = hrefFor(next);
+        return 'navigated';
+      } catch {
+        return 'none'; // best-effort — the grounded chat turn still runs
+      }
+    };
+
+    // An EXPLICIT "go browse the inventory instead" intent — the only thing that
+    // may release the COMPARE role for a fresh search. Requires a browse verb
+    // ("show me / find / search / do you have …") so a plain decision criterion
+    // ("low running costs", "space", "cheapest") is NEVER mistaken for one.
+    const FRESH_SEARCH_INTENT =
+      /\b(show|find|search|browse|list|see|view|got|have|want|looking for|look for|pull up|bring up)\b.*\b(car|cars|vehicle|vehicles|suv|suvs|ute|utes|sedan|sedans|hatch|hatchback|wagon|van|truck|4wd|awd|automatic|manual|diesel|petrol|hybrid|electric|under|below|over|around|cheaper|else|other|instead|something)\b/i;
+    const looksLikeFreshSearch = (t: string) => FRESH_SEARCH_INTENT.test(t.trim());
+
+    // Compare-agent decision (§compare). When Rebi is primed as the COMPARE agent
+    // and the visitor answers with a decision criterion, he STAYS the compare
+    // agent: /api/compare-pick ranks ONLY the compared cars (activeContext.refs —
+    // real ids) on that criterion using the SAME deterministic scoring the
+    // /compare board uses, then Rebi announces the winner and opens its listing —
+    // NEVER the generic inventory search. Returns:
+    //   'navigated' — a car was chosen; announced + navigating to its listing.
+    //   'unmatched' — criterion maps to no scoring lens; the caller MAY let an
+    //                 explicit fresh search leave compare, otherwise it grounds.
+    //   'grounded'  — matched a lens but not rankable/openable from the compared
+    //                 cars' data (or any error) → grounded chat turn, no search,
+    //                 no guess.
+    type CompareDecision = 'navigated' | 'unmatched' | 'grounded';
+    const COMPARE_NAV_DELAY_MS = 1100; // let the announcement land before the listing loads
+    const tryCompareDecision = async (text: string): Promise<CompareDecision> => {
+      const refs = activeContext?.refs ?? [];
+      if (refs.length < 2) return 'unmatched';
+      try {
+        const res = await fetch('/api/compare-pick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refs, criterion: text }),
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json().catch(() => null);
+        if (!data || !data.matched) return 'unmatched';
+        if (!data.rankable || !data.slug || !data.announce) return 'grounded';
+
+        // Announce the pick, then open its listing. The message is pushed to
+        // history so it persists in the chat after the same-tab navigation
+        // rehydrates it on the listing page.
+        hideTyping();
+        const ts = Date.now();
+        history.push({ role: 'assistant', content: String(data.announce), ts });
+        addBubble('assistant', format(String(data.announce)), ts);
+        soundRebi();
+        save();
+        const slug = String(data.slug);
+        setTimeout(() => {
+          window.location.href = `/listings/${encodeURIComponent(slug)}`;
+        }, COMPARE_NAV_DELAY_MS);
+        return 'navigated';
+      } catch {
+        return 'grounded'; // never turn an error into a generic search
+      }
+    };
+
+    const send = async (text: string) => {
+      if (busy || !text.trim()) return;
+
+      // First message + Turnstile enabled but no token yet → nudge and wait.
+      if (TURNSTILE_KEY && !sessionId && !getTurnstileToken()) {
+        ensureTurnstile();
+        if (turnstileBox) turnstileBox.hidden = false; // re-show if hidden (e.g. expired token)
+        addSystem('Please complete the quick verification above, then send again.');
+        return;
+      }
+
+      busy = true;
+      sendBtn.disabled = true;
+
+      const ts = Date.now();
+      history.push({ role: 'user', content: text, ts });
+      addBubble('user', format(text), ts);
+      save();
+      showTyping();
+
+      // "Type it to Rebi" inventory search, from ANY entry point. A filter-y
+      // (non-question) message re-drives the grid (or navigates to it) via
+      // /api/search BEFORE the chat turn — so basePayload (which reads
+      // location.search) grounds the reply on the applied set. AWAITED so the URL
+      // has moved first. The chatbot streaming core is never touched; only the
+      // filter URL moves. A question leaves the grid alone and just gets a
+      // grounded answer.
+      if (!looksLikeQuestion(text)) {
+        if (activeContext?.kind === 'compare') {
+          // COMPARE role: a decision criterion must NOT run the generic inventory
+          // search (which would abandon the compared cars). Rank the compared cars
+          // and open the winner instead. Only an EXPLICIT fresh-search intent may
+          // release the role; anything else grounds on the compared cars.
+          const decision = await tryCompareDecision(text);
+          if (decision === 'navigated') return; // announced + opening the listing
+          if (decision === 'unmatched' && looksLikeFreshSearch(text)) {
+            const outcome = await applyInventorySearch(text);
+            if (outcome === 'navigated') return;
+          }
+          // 'grounded' (and unmatched-but-not-a-fresh-search) → fall through to the
+          // normal grounded chat turn on the compared cars. No generic search.
+        } else {
+          const outcome = await applyInventorySearch(text);
+          // Off-grid apply navigates to the inventory — the page is unloading, so
+          // there's no in-page chat turn to run; the filtered grid is the answer.
+          if (outcome === 'navigated') return;
+        }
+      }
+
+      const payload = basePayload();
+      const wantStream = USE_STREAM && (status === 'ai_active' || status === 'closed');
+
+      try {
+        const res = await postChat(wantStream ? { ...payload, stream: true } : payload);
+        const ct = res.headers.get('Content-Type') || '';
+        if (ct.includes('text/event-stream')) {
+          await handleStream(res, payload);
+        } else {
+          hideTyping();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data: any = await res.json().catch(() => ({}));
+          if (res.ok) handleJson(data);
+          else handleJson(data.error ? data : { error: 'Sorry, something went wrong. Please try again.' });
+        }
+      } catch {
+        hideTyping();
+        addBubble('error', 'Network error — please check your connection and try again.');
+      } finally {
+        busy = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    };
+
+    // --- Contact submission ---
+    contactForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const value = (contactInput?.value || '').trim();
+      if (!value) { hideContactPrompt(); return; }
+      hideContactPrompt();
+      try {
+        const res = await postChat(sessionId ? { sessionId, contact: value } : { contact: value });
+        await res.json().catch(() => ({}));
+      } catch { /* best-effort */ }
+      addSystem("Thanks — our team has your details and will follow up if you're away.");
+    });
+
+    // --- Panel open/close + sync ---
+    const syncOnOpen = async () => {
+      if (!sessionId) return;
+      const data = await pollFetch(0);
+      if (!data || !data.status) return;
+      status = data.status;
+      if (status === 'escalated' || status === 'human_active') {
+        renderFromServer(data.messages);
+        startPolling();
+        if (status === 'escalated' && !data.messages.some((m) => m.role === 'human')) showContactPrompt();
+      } else if (history.length === 0 && data.messages.length > 0) {
+        // Returning visitor whose client history was cleared — rehydrate.
+        renderFromServer(data.messages);
+      } else {
+        lastId = data.lastId;
+      }
+    };
+
+    // Launcher badge: a conversation is waiting behind a hidden panel.
+    const updateBadge = () => {
+      if (badge) badge.hidden = !(panel.hidden && (sessionId || history.length > 0));
+    };
+
+    // --- End-chat confirmation dialog ---
+    let confirmHandoff = false;
+
+    const closeConfirm = (refocus = true) => {
+      if (confirmEl) confirmEl.hidden = true;
+      if (refocus) closeBtn.focus(); // back to the X that opened it
+    };
+
+    const openConfirm = () => {
+      if (!confirmEl || !confirmPrimary || !confirmSecondary) { closePanel(); return; } // graceful fallback
+      // Nothing to end (no session, nothing typed — greeting only) → X just minimises.
+      // Gate on sessionId, not local history alone, so a returning visitor whose
+      // transcript is still rehydrating can never bypass the confirmation.
+      if (!sessionId && history.length === 0) { closePanel(); return; }
+      confirmHandoff = status === 'escalated' || status === 'human_active';
+      if (confirmTitle) confirmTitle.textContent = confirmHandoff
+        ? 'A team member is being connected'
+        : 'End this chat?';
+      if (confirmSub) confirmSub.textContent = confirmHandoff
+        ? 'If you end the chat now you may miss their reply.'
+        : 'This will clear the conversation and start fresh next time.';
+      confirmPrimary.textContent = confirmHandoff ? 'Minimise instead' : 'Download & end chat';
+      confirmSecondary.textContent = confirmHandoff ? 'End chat anyway' : 'End chat';
+      confirmPrimary.disabled = false;
+      confirmSecondary.disabled = false;
+      confirmEl.hidden = false;
+      confirmPrimary.focus();
+    };
+
+    // Full reset + hide: reuses newChat() (storage, state, Turnstile) — closePanel
+    // clears the badge and any dialog state.
+    const endChat = () => {
+      closeConfirm(false);
+      newChat();
+      closePanel();
+    };
+
+    const openPanel = () => {
+      document.body.classList.add('reb-dreaming');
+      clearGreetingTimer(); // clear any stale timer if openPanel is re-entered before it fired
+      panel.hidden = false;
+      root.classList.add('reb-open');
+      launcher.setAttribute('aria-expanded', 'true');
+      // Fresh/primed open (no conversation yet) → typing indicator, then greeting.
+      // Returning to an in-progress chat → render immediately, no fake typing.
+      // (syncOnOpen may later re-render authoritatively from the server, which
+      // cancels the pending timer via renderFromServer/renderHistory.)
+      if (history.length === 0) renderGreetingWithTyping();
+      else renderHistory();
+      if (TURNSTILE_KEY && !sessionId) ensureTurnstile();
+      syncOnOpen();
+      updateBadge();
+      setTimeout(() => input.focus(), 50);
+    };
+    const closePanel = () => {
+      document.body.classList.remove('reb-dreaming');
+      // Cancel a pending typing→greeting reveal and clear any lingering dots so we
+      // never leave a dangling indicator or pop a greeting into the closed panel.
+      clearGreetingTimer();
+      hideTyping();
+      // Abandoned primed open: the visitor opened a context-primed chat but never
+      // sent a message. Discard the context so a later plain launcher open shows
+      // Rebi's default greeting, not the stale primed one. Only when unengaged —
+      // once a message exists (history.length > 0) the context is intended
+      // continuity for an in-progress primed conversation and must persist.
+      if (activeContext && history.length === 0) {
+        activeContext = null;
+        try { sessionStorage.removeItem(CONTEXT_KEY); } catch { /* ignore */ }
+      }
+      panel.hidden = true;
+      root.classList.remove('reb-open');
+      launcher.setAttribute('aria-expanded', 'false');
+      closeConfirm(false); // never leave a stale dialog for the next open
+      stopDictation(); // don't keep the mic live behind a hidden panel
+      updateBadge();
+      launcher.focus();
+    };
+    const toggle = () => (panel.hidden ? openPanel() : closePanel());
+
+    launcher.addEventListener('click', toggle);
+    closeBtn.addEventListener('click', openConfirm); // X → confirm end-chat (minimise is the chevron)
+    minimiseBtn?.addEventListener('click', closePanel);
+
+    // Delegated listener for priming triggers anywhere on the page (e.g. the
+    // per-listing "Ask about this car" button, the compare tray's "Ask AI").
+    // Same precedent as ContactModal / CompareTray: the wiring lives here, the
+    // trigger is just declarative markup (`data-rebi-open data-rebi-kind
+    // data-rebi-ref | data-rebi-refs data-rebi-title`). Sets the active context
+    // and opens the panel with the primed greeting.
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      const trigger = target?.closest?.('[data-rebi-open]') as HTMLElement | null;
+      if (!trigger) return;
+      e.preventDefault();
+      const kind = trigger.getAttribute('data-rebi-kind') || 'listing';
+      // A trigger carries either one `data-rebi-ref` (listing) or a comma-joined
+      // `data-rebi-refs` (compare); normalise both into a trimmed, non-empty array.
+      const single = trigger.getAttribute('data-rebi-ref') || '';
+      const multi = trigger.getAttribute('data-rebi-refs') || '';
+      const refs = (multi ? multi.split(',') : single ? [single] : [])
+        .map((r) => r.trim())
+        .filter(Boolean);
+      const title = trigger.getAttribute('data-rebi-title') || '';
+      if (!refs.length) return;
+      setActiveContext(kind, refs, title);
+      if (panel.hidden) {
+        openPanel(); // renders the primed greeting via currentGreeting()
+      } else {
+        renderHistory(); // already open — refresh so the primed greeting shows
+      }
+    });
+
+    // Homepage grid guard — #inventory-results exists ONLY on the homepage. The
+    // search context drives the grid there; off-homepage it's conversational-only.
+    const gridPresent = () => !!document.getElementById('inventory-results');
+
+    // The SearchDock (hero) drives the grid via applyFilterUrl, then asks Rebi to
+    // slide in grounded on the on-screen results via this decoupled DOM event —
+    // NO action channel, NO SSE change, the streaming core is untouched. `ref` is
+    // the serialized filter string (server grounds on it); `opening` is the
+    // client-only greeting (never sent — no injection).
+    document.addEventListener('reb:search', (e) => {
+      const detail = (e as CustomEvent).detail || {};
+      const ref: string = typeof detail.ref === 'string' ? detail.ref : '';
+      const opening: string = typeof detail.opening === 'string' ? detail.opening : '';
+      // A search always primes with exactly one ref (may be '' → server drops it,
+      // Rebi just chats). Pass the composed opening through as the `title`.
+      activeContext = { kind: 'search', refs: [ref], opening: buildOpening('search', opening) };
+      try { sessionStorage.setItem(CONTEXT_KEY, JSON.stringify(activeContext)); } catch { /* ignore */ }
+      if (panel.hidden) openPanel();
+      else renderHistory();
+    });
+
+    confirmX?.addEventListener('click', () => closeConfirm());
+    confirmEl?.addEventListener('click', (e) => {
+      if (e.target === confirmEl) closeConfirm(); // backdrop only — card clicks don't dismiss
+    });
+    confirmPrimary?.addEventListener('click', async () => {
+      if (confirmHandoff) { closeConfirm(false); closePanel(); return; } // "Minimise instead"
+      confirmPrimary.disabled = true; // guard against double-click during the await
+      if (confirmSecondary) confirmSecondary.disabled = true;
+      try { await downloadTranscript(); } catch { /* still end the chat */ }
+      endChat(); // must run AFTER the download — newChat() nulls the sessionId it needs
+    });
+    confirmSecondary?.addEventListener('click', () => endChat());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (confirmEl && !confirmEl.hidden) { closeConfirm(); return; } // dialog first
+      if (!panel.hidden) closePanel();
+    });
+
+    // --- Focus trap (modal semantics) ---
+    // Active only while the panel is open. Keeps Tab/Shift+Tab within the panel;
+    // when the confirm overlay is open it scopes to that card instead (the confirm
+    // already drives its own initial focus — this just fences the loop, no double
+    // management). ESC is handled above; this is Tab-only.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || panel.hidden) return;
+      const scope = confirmEl && !confirmEl.hidden ? confirmEl : panel;
+      const focusable = Array.from(
+        scope.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || !scope.contains(active)) { e.preventDefault(); last.focus(); }
+      } else {
+        if (active === last || !scope.contains(active)) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    updateBadge(); // returning visitor: show the badge on page load
+
+    // Resume polling promptly when the tab returns to the foreground.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && pollTimer) pollOnce();
+    });
+
+    // Auto-grow textarea.
+    const autogrow = () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 96) + 'px';
+    };
+    input.addEventListener('input', autogrow);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      stopDictation(); // finalise/stop the mic when the message is sent
+      const text = input.value.trim();
+      if (!text) return;
+      soundSend(); // "sent" blip (message tones — muteable via #reb-speaker)
+      input.value = '';
+      autogrow();
+      send(text);
+    });
+
+    // --- Voice dictation (Web Speech API) ---
+    // Feature-detected: the mic button stays hidden in browsers without support
+    // (e.g. Firefox), so there's never a dead control.
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SR && micBtn) {
+      const recog: any = new SR();
+      recog.lang = 'en-AU';
+      recog.interimResults = true;
+      recog.continuous = true; // keep listening across pauses until the visitor taps off
+
+      // `listening` is the visitor's intent (mic on until they tap off / panel
+      // closes / form submits); `starting` guards the async start() gap. The
+      // recording visual follows `listening`, so it stays lit through pauses and
+      // keep-alive restarts — never flickering while the visitor gathers a thought.
+      let listening = false;
+      let starting = false;
+      let micBase = '';
+      let lastRestart = 0;
+      const setRec = (on: boolean) => micBtn.classList.toggle('reb-recording', on);
+
+      const startRecog = () => {
+        if (starting) return; // guard against a double-start while starting
+        starting = true;
+        try { recog.start(); } catch { starting = false; }
+      };
+
+      stopDictation = () => {
+        if (!listening && !starting) return;
+        listening = false; // clear intent first so onend won't keep-alive restart
+        setRec(false);
+        try { recog.stop(); } catch { /* ignore */ }
+      };
+
+      recog.onstart = () => { starting = false; };
+      recog.onend = () => {
+        starting = false;
+        // Keep-alive: continuous recognition still ends on Chrome's ~60s silent
+        // socket drop (and some pauses). Restart if the visitor hasn't tapped off
+        // and the panel's still open — a storm guard bails if it just restarted.
+        if (listening && !panel.hidden) {
+          const now = performance.now();
+          if (now - lastRestart < 1000) { listening = false; setRec(false); return; }
+          lastRestart = now;
+          micBase = input.value; // fold the transcript so far into the base (new session starts fresh)
+          startRecog();
+          return;
+        }
+        setRec(false);
+      };
+      recog.onerror = async (e: any) => {
+        // 'no-speech' / 'aborted' are expected/benign and stay silent — onend's
+        // keep-alive decides whether to resume. Terminal errors clear `listening`
+        // so onend won't restart into a failure loop, and surface a precise notice.
+        if (e.error === 'no-speech' || e.error === 'aborted') return;
+        listening = false;
+        setRec(false);
+        switch (e.error) {
+          case 'not-allowed': {
+            // A persisted block vs. a one-off start failure read differently.
+            let denied = false;
+            try {
+              const p = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+              denied = p.state === 'denied';
+            } catch { /* permissions API unavailable — treat as non-persistent */ }
+            addSystem(denied
+              ? 'Microphone access is blocked — you can enable it in your browser settings, or just type.'
+              : "Voice input didn't start. Check the mic icon in the URL bar to allow it here.");
+            return;
+          }
+          case 'network':
+            addSystem("Voice input needs an internet connection to Google's speech service — please try again or type instead.");
+            return;
+          case 'service-not-allowed':
+            addSystem("Voice input isn't available in this browser — please type instead.");
+            return;
+          default:
+            addSystem("Voice input didn't work. Please type your message instead.");
+        }
+      };
+      recog.onresult = (e: any) => {
+        let t = '';
+        for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+        const sep = micBase && !/\s$/.test(micBase) ? ' ' : '';
+        input.value = (micBase + sep + t).slice(0, 2000); // respect the textarea maxlength
+        autogrow();
+      };
+
+      micBtn.addEventListener('click', () => {
+        if (listening || starting) { stopDictation(); return; } // tap-to-stop keeps the transcript
+        micBase = input.value; // dictation appends to whatever's already typed
+        listening = true;
+        setRec(true);
+        startRecog();
+      });
+
+      micBtn.hidden = false; // reveal only where the API exists
+    }
+
+    // --- Message tones (Web Audio) — extracted to ./rebi-sounds.ts for easy edits.
+    // createRebiSounds() wires the #reb-speaker toggle (mute persistence + a11y
+    // labels) and returns the two tone players. Assigned into the outer `let`s at
+    // the SAME point in execution as before, so behaviour is byte-identical (same
+    // key, same tones, same triggers).
+    ({ soundSend, soundRebi } = createRebiSounds());
+  }
+</script>

@@ -1,0 +1,79 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, vehicles, brands, icon } from './_shell/data';
+export const prerender = false;
+// One template; the active brand would come from ?brand= / a route param in the
+// real build. Demo uses Subaru.
+const brand = 'Subaru';
+const brandStock = vehicles.filter((v) => v.make === brand);
+const models = ['Outback', 'Forester', 'Crosstrek', 'WRX'];
+---
+<Shell title={`${brand} — Rebirth Auto`} active="Brands">
+  <!-- BRAND HERO -->
+  <section class="site-container section" style="padding-block:44px 20px">
+    <div class="card" style="overflow:hidden; background:var(--ink); color:#fff; border:0; padding:44px 48px; display:grid; grid-template-columns:1.3fr .7fr; gap:32px; align-items:center">
+      <div>
+        <span class="eyebrow" style="color:#7FE6DA">Brand hub</span>
+        <h1 class="rf-h1" style="color:#fff; margin-top:12px">{brand}</h1>
+        <p style="color:#C4D0E0; font-size:16px; margin-top:12px; max-width:52ch">All-wheel-drive capability and 5-star safety, built for regional roads. Explore the {brand} range, current offers and stock in the yard.</p>
+        <div class="rf-quick" style="margin-top:18px">
+          <a class="rf-action" href={`${BASE}/offers`} style="background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.25)"><span class="spark" set:html={icon('star',13)}></span> {brand} offers</a>
+          <a class="rf-action" href={`${BASE}/test-drive`} style="background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.25)"><span class="spark" set:html={icon('play',13)}></span> Test drive a {brand}</a>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div class="rf-row" style="justify-content:space-between; font-size:14px; color:#C4D0E0; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.12)"><span>In stock</span><b style="color:#fff">{brandStock.length + 6}</b></div>
+        <div class="rf-row" style="justify-content:space-between; font-size:14px; color:#C4D0E0; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.12)"><span>From</span><b style="color:#fff">$34,990</b></div>
+        <div class="rf-row" style="justify-content:space-between; font-size:14px; color:#C4D0E0; padding:8px 0"><span>ANCAP</span><b style="color:#fff">5-star</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODELS -->
+  <section class="site-container section-tight">
+    <h2 class="rf-h2" style="margin-bottom:18px">The {brand} range</h2>
+    <div class="rf-grid-4">
+      {models.map((m) => (
+        <a href={`${BASE}/#inventory`} class="card card-lift" style="padding:20px; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:8px">
+          <span class="brand-mark" set:html={icon('car',18)}></span>
+          <b style="font-family:var(--font-display); font-size:16px; margin-top:4px">{brand} {m}</b>
+          <span class="rf-row" style="gap:6px; font-size:12.5px; color:var(--teal-deep); font-weight:600">View stock <span set:html={icon('arrow',14)}></span></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- BRAND INVENTORY TEASER (facet overlap) -->
+  <section class="site-container section-tight">
+    <div class="rf-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:20px">
+      <h2 class="rf-h2">{brand} in the yard</h2>
+      <a href={`${BASE}/finance`} class="btn btn-ghost btn-sm"><span set:html={icon('calc',15)}></span> {brand} repayments</a>
+    </div>
+    <div class="rf-grid-4">
+      {brandStock.map((v) => <VehicleCard v={v} />)}
+    </div>
+  </section>
+
+  <!-- OTHER BRANDS (switch template) -->
+  <section class="site-container section-tight">
+    <div class="card" style="padding:22px 26px">
+      <div class="rf-mono-eyebrow" style="margin-bottom:14px">Switch brand</div>
+      <div class="rf-quick">{brands.map((b) => <a href={`${BASE}/brand`} class={`chip ${b === brand ? 'chip-teal' : ''}`} style="text-decoration:none">{b}</a>)}</div>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Which Subaru is best for towing a small boat and gravel roads?"
+      reply="The Outback is your pick — full-time symmetrical AWD, 213mm clearance and a 2,000kg braked tow rating handle the boat ramp and the gravel run comfortably. There's one in stock now. Want repayments or a test drive?"
+      actions={[
+        { label: 'See the Outback', href: `${BASE}/#inventory`, icon: 'car' },
+        { label: 'Work out repayments', href: `${BASE}/finance`, icon: 'calc' },
+        { label: 'Book a test drive', href: `${BASE}/test-drive`, icon: 'play' },
+      ]}
+    />
+  </section>
+</Shell>

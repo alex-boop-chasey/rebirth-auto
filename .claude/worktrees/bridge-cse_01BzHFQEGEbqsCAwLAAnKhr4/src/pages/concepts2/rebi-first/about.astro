@@ -1,0 +1,74 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="About us — Rebirth Auto" active="About us">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <div class="rf-grid-2" style="align-items:center">
+      <div>
+        <span class="eyebrow">Our story</span>
+        <h1 class="rf-h1" style="margin-top:14px">A local yard, with modern tools.</h1>
+        <p class="lead" style="margin-top:16px">Since 1978 (dummy), we've sold cars the same way — honestly, to our neighbours. Rebi is just the newest member of the team: it does the legwork so our people can do the handshake.</p>
+        <div class="rf-quick" style="margin-top:18px">
+          <a class="rf-action" href={`${BASE}/careers`}><span class="spark" set:html={icon('briefcase',13)}></span> Work with us</a>
+          <a class="rf-action" href={`${BASE}/contact`}><span class="spark" set:html={icon('pin',13)}></span> Find our yard</a>
+        </div>
+      </div>
+      <div class="ai-summary" style="padding:26px 28px">
+        <div class="rf-grid-2" style="gap:18px">
+          {[['1978','Est. (dummy)'],['12','Franchise brands'],['48','Local team'],['4.8★','1,200+ reviews']].map(([n, l]) => (
+            <div><div style="font-family:var(--font-display); font-weight:700; font-size:30px">{n}</div><div class="faint" style="font-size:12.5px">{l}</div></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-3">
+      {[
+        ['shield','No-pressure, always','Rebi never pushes and neither do we. Book a test drive when you\'re ready — not before.'],
+        ['users','Local people','A Bundaberg team who live where they sell. The handshake still matters.'],
+        ['spark','Honestly modern','Real drive-away prices, instant repayments, AI that\'s grounded in facts — not sales spin.'],
+      ].map(([ic, h, p]) => (
+        <div class="card" style="padding:24px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px">{h}</h3>
+          <p class="muted" style="margin-top:8px; font-size:14px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- TEAM + COMMUNITY + LOCATIONS TEASER -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-2">
+      <div class="card" style="padding:26px 28px">
+        <div class="rf-mono-eyebrow" style="margin-bottom:14px">The team</div>
+        <div class="rf-quick">
+          {['BT','JM','SP','KL','RW','AH'].map((i) => <span class="avatar" style="width:46px; height:46px">{i}</span>)}
+        </div>
+        <p class="muted" style="font-size:14px; margin-top:14px">Sales, service, parts and finance — all under one roof, all local.</p>
+      </div>
+      <a href={`${BASE}/contact`} class="card card-lift" style="padding:26px 28px; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:10px">
+        <div class="rf-mono-eyebrow">In the community</div>
+        <p class="muted" style="font-size:14px">Proud (dummy) sponsors of local junior sport and the regional show. Drop by the yard on the Bruce Highway — <b style="color:var(--teal-deep)">see hours &amp; map →</b></p>
+      </a>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Are you actually local, or just another big group?"
+      reply="Local — a Bundaberg team that's been at it since 1978 (dummy). We use modern tools like me to make buying easier, but every car is handed over by a real person here in town."
+      actions={[
+        { label: 'Find our yard', href: `${BASE}/contact`, icon: 'pin' },
+        { label: 'Careers', href: `${BASE}/careers`, icon: 'briefcase' },
+      ]}
+    />
+  </section>
+</Shell>

@@ -1,0 +1,82 @@
+---
+/**
+ * AuthLayout — light, on-brand shell for the auth surface (login / signup /
+ * account / check-email / reset-password).
+ *
+ * Re-skins the astro-users-demo dark Layout to THIS site's light theme: the
+ * `bg-slate-50` page, white cards, slate inks, emerald accent and the
+ * `.site-container` gutters — the same visual vocabulary as src/pages/index.astro.
+ * There is deliberately NO `prefers-color-scheme: dark` block: this is a
+ * light-only site.
+ *
+ * Brand name comes from dealerConfig (config-as-data) — no hardcoded dealer
+ * literal here.
+ */
+import '../styles/global.css';
+import { dealerConfig } from '../config/dealer';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Set noindex on transient/auth pages we don't want in search results. */
+  noindex?: boolean;
+}
+
+const { title, description = '', noindex = false } = Astro.props;
+
+// Two-tone brand mark, config-driven: first word inked, remainder muted.
+const brand = dealerConfig.identity.name;
+const [brandLead, ...brandRestParts] = brand.split(' ');
+const brandRest = brandRestParts.join(' ');
+const year = new Date().getFullYear();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex" />}
+  </head>
+
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <div class="site-container flex min-h-screen flex-col">
+      <!-- Header — matches src/pages/index.astro -->
+      <header class="flex items-center justify-between py-6">
+        <a href="/" class="text-base font-semibold tracking-tight text-slate-900">
+          {brandLead}{brandRest && <span class="text-slate-400"> {brandRest}</span>}
+        </a>
+        <nav class="flex items-center gap-6 text-sm">
+          <a href="/#inventory" class="text-slate-500 transition hover:text-slate-900">Inventory</a>
+          {
+            dealerConfig.accounts.enabled && (
+              <a href="/account" class="text-slate-500 transition hover:text-slate-900">
+                {dealerConfig.accounts.copy.navLabel}
+              </a>
+            )
+          }
+        </nav>
+      </header>
+
+      <main id="main-content" tabindex="-1" class="flex-1">
+        <slot />
+      </main>
+
+      <!-- Footer — matches src/pages/index.astro -->
+      <footer class="mt-24 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
+        © {year} {brand} · All vehicles subject to availability.
+      </footer>
+    </div>
+
+    <slot name="after" />
+  </body>
+</html>

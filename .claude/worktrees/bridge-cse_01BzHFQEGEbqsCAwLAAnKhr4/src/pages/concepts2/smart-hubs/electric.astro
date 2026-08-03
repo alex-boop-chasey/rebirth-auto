@@ -1,0 +1,71 @@
+---
+import Layout from './_shell/Layout.astro';
+import Crumbs from './_shell/Crumbs.astro';
+import HubBar from './_shell/HubBar.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, icon, base } from './_shell/data';
+export const prerender = false;
+const evStock = vehicles.filter((v) => v.fuel === 'Electric' || v.fuel === 'Hybrid');
+---
+<Layout title="Electric & hybrid hub — Smart Hubs" active="browse" dockPrompt="Is an EV right for your drive? Ask me.">
+  <section class="sh-wrap" style="padding-block:22px 0"><Crumbs items={[['Browse', base + '/browse'], ['Electric & hybrid']]} /></section>
+  <section class="sh-wrap" style="padding-block:14px 8px"><HubBar hubKey="browse" current={base + '/electric'} /></section>
+
+  <section class="sh-wrap sh-hero" style="padding-block:14px 20px">
+    <div class="eyebrow"><span set:html={icon('leaf',13)}></span> Electric hub · a fuel facet, expanded</div>
+    <h1 class="sh-h1" style="font-size:clamp(28px,3.4vw,40px)">Is an EV right for your drive?</h1>
+    <p class="sh-sub">This is the “Electric” fuel filter given room to teach — range, charging and running
+      costs — then it drops you back into filtered stock.</p>
+    <div class="sh-jumprow" style="margin-top:16px">
+      <a href={base + '/rebi'} class="btn btn-primary btn-sm"><span set:html={icon('spark',15)}></span> Ask Rebi: EV vs petrol for me</a>
+      <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('grid',15)}></span> Back to all stock</a>
+    </div>
+  </section>
+
+  <!-- why EV + running-cost compare -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-2">
+      <div class="card sh-panel">
+        <div class="sh-tile-ic" set:html={icon('bolt',22)}></div>
+        <h2 class="sh-h2">Why go electric</h2>
+        <ul style="margin:10px 0 0; padding-left:18px; font-size:14px; color:var(--ink-soft); line-height:1.7">
+          <li>Lower running cost per km than petrol</li>
+          <li>Instant torque, one-pedal driving</li>
+          <li>Home charging = wake up “full” each day</li>
+          <li>V2L on some models powers tools &amp; campsites</li>
+        </ul>
+      </div>
+      <div class="card sh-panel">
+        <div class="sh-tile-ic" set:html={icon('range',22)}></div>
+        <h2 class="sh-h2">Running cost — EV vs petrol</h2>
+        <div style="margin-top:14px">
+          {[['Electric (home charge)','~$4.20 / 100km','82%','var(--teal)'],['Petrol SUV','~$16.50 / 100km','100%','var(--amber)']].map(([l,v,w,c]) => (
+            <div style="margin-bottom:12px">
+              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px"><span style="color:var(--ink-soft)">{l}</span><b>{v}</b></div>
+              <div style="height:9px; background:var(--bg-2); border-radius:99px; overflow:hidden"><div style={`height:100%; width:${w}; background:${c}; border-radius:99px`}></div></div>
+            </div>
+          ))}
+          <p class="sh-note" style="margin-top:8px">Indicative demo figures. Actual cost varies with tariff and driving.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- charging basics -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div class="sh-grid sh-cols-3">
+      {[['plug','Home (AC)','7kW wallbox — full overnight for most cars.'],['bolt','Public (DC)','50–350kW — 10→80% while you grab a coffee.'],['leaf','Incentives','Rego &amp; stamp-duty concessions vary by state (demo note).']].map(([ic,t,d]) => (
+        <div class="card sh-panel"><span set:html={icon(ic,20)} style="color:var(--teal-deep)"></span><b style="display:block; margin:10px 0 4px; font-size:15px">{t}</b><p style="font-size:13.5px; color:var(--ink-soft)">{d}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <!-- EV/hybrid stock teaser -->
+  <section class="sh-wrap section-tight" style="padding-top:0">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:16px">
+      <h2 class="sh-h2">Electric &amp; hybrid in stock</h2>
+      <a href={base + '/browse'} class="sh-jump"><span class="sh-jic" set:html={icon('filter',15)}></span> See all EV/hybrid</a>
+    </div>
+    <div class="sh-grid sh-cols-3">{evStock.map((v) => <VehicleCard v={v} />)}</div>
+  </section>
+</Layout>

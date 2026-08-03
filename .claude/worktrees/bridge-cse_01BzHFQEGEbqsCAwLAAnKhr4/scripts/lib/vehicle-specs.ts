@@ -1,0 +1,291 @@
+/**
+ * scripts/lib/vehicle-specs.ts
+ *
+ * DEMO-ONLY TOOLING — shared mapper that turns loose `details[]` key/value rows
+ * into the typed `vehicleSpecs` fields. Single source of truth reused by the
+ * migration (`migrate-details-to-specs.ts`) and the seed/import scripts so the
+ * label-matching and enum-normalisation logic can't drift between them.
+ *
+ * Design: a label maps to a spec field by case-insensitive substring; a value
+ * normalises to a lowercase enum code (the code we filter by in URL params). If
+ * a value can't be confidently normalised it is SKIPPED and a warning is
+ * emitted — never guessed. The failure mode is "field left empty" (a human can
+ * fix it in Studio), not "wrong data written".
+ */
+
+export type VehicleSpecField =
+  | 'bodyType'
+  | 'transmission'
+  | 'fuelType'
+  | 'driveType'
+  | 'seatCount'
+  | 'year'
+  | 'odometer'
+  | 'condition';
+
+/** A loose view of a `details[]` array member — only the fields we read. */
+export interface DetailLike {
+  label?: string;
+  value?: string;
+  valueNumber?: number;
+  valueBoolean?: boolean;
+  valueDate?: string;
+  valueType?: string;
+}
+
+/** One confident mapping from a detail row to a typed spec field. */
+export interface SpecEntry {
+  field: VehicleSpecField;
+  /** Human-readable source value from `details[]`, for diff/warn output. */
+  raw: string;
+  /** Normalised typed value written to `vehicleSpecs`. */
+  typed: string | number;
+}
+
+/** Plain object form of the typed fields. */
+export type VehicleSpecs = Partial<{
+  bodyType: string;
+  transmission: string;
+  fuelType: string;
+  driveType: string;
+  seatCount: number;
+  year: number;
+  odometer: number;
+  condition: string;
+}>;
+
+// --- Label → field matching --------------------------------------------------
+// Case-insensitive substring. First match wins. Order the number fields so the
+// more specific substrings are checked before the looser ones (e.g. a label
+// only reaches `year` if it wasn't already claimed).
+const LABEL_MATCHERS: ReadonlyArray<{ field: VehicleSpecField; needles: string[] }> = [
+  { field: 'bodyType', needles: ['body', 'style'] },
+  { field: 'transmission', needles: ['transmission', 'gearbox'] },
+  { field: 'fuelType', needles: ['fuel'] },
+  { field: 'driveType', needles: ['drive'] },
+  { field: 'seatCount', needles: ['seat'] },
+  { field: 'odometer', needles: ['odometer', 'mileage', 'kilometres'] },
+  { field: 'year', needles: ['year'] },
+  { field: 'condition', needles: ['condition'] },
+];
+
+/** Map a details label to a spec field, or null if it isn't one we filter on. */
+export function matchSpecField(label: string | undefined): VehicleSpecField | null {
+  if (!label) return null;
+  const l = label.toLowerCase();
+  for (const { field, needles } of LABEL_MATCHERS) {
+    if (needles.some((n) => l.includes(n))) return field;
+  }
+  return null;
+}
+
+// --- Enum normalisation ------------------------------------------------------
+// For each enum field, an ordered list of { code, patterns }. A raw value
+// (lowercased) matches the first code whose any pattern is a substring. The code
+// itself is always an implicit pattern. Order matters where patterns overlap
+// (e.g. SUV before Ute so "sports utility vehicle" isn't caught by "utility").
+type EnumSpec = ReadonlyArray<{ code: string; patterns: string[] }>;
+
+const ENUM_MAPS: Record<'bodyType' | 'transmission' | 'fuelType' | 'driveType' | 'condition', EnumSpec> = {
+  bodyType: [
+    { code: 'suv', patterns: ['suv', 'sports utility'] },
+    { code: 'hatchback', patterns: ['hatch'] },
+    { code: 'sedan', patterns: ['sedan', 'saloon'] },
+    { code: 'ute', patterns: ['ute', 'utility', 'pickup', 'pick-up', 'cab chassis', 'dual cab', 'crew cab', 'king cab', 'single cab'] },
+    { code: 'wagon', patterns: ['wagon', 'estate'] },
+    { code: 'van', patterns: ['van', 'people mover'] },
+    { code: 'coupe', patterns: ['coupe', 'coupé'] },
+    { code: 'convertible', patterns: ['convertible', 'cabriolet', 'cabrio', 'roadster'] },
+  ],
+  transmission: [
+    // 'reduction gear' is the single-speed transmission EVs report; an EV is
+    // operationally automatic (no manual gear selection), so it normalises to
+    // 'auto' — this keeps EVs in the transmission filter, which is what a buyer
+    // expects. It carries no manual signal, so the ambiguity guard is unaffected.
+    { code: 'auto', patterns: ['auto', 'cvt', 'dsg', 'dct', 'tiptronic', 'reduction gear'] },
+    { code: 'manual', patterns: ['manual'] },
+  ],
+  fuelType: [
+    { code: 'diesel', patterns: ['diesel'] },
+    // Hybrid MUST be tested before electric: "petrol-electric" (and its space/
+    // slash variants) is a hybrid drivetrain but contains the substring
+    // "electric", so it would otherwise fall through to the generic electric
+    // pattern. Specific-before-generic keeps it deterministic.
+    {
+      code: 'hybrid',
+      patterns: ['hybrid', 'petrol-electric', 'petrol electric', 'petrol/electric'],
+    },
+    { code: 'electric', patterns: ['electric'] },
+    { code: 'lpg', patterns: ['lpg', 'autogas'] },
+    { code: 'petrol', patterns: ['petrol', 'unleaded', 'pulp', 'gasoline'] },
+  ],
+  driveType: [
+    { code: 'awd', patterns: ['awd', 'all wheel', 'all-wheel'] },
+    { code: '4wd', patterns: ['4wd', '4x4', '4 wd', 'four wheel'] },
+    // '4x2' / '4 x 2' is Australian notation for a 2WD variant of a model also
+    // sold as 4x4 (common on utes). It is checked AFTER 4wd and matches no 4wd
+    // pattern, so specific-before-generic ordering keeps it deterministically 2wd.
+    { code: '2wd', patterns: ['2wd', '2 wd', '4x2', '4 x 2', 'rwd', 'fwd', 'rear wheel', 'front wheel', 'two wheel'] },
+  ],
+  condition: [
+    { code: 'demo', patterns: ['demo', 'demonstrator'] },
+    { code: 'used', patterns: ['used', 'pre-owned', 'preowned', 'second hand', 'second-hand'] },
+    { code: 'new', patterns: ['new'] },
+  ],
+};
+
+// Transmission signals used to detect genuinely-ambiguous compound values.
+const TRANSMISSION_AUTO_SIGNAL = /auto|cvt|dsg|dct|tiptronic/;
+const TRANSMISSION_MANUAL_SIGNAL = /manual/;
+
+function normaliseEnum(field: keyof typeof ENUM_MAPS, raw: string): string | null {
+  const r = raw.toLowerCase().trim();
+  if (!r) return null;
+  // Ambiguity guard: a transmission value carrying BOTH an automatic and a
+  // manual signal (e.g. "automated manual", "automatic with manual mode") can't
+  // be resolved by ordering — neither answer is clearly correct — so bail to a
+  // WARN rather than guess. Plain "…automatic" / "…manual" values are unaffected.
+  if (
+    field === 'transmission' &&
+    TRANSMISSION_AUTO_SIGNAL.test(r) &&
+    TRANSMISSION_MANUAL_SIGNAL.test(r)
+  ) {
+    return null;
+  }
+  for (const { code, patterns } of ENUM_MAPS[field]) {
+    if (code === r || patterns.some((p) => r.includes(p))) return code;
+  }
+  return null;
+}
+
+// --- Base-colour matching ----------------------------------------------------
+// Maps a manufacturer paint NAME (e.g. "Snowflake White Pearl Mica") to a base
+// colour family code — a `vehicleSpecs.colour` value drawn from COLOUR_CODES in
+// src/lib/listings-query.ts, mirrored here so this script lib stays free of Astro
+// imports. Detection is by base-colour WORD substring, specific-before-generic
+// (same discipline as normaliseEnum above). If a paint name carries NO recognised
+// base-colour word it can't be confidently classified: we return null so the
+// caller emits a WARN and leaves the field unset. Determinism over guessing — a
+// human sets those by hand. We deliberately NEVER fall back to 'other'.
+//
+// 'grey' and 'gray' both normalise to the 'grey' code. Order is specific-before-
+// generic to stay deterministic if a name ever carries two base words.
+const BASE_COLOUR_MATCHERS: ReadonlyArray<{ code: string; patterns: string[] }> = [
+  { code: 'white', patterns: ['white'] },
+  { code: 'black', patterns: ['black'] },
+  { code: 'silver', patterns: ['silver'] },
+  { code: 'grey', patterns: ['grey', 'gray'] },
+  { code: 'blue', patterns: ['blue'] },
+  { code: 'red', patterns: ['red'] },
+  { code: 'green', patterns: ['green'] },
+  { code: 'gold', patterns: ['gold'] },
+  { code: 'brown', patterns: ['brown'] },
+  { code: 'orange', patterns: ['orange'] },
+  { code: 'yellow', patterns: ['yellow'] },
+  { code: 'purple', patterns: ['purple'] },
+];
+
+// Owner-confirmed overrides for specific manufacturer paint names that carry NO
+// base-colour word (so the word matchers below would WARN). Keyed by the exact
+// lowercased paint name; the human decision wins, so these are checked first.
+// Extend as new such names surface.
+const PAINT_NAME_OVERRIDES: Readonly<Record<string, string>> = {
+  'gun metallic': 'grey',
+  'metal ash': 'grey',
+  'river rock pearl': 'brown',
+};
+
+/**
+ * Map a manufacturer paint name to a base colour code (a COLOUR_CODES value), or
+ * null when no recognised base-colour word is present (caller should WARN + skip).
+ */
+export function matchBaseColour(paintName: string | undefined | null): string | null {
+  if (!paintName) return null;
+  const p = paintName.toLowerCase().trim();
+  if (PAINT_NAME_OVERRIDES[p]) return PAINT_NAME_OVERRIDES[p];
+  for (const { code, patterns } of BASE_COLOUR_MATCHERS) {
+    if (patterns.some((n) => p.includes(n))) return code;
+  }
+  return null;
+}
+
+// --- Number parsing ----------------------------------------------------------
+/** Prefer the structured number; else strip commas/units from the display value. */
+function parseNumber(d: DetailLike): number | null {
+  if (typeof d.valueNumber === 'number' && Number.isFinite(d.valueNumber)) {
+    return Math.round(d.valueNumber);
+  }
+  if (typeof d.value === 'string') {
+    const cleaned = d.value.replace(/[^0-9.-]/g, '');
+    if (cleaned) {
+      const n = Number(cleaned);
+      if (Number.isFinite(n)) return Math.round(n);
+    }
+  }
+  return null;
+}
+
+/** Best human representation of a detail's source value, for diff/warn output. */
+function rawOf(d: DetailLike): string {
+  if (typeof d.value === 'string' && d.value.trim()) return d.value.trim();
+  if (typeof d.valueNumber === 'number') return String(d.valueNumber);
+  if (typeof d.valueBoolean === 'boolean') return d.valueBoolean ? 'Yes' : 'No';
+  if (typeof d.valueDate === 'string') return d.valueDate;
+  return '';
+}
+
+// --- Public API --------------------------------------------------------------
+export interface DeriveOptions {
+  /** Emitted for a matched label whose value couldn't be normalised. */
+  onWarn?: (message: string) => void;
+}
+
+/**
+ * Derive confident typed spec entries from a listing's `details[]`. Only labels
+ * that map to a spec field AND whose value normalises are returned; unmatched
+ * labels are ignored silently, matched-but-unmappable values emit a warning.
+ */
+export function deriveVehicleSpecs(details: DetailLike[] | undefined, opts: DeriveOptions = {}): SpecEntry[] {
+  const warn = opts.onWarn ?? ((m: string) => console.warn(`WARN: ${m}`));
+  const entries: SpecEntry[] = [];
+  const seen = new Set<VehicleSpecField>();
+
+  for (const d of details ?? []) {
+    const field = matchSpecField(d.label);
+    if (!field) continue;
+    if (seen.has(field)) continue; // first mapped row wins per field
+    const raw = rawOf(d);
+    if (!raw) continue; // empty scaffold row — nothing to map, not a warning
+
+    if (field === 'seatCount' || field === 'year' || field === 'odometer') {
+      const n = parseNumber(d);
+      if (n == null) {
+        warn(`${d.label ?? field}: could not parse a number from "${raw}" — skipped`);
+        continue;
+      }
+      entries.push({ field, raw, typed: n });
+      seen.add(field);
+      continue;
+    }
+
+    // Enum field.
+    const code = normaliseEnum(field, raw);
+    if (code == null) {
+      warn(`${d.label ?? field}: "${raw}" did not match any ${field} code — skipped`);
+      continue;
+    }
+    entries.push({ field, raw, typed: code });
+    seen.add(field);
+  }
+
+  return entries;
+}
+
+/** Convenience: collapse derived entries into a plain `vehicleSpecs` object. */
+export function specsFromDetails(details: DetailLike[] | undefined, opts: DeriveOptions = {}): VehicleSpecs {
+  const specs: VehicleSpecs = {};
+  for (const { field, typed } of deriveVehicleSpecs(details, opts)) {
+    (specs as Record<string, string | number>)[field] = typed;
+  }
+  return specs;
+}

@@ -1,0 +1,19 @@
+---
+/**
+ * Crumbs — breadcrumb wayfinder. Every drill-in page shows its trail back up to
+ * its hub, making the hub → page structure legible on the page itself.
+ * Props: items = [ [label, href?] ... ] ; last item is the current page (no href).
+ */
+import { base } from './data';
+interface Props { items: [string, string?][]; }
+const { items } = Astro.props as Props;
+---
+<nav class="sh-crumbs" aria-label="Breadcrumb">
+  <a href={base + '/'}>Home</a>
+  {items.map(([label, href]) => (
+    <>
+      <span class="sep">/</span>
+      {href ? <a href={href}>{label}</a> : <span style="color:var(--ink)">{label}</span>}
+    </>
+  ))}
+</nav>

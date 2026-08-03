@@ -1,0 +1,137 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, icon } from './_shell/data';
+export const prerender = false;
+---
+<Shell title="Finance & repayments — Rebirth Auto" active="Finance & repayments">
+  <!-- HERO -->
+  <section class="site-container section" style="padding-block:44px 24px">
+    <span class="eyebrow">Finance</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:18ch">Know the weekly number before you fall in love.</h1>
+    <p class="lead" style="margin-top:16px">Move the sliders for an honest, indicative repayment — then ask Rebi to pre-qualify you. No surprises at the desk.</p>
+  </section>
+
+  <!-- CALCULATOR -->
+  <section class="site-container" style="padding-bottom:20px">
+    <div class="rf-grid-2" style="grid-template-columns:1.2fr .8fr; align-items:stretch">
+      <div class="card" style="padding:28px 30px">
+        <div class="rf-row" style="gap:9px; margin-bottom:22px"><span class="brand-mark" set:html={icon('calc',18)}></span><b class="rf-h3">Repayment calculator</b></div>
+
+        <div style="display:flex; flex-direction:column; gap:22px">
+          <div>
+            <label class="rf-lab">Vehicle price <b id="v-price" style="float:right; color:var(--ink)">$52,990</b></label>
+            <input id="s-price" class="rf-slider" type="range" min="10000" max="120000" step="500" value="52990" />
+          </div>
+          <div>
+            <label class="rf-lab">Deposit <b id="v-dep" style="float:right; color:var(--ink)">$5,000</b></label>
+            <input id="s-dep" class="rf-slider" type="range" min="0" max="40000" step="500" value="5000" />
+          </div>
+          <div>
+            <label class="rf-lab">Term <b id="v-term" style="float:right; color:var(--ink)">5 years</b></label>
+            <input id="s-term" class="rf-slider" type="range" min="1" max="7" step="1" value="5" />
+          </div>
+          <div>
+            <label class="rf-lab">Comparison rate <b id="v-rate" style="float:right; color:var(--ink)">7.9% p.a.</b></label>
+            <input id="s-rate" class="rf-slider" type="range" min="4" max="15" step="0.1" value="7.9" />
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-summary" style="padding:28px 30px; display:flex; flex-direction:column; justify-content:center; gap:18px">
+        <div>
+          <div class="rf-mono-eyebrow">Indicative weekly</div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:46px; line-height:1"><span id="out-week">$149</span><span style="font-size:18px; color:var(--ink-soft)">/wk</span></div>
+        </div>
+        <div style="border-top:1px solid var(--line); padding-top:16px">
+          <div class="rf-row" style="justify-content:space-between; font-size:14px; padding:5px 0"><span class="muted">Monthly</span><b id="out-month">$646</b></div>
+          <div class="rf-row" style="justify-content:space-between; font-size:14px; padding:5px 0"><span class="muted">Amount financed</span><b id="out-fin">$47,990</b></div>
+          <div class="rf-row" style="justify-content:space-between; font-size:14px; padding:5px 0"><span class="muted">Total cost of credit</span><b id="out-tot">$58,140</b></div>
+        </div>
+        <a href={`${BASE}/contact`} class="btn btn-primary" style="justify-content:center"><span class="spark" set:html={icon('shield',15)}></span> Get pre-approved</a>
+        <p class="faint" style="font-size:11px; margin:0">Indicative only — not a quote or credit offer. Placeholder rates.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LENDER PANEL + contextual buttons -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-3">
+      {[
+        ['shield','Panel of lenders','We compare across major and specialist lenders to find your fit — one application, multiple options.'],
+        ['clock','Fast pre-approval','Most pre-approvals come back the same business day so you can shop with a firm budget.'],
+        ['doc','Flexible structures','Consumer, commercial, novated and balloon options — Rebi can explain any of them in plain English.'],
+      ].map(([ic, h, p]) => (
+        <div class="card" style="padding:24px">
+          <span class="brand-mark" set:html={icon(ic as string,18)}></span>
+          <h3 class="rf-h3" style="margin-top:12px">{h}</h3>
+          <p class="muted" style="margin-top:8px; font-size:14px">{p}</p>
+        </div>
+      ))}
+    </div>
+    <!-- overlap: finance ↔ offers pre-approval; finance ↔ test-drive -->
+    <div class="rf-quick" style="margin-top:22px">
+      <a class="rf-action" href={`${BASE}/offers`}><span class="spark" set:html={icon('star',13)}></span> See finance offers &amp; specials</a>
+      <a class="rf-action" href={`${BASE}/sell`}><span class="spark" set:html={icon('tag',13)}></span> Trade-in to lower the amount</a>
+      <a class="rf-action" href={`${BASE}/test-drive`}><span class="spark" set:html={icon('play',13)}></span> Book a test drive</a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="site-container section-tight">
+    <h2 class="rf-h2" style="margin-bottom:18px">Finance, briefly</h2>
+    <div class="rf-grid-2">
+      {[
+        ['Does a quote affect my credit?','An indicative estimate here doesn\'t touch your file. A formal pre-approval is a soft check first, with your consent.'],
+        ['Can I finance a used car?','Yes — most vehicles in the yard qualify. Term and rate depend on the car\'s age and your profile.'],
+        ['What deposit do I need?','None is required, though a deposit or trade-in lowers your weekly repayment. Try the slider above.'],
+        ['Can I pay it out early?','Most structures allow early payout; some carry a small fee. Rebi can flag which lenders don\'t.'],
+      ].map(([q, a]) => (
+        <div class="card" style="padding:20px 22px">
+          <b style="font-size:15px">{q}</b>
+          <p class="muted" style="margin-top:7px; font-size:14px">{a}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- REBI TOUCHPOINT -->
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Can you pre-qualify me for around $48k over 5 years?"
+      reply="I can get that moving. Based on an indicative 7.9% comparison rate, $48k over 5 years is roughly $149/week. Want me to open a pre-approval, or lower it with a trade-in first?"
+      actions={[
+        { label: 'Start pre-approval', href: `${BASE}/contact`, icon: 'shield' },
+        { label: 'Value my trade-in', href: `${BASE}/sell`, icon: 'tag' },
+        { label: 'See offers', href: `${BASE}/offers`, icon: 'star' },
+      ]}
+    />
+  </section>
+
+  <script is:inline>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const money = (n) => '$' + Math.round(n).toLocaleString('en-AU');
+      const price = $('s-price'), dep = $('s-dep'), term = $('s-term'), rate = $('s-rate');
+      if (!price) return;
+      function calc() {
+        const P = +price.value, D = +dep.value, Y = +term.value, R = +rate.value / 100;
+        const fin = Math.max(P - D, 0);
+        const n = Y * 12, i = R / 12;
+        const monthly = i > 0 ? (fin * i) / (1 - Math.pow(1 + i, -n)) : fin / n;
+        const weekly = monthly * 12 / 52;
+        $('v-price').textContent = money(P);
+        $('v-dep').textContent = money(D);
+        $('v-term').textContent = Y + (Y === 1 ? ' year' : ' years');
+        $('v-rate').textContent = R * 100 % 1 === 0 ? (R * 100) + '% p.a.' : (R * 100).toFixed(1) + '% p.a.';
+        $('out-week').textContent = money(weekly);
+        $('out-month').textContent = money(monthly);
+        $('out-fin').textContent = money(fin);
+        $('out-tot').textContent = money(monthly * n);
+      }
+      [price, dep, term, rate].forEach((s) => s.addEventListener('input', calc));
+      calc();
+    })();
+  </script>
+</Shell>

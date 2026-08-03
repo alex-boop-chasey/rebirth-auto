@@ -1,0 +1,258 @@
+---
+// SSR (not prerendered): the page posts to /api/trade-in and honours the
+// dealer feature flag at request time. Mirrors index.astro / compare.astro.
+export const prerender = false;
+
+import '../styles/global.css';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.tradeIn;
+
+// Feature flag — a dealer can hide the trade-in tool without a deploy. When off,
+// the tool simply isn't reachable (the API returns 404 too).
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+const { locale, currency } = dealerConfig.locale;
+const year = new Date().getFullYear();
+
+const conditions = [
+  { value: 'excellent', label: 'Excellent — like new, no faults' },
+  { value: 'good', label: 'Good — minor wear, well maintained' },
+  { value: 'fair', label: 'Fair — visible wear or small issues' },
+  { value: 'poor', label: 'Poor — needs work' },
+] as const;
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+
+const inputClass =
+  'mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
+const labelClass = 'block text-sm font-medium text-slate-700';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <div class="site-container">
+      <!-- Header -->
+      <header class="flex items-center justify-between py-6">
+        <a href="/" class="text-base font-semibold tracking-tight text-slate-900">
+          Rebirth<span class="text-slate-400"> Auto</span>
+        </a>
+        <nav class="flex items-center gap-6 text-sm">
+          <a href="/" class="text-slate-500 transition hover:text-slate-900">Inventory</a>
+          <a href="/trade-in" class="font-medium text-slate-900">{copy.navLabel}</a>
+        </nav>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="mx-auto max-w-2xl pt-12 pb-16 md:pt-16">
+          <!-- Intro -->
+          <div class="text-center">
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/10"
+            >
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              {copy.eyebrow}
+            </span>
+            <h1 class="mt-6 text-3xl font-bold tracking-tight text-slate-900 md:text-5xl">
+              {copy.heading}
+            </h1>
+            <p class="mx-auto mt-4 max-w-xl text-lg text-slate-600">{copy.subheading}</p>
+          </div>
+
+          <!-- Form card -->
+          <div
+            id="tradein-root"
+            data-locale={locale}
+            data-currency={currency}
+            data-loading-label={copy.loadingLabel}
+            class="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
+          >
+            <form id="tradein-form" novalidate class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div class="sm:col-span-1">
+                <label class={labelClass} for="ti-make">Make</label>
+                <input class={inputClass} id="ti-make" name="make" type="text" required
+                  autocomplete="off" placeholder="e.g. Toyota" />
+              </div>
+              <div class="sm:col-span-1">
+                <label class={labelClass} for="ti-model">Model</label>
+                <input class={inputClass} id="ti-model" name="model" type="text" required
+                  autocomplete="off" placeholder="e.g. Corolla" />
+              </div>
+              <div class="sm:col-span-1">
+                <label class={labelClass} for="ti-year">Year</label>
+                <input class={inputClass} id="ti-year" name="year" type="number" required
+                  inputmode="numeric" min="1950" max={year + 1} placeholder={String(year - 5)} />
+              </div>
+              <div class="sm:col-span-1">
+                <label class={labelClass} for="ti-odo">Odometer (km)</label>
+                <input class={inputClass} id="ti-odo" name="odometerKm" type="number" required
+                  inputmode="numeric" min="0" max="1000000" step="1000" placeholder="e.g. 80000" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class={labelClass} for="ti-condition">Condition</label>
+                <select class={inputClass} id="ti-condition" name="condition" required>
+                  <option value="" disabled selected>Choose a condition…</option>
+                  {conditions.map((c) => <option value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <button
+                  type="submit"
+                  id="ti-submit"
+                  class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                >
+                  <span id="ti-submit-label">{copy.submitLabel}</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- Error banner -->
+            <p
+              id="ti-error"
+              role="alert"
+              hidden
+              class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+            </p>
+
+            <!-- Result -->
+            <div id="ti-result" hidden aria-live="polite" class="mt-8 border-t border-slate-200 pt-8">
+              <p class="text-sm font-medium text-slate-500">Estimated trade-in range</p>
+              <div class="mt-3 flex flex-wrap items-end justify-center gap-x-3 gap-y-1 text-center">
+                <span id="ti-low" class="text-2xl font-semibold text-slate-500 tabular-nums"></span>
+                <span class="pb-1 text-slate-300">–</span>
+                <span id="ti-high" class="text-2xl font-semibold text-slate-500 tabular-nums"></span>
+              </div>
+              <div class="mt-4 text-center">
+                <span class="text-xs uppercase tracking-wide text-slate-400">Most likely</span>
+                <div id="ti-mid" class="text-4xl font-bold tracking-tight text-slate-900 tabular-nums"></div>
+              </div>
+              <div class="mt-5 flex justify-center">
+                <span
+                  id="ti-badge"
+                  class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200"
+                >
+                  Indicative estimate
+                </span>
+              </div>
+              <p id="ti-disclaimer" class="mx-auto mt-5 max-w-lg text-center text-xs leading-relaxed text-slate-500"></p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="mt-8 border-t border-slate-200 py-8 text-center text-sm text-slate-500">
+        © {year} {dealerConfig.identity.name} · Estimates are indicative only and not a firm offer.
+      </footer>
+    </div>
+
+    <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
+    <ChatWidget />
+
+    <script>
+      const root = document.getElementById('tradein-root');
+      const form = document.getElementById('tradein-form') as HTMLFormElement | null;
+      if (root && form) {
+        const locale = root.dataset.locale || 'en-AU';
+        const currency = root.dataset.currency || 'AUD';
+        const loadingLabel = root.dataset.loadingLabel || 'Valuing your car…';
+
+        const submit = document.getElementById('ti-submit') as HTMLButtonElement;
+        const submitLabel = document.getElementById('ti-submit-label') as HTMLElement;
+        const defaultLabel = submitLabel.textContent || 'Get my estimate';
+        const errorEl = document.getElementById('ti-error') as HTMLElement;
+        const resultEl = document.getElementById('ti-result') as HTMLElement;
+        const lowEl = document.getElementById('ti-low') as HTMLElement;
+        const midEl = document.getElementById('ti-mid') as HTMLElement;
+        const highEl = document.getElementById('ti-high') as HTMLElement;
+        const disclaimerEl = document.getElementById('ti-disclaimer') as HTMLElement;
+
+        const money = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency,
+          maximumFractionDigits: 0,
+        });
+
+        const showError = (msg: string) => {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+          resultEl.hidden = true;
+        };
+
+        const setLoading = (on: boolean) => {
+          submit.disabled = on;
+          submitLabel.textContent = on ? loadingLabel : defaultLabel;
+        };
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorEl.hidden = true;
+
+          const data = new FormData(form);
+          const payload = {
+            make: String(data.get('make') || '').trim(),
+            model: String(data.get('model') || '').trim(),
+            year: Number(data.get('year')),
+            odometerKm: Number(data.get('odometerKm')),
+            condition: String(data.get('condition') || ''),
+          };
+
+          if (!payload.make || !payload.model) return showError('Please enter the make and model.');
+          if (!Number.isFinite(payload.year)) return showError('Please enter the vehicle year.');
+          if (!Number.isFinite(payload.odometerKm)) return showError('Please enter the odometer reading.');
+          if (!payload.condition) return showError('Please choose a condition.');
+
+          setLoading(true);
+          try {
+            const res = await fetch('/api/trade-in', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const body = (await res.json()) as {
+              valuation?: { low: number; mid: number; high: number; currency: string; disclaimer: string };
+              error?: string;
+            };
+            if (!res.ok || !body.valuation) {
+              showError(body.error || 'We could not estimate a value right now — please try again.');
+              return;
+            }
+            const v = body.valuation;
+            lowEl.textContent = money.format(v.low);
+            highEl.textContent = money.format(v.high);
+            midEl.textContent = money.format(v.mid);
+            disclaimerEl.textContent = v.disclaimer;
+            resultEl.hidden = false;
+            resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch {
+            showError('Something went wrong — please check your connection and try again.');
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

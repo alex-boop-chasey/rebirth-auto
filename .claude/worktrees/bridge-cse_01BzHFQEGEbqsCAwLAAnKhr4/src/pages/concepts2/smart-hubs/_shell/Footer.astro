@@ -1,0 +1,43 @@
+---
+/**
+ * Smart Hubs Footer — the long-tail / utility surface. About, Careers, Contact,
+ * brand hubs and every drill-in page live here so the top nav stays lean.
+ * Reuses shipped .site-footer chrome from global.css.
+ */
+import { footerHubs, icon, base } from './data';
+const spark = icon('spark', 15);
+const year = 2026;
+---
+<footer class="site-footer">
+  <div class="site-container site-foot-grid" style="grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;">
+    <div>
+      <a class="site-brand site-brand-footer" href={base + '/'} aria-label="Rebirth Auto home">
+        <span class="brand-mark" set:html={spark}></span>
+        <span>Rebirth Auto<small>Smart Hubs · IA demo</small></span>
+      </a>
+      <p style="margin-top:16px; font-size:14px; color:#9AA8BC; max-width:34ch">
+        A modern, AI-native car yard. The long tail lives down here — the top nav
+        stays to three hubs so nothing feels buried.
+      </p>
+      <a href={base + '/rebi'} class="btn btn-primary btn-sm" style="margin-top:16px">
+        <span set:html={spark}></span> Chat with Rebi
+      </a>
+    </div>
+
+    {footerHubs.map((c) => (
+      <div>
+        <div class="site-foot-h">{c.h}</div>
+        <ul>
+          {c.links.map(([label, href]) => (
+            <li><a href={href}>{label}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  <div class="site-container site-foot-bar">
+    <span>© {year} Rebirth Auto (demo). Placeholder content — not a live dealership.</span>
+    <span class="mono">Smart Hubs · progressive disclosure</span>
+  </div>
+</footer>

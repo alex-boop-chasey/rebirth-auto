@@ -1,0 +1,34 @@
+---
+import { icon } from './data';
+const { active = '' } = Astro.props;
+const base = '/concepts/near-future-yard';
+const links = [
+  { label: 'Buy',       href: `${base}/listings`,   key: 'listings' },
+  { label: 'Electric',  href: `${base}/electric`,   key: 'electric' },
+  { label: 'Finance',   href: `${base}/finance`,    key: 'finance' },
+  { label: 'Offers',    href: `${base}/offers`,     key: 'offers' },
+  { label: 'Sell',      href: `${base}/sell`,       key: 'sell' },
+  { label: 'Fleet',     href: `${base}/fleet`,      key: 'fleet' },
+  { label: 'About',     href: `${base}/about`,      key: 'about' },
+];
+---
+<header class="nfy-nav">
+  <div class="nfy-wrap nfy-nav-inner">
+    <a class="nfy-logo" href={`${base}/`} aria-label="Rebirth Auto home">
+      <span class="nfy-logo-mark" set:html={icon('spark', 20)} style="color:#fff"></span>
+      <span>Rebirth Auto<small>Near-Future Yard</small></span>
+    </a>
+    <nav class="nfy-navlinks">
+      {links.map(l => (
+        <a href={l.href} class={active === l.key ? 'is-active' : ''}>{l.label}</a>
+      ))}
+    </nav>
+    <div class="nfy-nav-right">
+      <a href={`${base}/rebi`} class="nfy-ai-badge" style="text-decoration:none">
+        <span class="nfy-spark" set:html={icon('spark', 14)}></span> Ask Rebi
+      </a>
+      <a href={`${base}/contact`} class="nfy-btn nfy-btn-ghost nfy-btn-sm">Contact</a>
+      <a href={`${base}/test-drive`} class="nfy-btn nfy-btn-primary nfy-btn-sm">Book a test drive</a>
+    </div>
+  </div>
+</header>

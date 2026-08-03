@@ -1,0 +1,33 @@
+---
+/**
+ * SearchDock — thin host for the SmartSearch React island.
+ * ------------------------------------------------------------------
+ * The Rebi-fronted plain-English homepage search entry point. Formerly a vanilla
+ * `<script>`; the behaviour now lives in the `SmartSearch` island (Phase 3), which
+ * consumes the shared AI-island hooks. This host just reads `dealerConfig.chat.search`,
+ * builds the typed `config` object, and mounts the island `client:idle`.
+ *
+ * Config-as-data: all copy/timings/sounds come from config, so a tenant swap
+ * restyles the surface without a code edit. `dealerConfig.chat.search.enabled` is
+ * the operational kill-switch (checked by the caller). The filename is preserved so
+ * `src/pages/index.astro` (`<SearchDock />`) is untouched.
+ */
+import { dealerConfig } from '../../config/dealer';
+import SmartSearch, { type SmartSearchConfig } from './SmartSearch.tsx';
+
+const { placeholders, typewriter, messages, greeting, sounds, stage, maxQueryLength } =
+  dealerConfig.chat.search;
+
+// A real object prop (not a JSON string) — the island types it as SmartSearchConfig.
+const config: SmartSearchConfig = {
+  placeholders,
+  typewriter,
+  messages,
+  greeting,
+  sounds,
+  stage,
+  maxQueryLength,
+};
+---
+
+<SmartSearch client:idle config={config} />

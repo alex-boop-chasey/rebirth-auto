@@ -1,0 +1,162 @@
+---
+export const prerender = false;
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+const steps = [
+  { n: 1, h: 'Tell us the basics', p: 'Price, deposit and how long you’d like to pay it off.' },
+  { n: 2, h: 'Rebi gives an honest estimate', p: 'A realistic weekly figure — no surprises, no fine-print games.' },
+  { n: 3, h: 'A local sorts the paperwork', p: 'Our finance manager finds the right lender and handles it all.' },
+];
+const faqs = [
+  ['Will checking affect my credit score?', 'An estimate with Rebi never touches your credit file. A formal application only happens once you say go.'],
+  ['Can I finance a used or demo car?', 'Yes — new, demo and quality used are all eligible, often at the same competitive rates.'],
+  ['What if I have a trade-in?', 'Great — we put its value straight toward your deposit to lower repayments. Get a value on the Sell page.'],
+];
+---
+<Layout title="Finance" active="finance">
+  <section class="rt-fin-hero">
+    <div class="rt-wrap rt-fin-hero-grid">
+      <div>
+        <span class="rt-eyebrow">Finance, the honest way</span>
+        <h1>Straight-up finance from people you’ll actually see again.</h1>
+        <p>We’ve been arranging car loans for {`local`} families for decades. No pressure, no jargon — and Rebi can
+          give you a realistic weekly figure before you even walk in.</p>
+        <div class="rt-fin-hero-trust">
+          <span class="rt-pill rt-pill-gold">★ 20+ lender panel</span>
+          <span class="rt-pill rt-pill-green">✓ Same-day pre-approval</span>
+          <span class="rt-pill rt-pill-sand">No obligation estimates</span>
+        </div>
+      </div>
+
+      <!-- CALCULATOR -->
+      <div class="rt-calc rt-card">
+        <div class="rt-calc-head">
+          <span class="rt-rebi-orb lg"></span>
+          <div><strong>Repayment estimator</strong><em>Rebi does the maths for you</em></div>
+        </div>
+        <div class="rt-calc-fields">
+          <div class="rt-calc-field">
+            <label>Car price</label>
+            <div class="rt-calc-value">$52,990</div>
+            <div class="rt-range-track"><div class="rt-range-fill" style="left:0;right:42%"></div><span class="rt-range-knob" style="left:58%"></span></div>
+          </div>
+          <div class="rt-calc-field">
+            <label>Deposit / trade-in</label>
+            <div class="rt-calc-value">$8,000</div>
+            <div class="rt-range-track"><div class="rt-range-fill" style="left:0;right:78%"></div><span class="rt-range-knob" style="left:22%"></span></div>
+          </div>
+          <div class="rt-calc-row">
+            <div class="rt-calc-field">
+              <label>Term</label>
+              <div class="rt-calc-seg"><span>3 yr</span><span class="on">5 yr</span><span>7 yr</span></div>
+            </div>
+            <div class="rt-calc-field">
+              <label>Rate (p.a.)</label>
+              <div class="rt-calc-value sm">7.45%</div>
+            </div>
+          </div>
+        </div>
+        <div class="rt-calc-result">
+          <div>
+            <span class="rt-calc-result-label">Estimated repayment</span>
+            <span class="rt-calc-result-num">$186<em>/week</em></span>
+          </div>
+          <span class="rt-calc-result-alt">≈ $806/month · over 5 years</span>
+        </div>
+        <div class="rt-calc-rebi">
+          <span class="rt-rebi-orb"></span>
+          <p>“That’s comfortable for most budgets. Add a trade-in and I can likely get this under $170/wk — want me to check?”</p>
+        </div>
+        <button class="rt-btn rt-btn-primary rt-calc-cta">Get my real rate</button>
+        <p class="rt-calc-disc">Illustrative only. Estimate excludes fees; real rate depends on your circumstances and lender approval.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">How it works</span><h2>Three easy steps</h2></div></div>
+    <div class="rt-fin-steps">
+      {steps.map((s) => (
+        <div class="rt-fin-step rt-card">
+          <span class="rt-fin-step-n">{s.n}</span>
+          <h3>{s.h}</h3>
+          <p>{s.p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-fin-options">
+    <div class="rt-fin-opt rt-card">
+      <h3>Consumer loan</h3><p>Own the car outright with fixed weekly repayments. The go-to for personal buyers.</p>
+      <span class="rt-fin-opt-tag">Most popular</span>
+    </div>
+    <div class="rt-fin-opt rt-card">
+      <h3>Novated lease</h3><p>Salary-package your next car and pay from pre-tax income. We’ll explain if it suits you.</p>
+    </div>
+    <div class="rt-fin-opt rt-card">
+      <h3>Business &amp; chattel</h3><p>ABN holders — potential tax benefits on work vehicles. Ask about our fleet rates too.</p>
+    </div>
+  </section>
+
+  <section class="rt-wrap rt-section rt-fin-faq">
+    <div class="rt-section-head"><div><span class="rt-eyebrow">Good to know</span><h2>Common questions</h2></div>
+      <a href="/concepts/regional-trust/rebi" class="rt-btn rt-btn-ghost"><span class="rt-rebi-orb"></span> Ask Rebi yours</a></div>
+    <div class="rt-faq-list">
+      {faqs.map(([q, a]) => (
+        <div class="rt-faq rt-card"><h4>{q}</h4><p>{a}</p></div>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .rt-fin-hero { background: linear-gradient(180deg, var(--cream), var(--paper)); border-bottom: 1px solid var(--line); }
+  .rt-fin-hero-grid { display: grid; grid-template-columns: 1fr 460px; gap: 48px; padding-block: 56px 64px; align-items: center; }
+  .rt-fin-hero h1 { font-size: 44px; margin: 16px 0; }
+  .rt-fin-hero p { font-size: 17px; color: var(--ink-70); max-width: 480px; }
+  .rt-fin-hero-trust { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+
+  .rt-calc { padding: 24px; }
+  .rt-calc-head { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
+  .rt-calc-head strong { display: block; font-size: 17px; color: var(--green-deep); }
+  .rt-calc-head em { font-style: normal; font-size: 13px; color: var(--muted); }
+  .rt-calc-fields { display: flex; flex-direction: column; gap: 20px; }
+  .rt-calc-field label { font-size: 13px; font-weight: 700; color: var(--ink-70); display: block; margin-bottom: 6px; }
+  .rt-calc-value { font-family: var(--ff-display); font-size: 24px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+  .rt-calc-value.sm { font-size: 20px; margin-bottom: 0; }
+  .rt-calc-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+  .rt-calc-seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .rt-calc-seg span { padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--ink-70); }
+  .rt-calc-seg span.on { background: var(--green); color: #eef4f0; }
+  .rt-range-track { position: relative; height: 5px; border-radius: 3px; background: var(--sand-deep); }
+  .rt-range-fill { position: absolute; top: 0; bottom: 0; background: var(--green); border-radius: 3px; }
+  .rt-range-knob { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: var(--white); border: 3px solid var(--green); transform: translate(-50%,-50%); }
+  .rt-calc-result { display: flex; justify-content: space-between; align-items: center; background: var(--green-soft); border: 1px solid var(--green-line); border-radius: var(--r); padding: 18px; margin: 22px 0 14px; }
+  .rt-calc-result-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--green); display: block; }
+  .rt-calc-result-num { font-family: var(--ff-display); font-size: 40px; font-weight: 700; color: var(--green-deep); }
+  .rt-calc-result-num em { font-style: normal; font-size: 16px; color: var(--muted); }
+  .rt-calc-result-alt { font-size: 13px; color: var(--ink-70); text-align: right; }
+  .rt-calc-rebi { display: flex; gap: 10px; align-items: flex-start; background: var(--paper); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  .rt-calc-rebi .rt-rebi-orb { flex: 0 0 auto; margin-top: 2px; }
+  .rt-calc-rebi p { font-size: 13.5px; color: var(--ink-70); font-style: italic; }
+  .rt-calc-cta { width: 100%; }
+  .rt-calc-disc { font-size: 11.5px; color: var(--muted); text-align: center; margin-top: 12px; }
+
+  .rt-fin-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-fin-step { padding: 26px; }
+  .rt-fin-step-n { width: 40px; height: 40px; border-radius: 50%; background: var(--clay-soft); color: var(--clay-deep); font-family: var(--ff-display); font-weight: 700; font-size: 20px; display: grid; place-items: center; margin-bottom: 14px; }
+  .rt-fin-step h3 { font-size: 20px; margin-bottom: 8px; }
+  .rt-fin-step p { font-size: 14px; color: var(--ink-70); }
+
+  .rt-fin-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding-bottom: 20px; }
+  .rt-fin-opt { padding: 24px; position: relative; }
+  .rt-fin-opt h3 { font-size: 20px; margin-bottom: 8px; }
+  .rt-fin-opt p { font-size: 14px; color: var(--ink-70); }
+  .rt-fin-opt-tag { position: absolute; top: 18px; right: 18px; font-size: 11px; font-weight: 800; color: var(--clay-deep); background: var(--clay-soft); padding: 4px 10px; border-radius: 999px; }
+
+  .rt-faq-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .rt-faq { padding: 22px; }
+  .rt-faq h4 { font-size: 16px; margin-bottom: 8px; }
+  .rt-faq p { font-size: 14px; color: var(--ink-70); }
+</style>

@@ -1,0 +1,21 @@
+---
+/**
+ * /login — Supabase sign-in. Guarded by src/middleware.ts (authed users are
+ * bounced to /account). Gated by the accounts.enabled feature flag.
+ */
+export const prerender = false;
+
+import AuthLayout from '../layouts/AuthLayout.astro';
+import AuthCard from '../components/auth/AuthCard.astro';
+import { dealerConfig } from '../config/dealer';
+
+if (!dealerConfig.accounts.enabled) return Astro.redirect('/', 302);
+
+const title = `Sign in — ${dealerConfig.identity.name}`;
+---
+
+<AuthLayout title={title} noindex>
+  <section class="mx-auto flex max-w-md flex-col justify-center py-12 md:py-20">
+    <AuthCard initialMode="login" />
+  </section>
+</AuthLayout>

@@ -1,0 +1,77 @@
+---
+import '../../../styles/global.css';
+import Shell from './_shell/Shell.astro';
+import RebiAsk from './_shell/RebiAsk.astro';
+import { BASE, vehicles, icon, fmt } from './_shell/data';
+export const prerender = false;
+const options = vehicles.slice(0, 4);
+---
+<Shell title="Book a test drive — Rebirth Auto" active="Book a test drive">
+  <section class="site-container section" style="padding-block:44px 20px">
+    <span class="eyebrow">Book a test drive</span>
+    <h1 class="rf-h1" style="margin-top:14px; max-width:16ch">Pick a car, pick a time. Done.</h1>
+    <p class="lead" style="margin-top:16px">Or just tell Rebi "book me a test drive in the Outback this Saturday" and it fills this in for you.</p>
+  </section>
+
+  <!-- PICK A VEHICLE -->
+  <section class="site-container section-tight">
+    <div class="rf-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:18px">
+      <h2 class="rf-h2">1 · Pick a vehicle</h2>
+      <a href={`${BASE}/#inventory`} class="btn btn-ghost btn-sm">Browse all <span set:html={icon('arrow',15)}></span></a>
+    </div>
+    <div class="rf-grid-4">
+      {options.map((v, i) => (
+        <label class="card card-lift" style="overflow:hidden; cursor:pointer; display:flex; flex-direction:column">
+          <div style={`height:120px; background:${v.hue}; position:relative`}>
+            <span class="chip" style={`position:absolute; top:10px; right:10px; ${i === 0 ? 'background:var(--mint-glow); color:var(--teal-deep)' : 'background:rgba(255,255,255,.85)'}`}>{i === 0 ? 'Selected' : 'Choose'}</span>
+          </div>
+          <div style="padding:14px 16px">
+            <b style="font-family:var(--font-display); font-size:14.5px">{v.year} {v.make} {v.model}</b>
+            <div class="faint" style="font-size:12px">{fmt(v.price)} · {v.drive}</div>
+          </div>
+        </label>
+      ))}
+    </div>
+  </section>
+
+  <!-- PICK A TIME + WHAT TO BRING -->
+  <section class="site-container section-tight">
+    <div class="rf-grid-2" style="grid-template-columns:1.15fr .85fr; align-items:start">
+      <div class="card" style="padding:28px 30px">
+        <b class="rf-h3">2 · Preferred time</b>
+        <div class="rf-grid-2" style="gap:16px; margin-top:18px">
+          <div><label class="rf-lab">Date</label><input class="rf-field" placeholder="Sat 2 Aug" /></div>
+          <div><label class="rf-lab">Time</label>
+            <div class="rf-quick"><span class="chip chip-teal">9:00</span><span class="chip">11:30</span><span class="chip">2:00</span><span class="chip">4:00</span></div>
+          </div>
+          <div><label class="rf-lab">Name</label><input class="rf-field" placeholder="Your name" /></div>
+          <div><label class="rf-lab">Contact</label><input class="rf-field" placeholder="Email or phone (demo)" /></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:20px; justify-content:center; width:100%; pointer-events:none"><span class="spark" set:html={icon('play',15)}></span> Confirm test drive</button>
+        <p class="faint" style="font-size:11px; margin-top:10px">Demo form — a real booking would confirm by email/SMS.</p>
+      </div>
+      <div class="ai-summary" style="padding:26px 28px">
+        <div class="rf-row" style="gap:7px; margin-bottom:12px"><span set:html={icon('shield',15)} style="color:var(--teal-deep)"></span><b class="rf-h3" style="font-size:16px">What to bring</b></div>
+        {['A current driver licence','Anything you\'re trading (we\'ll value it while you drive)','Your must-haves — Rebi briefs the consultant first'].map((t) => (
+          <div class="rf-row" style="gap:10px; font-size:14px; color:var(--ink-soft); padding:8px 0; border-bottom:1px solid var(--line)"><span set:html={icon('star',14)} style="color:var(--amber)"></span> {t}</div>
+        ))}
+        <div class="rf-quick" style="margin-top:16px">
+          <a class="rf-action" href={`${BASE}/sell`}><span class="spark" set:html={icon('tag',13)}></span> Value my trade first</a>
+          <a class="rf-action" href={`${BASE}/finance`}><span class="spark" set:html={icon('calc',13)}></span> Sort finance first</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="site-container section-tight">
+    <RebiAsk
+      ask="Book me a test drive in the Subaru Outback this Saturday morning."
+      reply="Done — I've set the Outback for Saturday at 9:00 and flagged you want to try it on gravel. Bring your licence; I'll brief the consultant on your highway-plus-farm use so you're not starting from scratch. Want a trade-in valued while you're here?"
+      actions={[
+        { label: 'Value my trade-in', href: `${BASE}/sell`, icon: 'tag' },
+        { label: 'Work out repayments', href: `${BASE}/finance`, icon: 'calc' },
+        { label: 'Get directions', href: `${BASE}/contact`, icon: 'pin' },
+      ]}
+    />
+  </section>
+</Shell>

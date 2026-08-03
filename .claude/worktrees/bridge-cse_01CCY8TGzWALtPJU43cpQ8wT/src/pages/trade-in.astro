@@ -1,0 +1,260 @@
+---
+// SSR (not prerendered): the page posts to /api/trade-in and honours the
+// dealer feature flag at request time. Mirrors index.astro / compare.astro.
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.tradeIn;
+
+// Feature flag — a dealer can hide the trade-in tool without a deploy. When off,
+// the tool simply isn't reachable (the API returns 404 too).
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+const { locale, currency } = dealerConfig.locale;
+const year = new Date().getFullYear();
+
+const conditions = [
+  { value: 'excellent', label: 'Excellent — like new, no faults' },
+  { value: 'good', label: 'Good — minor wear, well maintained' },
+  { value: 'fair', label: 'Fair — visible wear or small issues' },
+  { value: 'poor', label: 'Poor — needs work' },
+] as const;
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active="trade-in" />
+
+    <main id="main-content" tabindex="-1" class="site-container">
+      <section class="mx-auto max-w-2xl section-tight">
+        <!-- Intro -->
+        <div class="text-center">
+          <span class="eyebrow">{copy.eyebrow}</span>
+          <h1 class="mt-5 text-3xl font-bold tracking-tight text-ink md:text-5xl">
+            {copy.heading}
+          </h1>
+          <p class="lead mx-auto mt-4">{copy.subheading}</p>
+        </div>
+
+        <!-- Form card (glass) -->
+        <div
+          id="tradein-root"
+          data-locale={locale}
+          data-currency={currency}
+          data-loading-label={copy.loadingLabel}
+          class="glass mt-10 p-6 md:p-8"
+        >
+          <form id="tradein-form" novalidate class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="ti-make">Make</label>
+              <input class="field-input" id="ti-make" name="make" type="text" required
+                autocomplete="off" placeholder="e.g. Toyota" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="ti-model">Model</label>
+              <input class="field-input" id="ti-model" name="model" type="text" required
+                autocomplete="off" placeholder="e.g. Corolla" />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="ti-year">Year</label>
+              <input class="field-input" id="ti-year" name="year" type="number" required
+                inputmode="numeric" min="1950" max={year + 1} placeholder={String(year - 5)} />
+            </div>
+            <div class="field sm:col-span-1">
+              <label class="field-label" for="ti-odo">Odometer (km)</label>
+              <input class="field-input" id="ti-odo" name="odometerKm" type="number" required
+                inputmode="numeric" min="0" max="1000000" step="1000" placeholder="e.g. 80000" />
+            </div>
+            <div class="field sm:col-span-2">
+              <label class="field-label" for="ti-condition">Condition</label>
+              <select class="field-select" id="ti-condition" name="condition" required>
+                <option value="" disabled selected>Choose a condition…</option>
+                {conditions.map((c) => <option value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+
+            <div class="sm:col-span-2">
+              <button
+                type="submit"
+                id="ti-submit"
+                class="btn btn-primary w-full justify-center disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                <span id="ti-submit-label">{copy.submitLabel}</span>
+              </button>
+              <p class="faint mt-3 text-xs">
+                An instant indicative valuation — not a firm offer. Our team confirms the final figure.
+              </p>
+            </div>
+          </form>
+
+          <!-- Error banner -->
+          <p
+            id="ti-error"
+            role="alert"
+            hidden
+            class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+          </p>
+
+          <!-- Result -->
+          <div id="ti-result" hidden aria-live="polite" class="ai-summary scan mt-8">
+            <p class="text-sm font-medium text-ink-soft">Estimated trade-in range</p>
+            <div class="mt-3 flex flex-wrap items-end justify-center gap-x-3 gap-y-1 text-center">
+              <span id="ti-low" class="text-2xl font-semibold text-ink-soft tabular-nums"></span>
+              <span class="pb-1 text-ink-faint">–</span>
+              <span id="ti-high" class="text-2xl font-semibold text-ink-soft tabular-nums"></span>
+            </div>
+            <div class="mt-4 text-center">
+              <span class="text-xs uppercase tracking-wide text-ink-faint">Most likely</span>
+              <div id="ti-mid" class="text-4xl font-bold tracking-tight text-ink tabular-nums"></div>
+            </div>
+            <div class="mt-5 flex justify-center">
+              <span id="ti-badge" class="chip chip-amber">Indicative estimate</span>
+            </div>
+            <p id="ti-disclaimer" class="faint mx-auto mt-5 max-w-lg text-center text-xs leading-relaxed"></p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter />
+
+    <!-- Floating AI chat assistant (Rebi) — self-contained global overlay -->
+    <ChatWidget />
+
+    <script>
+      const root = document.getElementById('tradein-root');
+      const form = document.getElementById('tradein-form') as HTMLFormElement | null;
+      if (root && form) {
+        const locale = root.dataset.locale || 'en-AU';
+        const currency = root.dataset.currency || 'AUD';
+        const loadingLabel = root.dataset.loadingLabel || 'Valuing your car…';
+
+        const submit = document.getElementById('ti-submit') as HTMLButtonElement;
+        const submitLabel = document.getElementById('ti-submit-label') as HTMLElement;
+        const defaultLabel = submitLabel.textContent || 'Get my estimate';
+        const errorEl = document.getElementById('ti-error') as HTMLElement;
+        const resultEl = document.getElementById('ti-result') as HTMLElement;
+        const lowEl = document.getElementById('ti-low') as HTMLElement;
+        const midEl = document.getElementById('ti-mid') as HTMLElement;
+        const highEl = document.getElementById('ti-high') as HTMLElement;
+        const disclaimerEl = document.getElementById('ti-disclaimer') as HTMLElement;
+
+        const money = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency,
+          maximumFractionDigits: 0,
+        });
+
+        const showError = (msg: string) => {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+          resultEl.hidden = true;
+        };
+
+        const setLoading = (on: boolean) => {
+          submit.disabled = on;
+          submitLabel.textContent = on ? loadingLabel : defaultLabel;
+        };
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          errorEl.hidden = true;
+
+          const data = new FormData(form);
+          const payload = {
+            make: String(data.get('make') || '').trim(),
+            model: String(data.get('model') || '').trim(),
+            year: Number(data.get('year')),
+            odometerKm: Number(data.get('odometerKm')),
+            condition: String(data.get('condition') || ''),
+          };
+
+          if (!payload.make || !payload.model) return showError('Please enter the make and model.');
+          if (!Number.isFinite(payload.year)) return showError('Please enter the vehicle year.');
+          if (!Number.isFinite(payload.odometerKm)) return showError('Please enter the odometer reading.');
+          if (!payload.condition) return showError('Please choose a condition.');
+
+          setLoading(true);
+          try {
+            const res = await fetch('/api/trade-in', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const body = (await res.json()) as {
+              valuation?: { low: number; mid: number; high: number; currency: string; disclaimer: string };
+              error?: string;
+            };
+            if (!res.ok || !body.valuation) {
+              showError(body.error || 'We could not estimate a value right now — please try again.');
+              return;
+            }
+            const v = body.valuation;
+            lowEl.textContent = money.format(v.low);
+            highEl.textContent = money.format(v.high);
+            midEl.textContent = money.format(v.mid);
+            disclaimerEl.textContent = v.disclaimer;
+            resultEl.hidden = false;
+            resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch {
+            showError('Something went wrong — please check your connection and try again.');
+          } finally {
+            setLoading(false);
+          }
+        });
+      }
+    </script>
+
+    <style>
+      /* NFY form-control primitives (ported from the concept shell, token-driven). */
+      .field { display: flex; flex-direction: column; gap: 7px; }
+      .field-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+      .field-input,
+      .field-select {
+        width: 100%;
+        font-family: var(--font-ui);
+        font-size: 15px;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-sm);
+        padding: 12px 14px;
+        transition: border-color 0.16s, box-shadow 0.16s;
+      }
+      .field-input::placeholder { color: var(--ink-faint); }
+      .field-input:focus,
+      .field-select:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px rgba(15, 181, 166, 0.15);
+        outline: none;
+      }
+    </style>
+  </body>
+</html>

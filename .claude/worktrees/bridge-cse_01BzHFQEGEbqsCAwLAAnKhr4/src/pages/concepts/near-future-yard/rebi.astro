@@ -1,0 +1,126 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { vehicles, icon, fmt } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const picks = [vehicles[0], vehicles[2]];
+---
+<Layout title="Rebi — your AI car assistant" active="" hideDock={true}>
+  <section class="nfy-wrap" style="padding-block:24px 60px; display:grid; grid-template-columns:270px 1fr 300px; gap:24px; align-items:start; min-height:82vh">
+
+    <!-- LEFT: conversations + capability -->
+    <div style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="nfy-card" style="padding:20px">
+        <div class="nfy-row" style="gap:11px; margin-bottom:16px">
+          <span class="nfy-orb nfy-orb--halo" style="width:40px;height:40px"></span>
+          <div><b style="font-family:var(--font-display); font-size:18px">Rebi</b>
+          <div style="font-size:12px; color:var(--teal-deep); display:flex; gap:5px; align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:var(--teal)"></span> Online · grounded on 305 cars</div></div>
+        </div>
+        <a href="#" class="nfy-btn nfy-btn-primary nfy-btn-sm" style="width:100%; justify-content:center"><span set:html={icon('spark',15)}></span> New chat</a>
+      </div>
+
+      <div class="nfy-card" style="padding:16px 18px">
+        <div class="nfy-filter-h">Recent</div>
+        {[['Family SUV, gravel roads','2 picks'],['Ute that tows 3.5t','active'],['EV with home charging','4 picks']].map(([t,m],i) => (
+          <a href="#" style={`display:block; padding:11px 12px; border-radius:10px; text-decoration:none; color:inherit; background:${i===0?'var(--bg-2)':'transparent'}`}>
+            <div style="font-size:13.5px; font-weight:600; color:var(--ink)">{t}</div>
+            <div style="font-size:11.5px; color:var(--ink-faint)">{m}</div>
+          </a>
+        ))}
+      </div>
+
+      <div class="nfy-glass" style="padding:16px 18px">
+        <div class="nfy-filter-h" style="margin-bottom:10px">What I can do</div>
+        {[['car','Match cars to your life'],['calc','Estimate repayments'],['tag','Value your trade-in'],['play','Book a test drive']].map(([ic,t]) => (
+          <div class="nfy-row" style="gap:10px; font-size:13px; color:var(--ink-soft); padding:6px 0"><span set:html={icon(ic as string,15)} style="color:var(--teal-deep)"></span> {t}</div>
+        ))}
+      </div>
+    </div>
+
+    <!-- CENTRE: the conversation -->
+    <div class="nfy-card" style="display:flex; flex-direction:column; overflow:hidden; min-height:78vh">
+      <div class="nfy-row" style="gap:11px; padding:16px 22px; border-bottom:1px solid var(--line); background:linear-gradient(120deg, rgba(15,181,166,.06), rgba(85,102,240,.06))">
+        <span class="nfy-orb nfy-orb--halo" style="width:30px;height:30px"></span>
+        <div style="flex:1"><b style="font-family:var(--font-display); font-size:15px">Chat with Rebi</b>
+        <div style="font-size:11.5px; color:var(--ink-faint)">Grounded only on public listing data — never your private details</div></div>
+        <span class="nfy-chip nfy-chip--teal"><span set:html={icon('shield',13)}></span> Private &amp; honest</span>
+      </div>
+
+      <div style="flex:1; padding:26px 22px; display:flex; flex-direction:column; gap:20px; overflow:hidden">
+        <!-- user -->
+        <div style="align-self:flex-end; max-width:74%">
+          <div style="background:var(--ink); color:#fff; padding:13px 17px; border-radius:16px 16px 4px 16px; font-size:14.5px">We’re a family of five near Bundaberg. Do a lot of highway plus some gravel out to the farm. Budget around $55k. What should we look at?</div>
+        </div>
+
+        <!-- rebi thinking -->
+        <div style="max-width:82%">
+          <div class="nfy-row" style="gap:9px; margin-bottom:8px"><span class="nfy-orb nfy-orb--halo" style="width:26px;height:26px"></span><b style="font-size:13px; color:var(--indigo-deep)">Rebi</b></div>
+          <div class="nfy-ai-summary nfy-scan" style="padding:18px 20px">
+            <p style="font-size:14.5px; color:var(--ink); line-height:1.6">Good brief — that mix of highway and gravel points to full-time AWD with real ground clearance rather than a soft crossover. Within $55k I’d shortlist two, both 5-star ANCAP with room for five:</p>
+          </div>
+        </div>
+
+        <!-- inline vehicle picks in-chat -->
+        <div style="max-width:88%; display:flex; flex-direction:column; gap:12px">
+          {picks.map((p,i) => (
+            <a href={`${base}/vehicle`} class="nfy-card nfy-card--lift" style="display:flex; gap:14px; padding:12px; text-decoration:none; color:inherit; align-items:center">
+              <div style={`width:104px; height:70px; border-radius:12px; flex:none; background:${p.hue}`}></div>
+              <div style="flex:1">
+                <div class="nfy-row" style="gap:8px; margin-bottom:3px"><span class="nfy-chip nfy-chip--ai" style="padding:3px 9px">{i===0?'Top match':'Value pick'}</span><span style="font-size:11.5px; color:var(--ink-faint)">{p.condition}</span></div>
+                <div style="font-family:var(--font-display); font-weight:600; font-size:15px">{p.year} {p.make} {p.model}</div>
+                <div style="font-size:12.5px; color:var(--ink-soft)">{p.aiLine}</div>
+              </div>
+              <div style="text-align:right"><div style="font-family:var(--font-display); font-weight:700; font-size:17px">{fmt(p.price)}</div><div style="font-size:11px; color:var(--ink-faint)">drive away</div></div>
+            </a>
+          ))}
+          <div class="nfy-row" style="gap:8px; font-size:12.5px; color:var(--ink-soft)"><span set:html={icon('calc',14)} style="color:var(--teal-deep)"></span> Both land near <b>$150/week</b> on a 5-year term with $5k down — want me to firm that up?</div>
+        </div>
+
+        <!-- follow up chips -->
+        <div class="nfy-pillrow" style="max-width:88%">
+          {['Compare these two','Which is better on gravel?','Add my trade-in','Book a test drive'].map(c => (
+            <span class="nfy-chip" style="cursor:pointer; background:var(--surface); border-color:var(--line)"><span class="nfy-spark" set:html={icon('spark',12)} style="color:var(--indigo)"></span> {c}</span>
+          ))}
+        </div>
+
+        <!-- live typing -->
+        <div class="nfy-row" style="gap:9px; color:var(--ink-faint)"><span class="nfy-orb" style="width:22px;height:22px"></span><span class="nfy-dots"><i></i><i></i><i></i></span></div>
+      </div>
+
+      <!-- composer -->
+      <div style="padding:14px 18px; border-top:1px solid var(--line)">
+        <div class="nfy-aisearch" style="box-shadow:none">
+          <span set:html={icon('chat',18)} style="color:var(--ink-faint)"></span>
+          <input type="text" placeholder="Message Rebi — e.g. “which one is cheaper to service?”" readonly />
+          <button class="nfy-btn nfy-btn-primary nfy-btn-sm" style="pointer-events:none"><span set:html={icon('send',15)}></span></button>
+        </div>
+        <p class="nfy-faint" style="font-size:11px; text-align:center; margin-top:9px">Rebi can make mistakes — confirm details with our team before you buy. Demo interface.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: live context panel -->
+    <div style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="nfy-glass" style="padding:20px">
+        <div class="nfy-filter-h" style="margin-bottom:12px">Rebi’s working notes</div>
+        {[['users','Household','5 people'],['map','Use','Highway + gravel'],['tag','Budget','~$55,000'],['drive','Needs','AWD + clearance']].map(([ic,k,val]) => (
+          <div class="nfy-row" style="justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px">
+            <span class="nfy-row" style="gap:9px; color:var(--ink-soft)"><span set:html={icon(ic as string,15)} style="color:var(--teal-deep)"></span> {k}</span>
+            <b>{val}</b>
+          </div>
+        ))}
+        <p class="nfy-faint" style="font-size:11.5px; margin-top:12px">Rebi keeps a light memory of your search — you can clear it anytime.</p>
+      </div>
+
+      <div class="nfy-card" style="padding:20px">
+        <div class="nfy-row" style="gap:9px; margin-bottom:10px"><span set:html={icon('shield',17)} style="color:var(--teal-deep)"></span><b style="font-family:var(--font-display); font-size:15px">Grounded, not guessing</b></div>
+        <p style="font-size:13px; color:var(--ink-soft); line-height:1.5">Rebi only speaks from real, public listing data and expert reviews. It never sees private dealer notes or your finances — and always hands you to a human to close.</p>
+      </div>
+
+      <a href={`${base}/contact`} class="nfy-card nfy-card--lift" style="padding:18px; display:flex; gap:12px; align-items:center; text-decoration:none; color:inherit">
+        <span class="nfy-avatar" style="width:42px; height:42px">BT</span>
+        <div><div style="font-size:13.5px; font-weight:600">Prefer a human?</div><div style="font-size:12px; color:var(--ink-faint)">Talk to the Bundaberg team →</div></div>
+      </a>
+    </div>
+  </section>
+</Layout>

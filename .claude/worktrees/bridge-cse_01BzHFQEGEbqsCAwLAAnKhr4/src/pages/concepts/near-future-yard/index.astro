@@ -1,0 +1,141 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import VehicleCard from './_shell/VehicleCard.astro';
+import { vehicles, brands, icon } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const featured = vehicles.slice(0, 4);
+---
+<Layout title="Rebirth Auto — a smarter car yard" active="">
+  <!-- HERO -->
+  <section class="nfy-hero nfy-grid-lines">
+    <div class="nfy-hero-mesh"></div>
+    <div class="nfy-wrap" style="position:relative; z-index:1; padding-top:64px; padding-bottom:44px">
+      <div style="display:grid; grid-template-columns:1.15fr .95fr; gap:56px; align-items:center">
+        <div>
+          <span class="nfy-eyebrow">AI-native car buying · Bundaberg region</span>
+          <h1 class="nfy-h1" style="margin-top:18px">The car yard that<br/>thinks with you.</h1>
+          <p class="nfy-lead" style="margin-top:20px">Browse 305 vehicles across 12 brands. Rebi — our on-site assistant — reads every listing, answers plainly, and never pushes. Local team, honest advice, modern tools.</p>
+
+          <!-- AI search: the primary way in -->
+          <div class="nfy-aisearch" style="margin-top:30px; max-width:560px">
+            <span class="nfy-orb nfy-orb--halo" style="width:30px;height:30px"></span>
+            <input type="text" placeholder="Ask Rebi: “reliable 7-seater under $45k for gravel roads”" readonly />
+            <button class="nfy-btn nfy-btn-primary" style="pointer-events:none"><span set:html={icon('send',16)}></span> Ask</button>
+          </div>
+          <div class="nfy-pillrow" style="margin-top:14px">
+            {['Family SUVs','Tradie utes','Under $30k','EVs & hybrids','Tow 3,500kg'].map(t => <span class="nfy-chip">{t}</span>)}
+          </div>
+
+          <div class="nfy-row" style="gap:34px; margin-top:38px">
+            <div class="nfy-stat"><b>305</b><span>vehicles in stock</span></div>
+            <div class="nfy-stat"><b>12</b><span>franchise brands</span></div>
+            <div class="nfy-stat"><b>4.8★</b><span>1,200+ local reviews</span></div>
+          </div>
+        </div>
+
+        <!-- glass hero card: live Rebi snapshot -->
+        <div class="nfy-glass nfy-scan" style="padding:22px">
+          <div class="nfy-row" style="gap:11px; margin-bottom:16px">
+            <span class="nfy-orb nfy-orb--halo" style="width:40px;height:40px"></span>
+            <div>
+              <b style="font-family:var(--font-display); font-size:17px">Rebi</b>
+              <div style="font-size:12px; color:var(--teal-deep); display:flex; gap:6px; align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:var(--teal)"></span> reading your local inventory</div>
+            </div>
+          </div>
+          <div style="background:var(--bg-2); border-radius:var(--r); padding:14px; font-size:13.5px; color:var(--ink-soft); margin-bottom:12px">
+            You: <b style="color:var(--ink)">Something safe for the family that handles the highway to Brisbane?</b>
+          </div>
+          <div class="nfy-ai-summary" style="padding:16px">
+            <div class="nfy-row" style="gap:7px; margin-bottom:8px"><span class="nfy-spark" set:html={icon('spark',15)} style="color:var(--indigo)"></span><b style="font-size:13px; color:var(--indigo-deep)">Rebi suggests</b></div>
+            <p style="font-size:13.5px; color:var(--ink-soft); line-height:1.5">Three 5-star ANCAP picks with adaptive cruise for long trips. The Subaru Outback stands out — full-time AWD and 213mm clearance for the gravel stretches.</p>
+            <div class="nfy-row" style="gap:8px; margin-top:12px">
+              <span class="nfy-chip nfy-chip--teal">Outback AWD · $52,990</span>
+              <span class="nfy-chip">Tucson · $41,990</span>
+            </div>
+          </div>
+          <div class="nfy-row" style="gap:6px; margin-top:14px; color:var(--ink-faint)"><span class="nfy-dots"><i></i><i></i><i></i></span><span style="font-size:12px">checking finance + trade-in options…</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BRAND STRIP -->
+  <section class="nfy-wrap" style="padding-block:26px">
+    <div class="nfy-card" style="padding:20px 26px; display:flex; align-items:center; gap:26px; overflow:hidden">
+      <div style="font-size:13px; color:var(--ink-faint); font-weight:600; white-space:nowrap">Franchise brands</div>
+      <div class="nfy-row" style="gap:26px; flex-wrap:wrap; flex:1">
+        {brands.map(b => <span style="font-family:var(--font-display); font-weight:600; font-size:16px; color:var(--ink-soft)">{b}</span>)}
+      </div>
+      <a href={`${base}/brand`} class="nfy-btn nfy-btn-ghost nfy-btn-sm">All brands <span set:html={icon('arrow',15)}></span></a>
+    </div>
+  </section>
+
+  <!-- FEATURED -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div class="nfy-row" style="justify-content:space-between; align-items:flex-end; margin-bottom:24px">
+      <div>
+        <span class="nfy-eyebrow">Curated by Rebi</span>
+        <h2 class="nfy-h2" style="margin-top:12px">This week’s standouts</h2>
+      </div>
+      <a href={`${base}/listings`} class="nfy-btn nfy-btn-ghost">Browse all 305 <span set:html={icon('arrow',16)}></span></a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:22px">
+      {featured.map(v => <VehicleCard v={v} />)}
+    </div>
+  </section>
+
+  <!-- THREE WAYS / AI PILLARS -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:22px">
+      {[
+        ['chat','Ask, don’t scroll','Tell Rebi what your week looks like — school runs, the boat, the odd trip north — and get a shortlist, not 300 tabs.'],
+        ['calc','See the real number','Every listing shows an honest drive-away price and an instant repayment estimate. No surprises at the desk.'],
+        ['shield','Backed by real people','Rebi does the legwork; our Bundaberg team does the handshake. Book a test drive when you’re ready — never before.'],
+      ].map(([ic,h,p]) => (
+        <div class="nfy-card nfy-card--lift" style="padding:26px">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,20)} style="color:#fff; margin-bottom:16px"></span>
+          <h3 class="nfy-h3">{h}</h3>
+          <p class="nfy-muted" style="margin-top:10px; font-size:15px">{p}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- QUICK TOOLS -->
+  <section class="nfy-wrap nfy-section--tight">
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px">
+      {[
+        ['calc','Finance calculator',`${base}/finance`],
+        ['tag','Sell your car',`${base}/sell`],
+        ['leaf','Electric hub',`${base}/electric`],
+        ['play','Book a test drive',`${base}/test-drive`],
+      ].map(([ic,t,h]) => (
+        <a href={h} class="nfy-card nfy-card--lift" style="padding:20px; display:flex; align-items:center; gap:14px; text-decoration:none; color:inherit">
+          <span class="nfy-logo-mark" set:html={icon(ic as string,18)} style="color:#fff; width:40px; height:40px"></span>
+          <b style="font-family:var(--font-display); font-size:16px">{t}</b>
+          <span set:html={icon('arrow',18)} style="margin-left:auto; color:var(--teal-deep)"></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section class="nfy-wrap" style="padding-block:20px 70px">
+    <div class="nfy-hero nfy-grid-lines" style="border-radius:var(--r-xl); overflow:hidden; background:var(--ink); color:#fff; padding:52px 56px">
+      <div class="nfy-hero-mesh" style="opacity:.5"></div>
+      <div style="position:relative; z-index:1; display:grid; grid-template-columns:1.3fr .7fr; gap:40px; align-items:center">
+        <div>
+          <span class="nfy-eyebrow" style="color:#7FE6DA">Local, and always on</span>
+          <h2 class="nfy-h2" style="color:#fff; margin-top:14px">Rebi never clocks off.</h2>
+          <p style="color:#C4D0E0; font-size:17px; margin-top:12px; max-width:52ch">Weigh up finance, trade-in and a test drive at 11pm on a Sunday. When you want a human, our team is a message away.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px">
+          <a href={`${base}/rebi`} class="nfy-btn nfy-btn-primary nfy-btn-lg" style="justify-content:center"><span set:html={icon('spark',17)}></span> Chat with Rebi</a>
+          <a href={`${base}/contact`} class="nfy-btn nfy-btn-ghost nfy-btn-lg" style="justify-content:center; background:rgba(255,255,255,.08); color:#fff; border-color:rgba(255,255,255,.2)">Find our yard</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

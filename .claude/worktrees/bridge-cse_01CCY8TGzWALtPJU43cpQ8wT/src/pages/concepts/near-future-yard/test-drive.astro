@@ -1,0 +1,68 @@
+---
+import '../../../styles/global.css';
+import Layout from './_shell/Layout.astro';
+import { icon, vehicles, fmt } from './_shell/data';
+export const prerender = false;
+const base = '/concepts/near-future-yard';
+const v = vehicles[0];
+const times = ['9:00','9:30','10:00','10:30','11:00','1:00','2:30','3:00','4:00'];
+---
+<Layout title="Book a test drive — Rebirth Auto" active="" dockPrompt="Want me to hold a time before it goes?">
+  <section class="nfy-wrap" style="padding-block:34px 12px">
+    <span class="nfy-eyebrow"><span set:html={icon('play',14)}></span> Book a test drive</span>
+    <h1 class="nfy-h2" style="margin-top:12px; font-size:36px">Pick a time. We’ll have it ready.</h1>
+    <p class="nfy-lead" style="margin-top:12px">Choose a slot that suits you — Rebi checks the car’s availability and confirms with our team. No deposit, no pressure.</p>
+  </section>
+
+  <section class="nfy-wrap" style="padding-block:22px 70px; display:grid; grid-template-columns:1fr 340px; gap:28px; align-items:start">
+    <div class="nfy-card" style="padding:30px 32px">
+      <div class="nfy-steps" style="margin-bottom:26px">
+        <div class="nfy-step is-on"><span class="nfy-step-n">1</span> Details</div><div class="nfy-step-line"></div>
+        <div class="nfy-step is-on"><span class="nfy-step-n">2</span> Time</div><div class="nfy-step-line"></div>
+        <div class="nfy-step"><span class="nfy-step-n">3</span> Confirm</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px">
+        <div class="nfy-field"><span class="nfy-label">First name</span><input class="nfy-input" placeholder="Jordan" readonly /></div>
+        <div class="nfy-field"><span class="nfy-label">Last name</span><input class="nfy-input" placeholder="Ellis" readonly /></div>
+        <div class="nfy-field"><span class="nfy-label">Mobile</span><input class="nfy-input" placeholder="04__ ___ ___ (demo)" readonly /></div>
+        <div class="nfy-field"><span class="nfy-label">Email</span><input class="nfy-input" placeholder="you@example.com" readonly /></div>
+        <div class="nfy-field"><span class="nfy-label">Licence type</span><select class="nfy-select"><option>Full (open)</option><option>Provisional</option></select></div>
+        <div class="nfy-field"><span class="nfy-label">Preferred day</span><select class="nfy-select"><option>Sat 9 Aug</option><option>Sun 10 Aug</option><option>Mon 11 Aug</option></select></div>
+      </div>
+
+      <span class="nfy-label" style="display:block; margin-bottom:10px">Available times · Sat 9 Aug</span>
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:24px">
+        {times.map((t,i) => (
+          <div class={`nfy-chip ${i===3?'nfy-chip--teal':''}`} style={`justify-content:center; padding:11px 0; cursor:pointer; opacity:${i===1?.4:1}`}>{t}{i>=5?'pm':'am'}</div>
+        ))}
+      </div>
+
+      <div class="nfy-ai-summary" style="display:flex; gap:12px; align-items:center; padding:15px 17px; margin-bottom:22px">
+        <span class="nfy-orb nfy-orb--halo" style="width:30px;height:30px"></span>
+        <p style="font-size:13.5px; color:var(--ink-soft); flex:1">Rebi tip: 10:30am is quietest on Saturdays — you’ll get more time with the car. Want me to also line up a finance chat while you’re here?</p>
+      </div>
+
+      <button class="nfy-btn nfy-btn-primary nfy-btn-lg" style="width:100%; justify-content:center; pointer-events:none">Confirm test drive <span set:html={icon('check',17)}></span></button>
+      <p class="nfy-faint" style="font-size:12px; text-align:center; margin-top:12px">Demo form — no booking is made. Bring a valid driver’s licence on the day.</p>
+    </div>
+
+    <!-- car summary -->
+    <div style="position:sticky; top:92px; display:flex; flex-direction:column; gap:16px">
+      <div class="nfy-card" style="overflow:hidden">
+        <div style={`aspect-ratio:16/10; background:${v.hue}`}></div>
+        <div style="padding:18px 20px">
+          <span class="nfy-chip nfy-chip--ai">{v.condition}</span>
+          <h3 style="font-family:var(--font-display); font-size:18px; font-weight:600; margin-top:8px">{v.year} {v.make} {v.model}</h3>
+          <div style="font-size:13px; color:var(--ink-soft)">{v.variant}</div>
+          <div style="font-family:var(--font-display); font-weight:700; font-size:22px; margin-top:10px">{fmt(v.price)}</div>
+          <a href={`${base}/vehicle`} class="nfy-btn nfy-btn-ghost nfy-btn-sm" style="width:100%; justify-content:center; margin-top:14px">View full details</a>
+        </div>
+      </div>
+      <div class="nfy-glass" style="padding:18px">
+        <div class="nfy-row" style="gap:9px; margin-bottom:8px"><span set:html={icon('pin',16)} style="color:var(--teal-deep)"></span><b style="font-size:14px; font-family:var(--font-display)">Where</b></div>
+        <p style="font-size:13px; color:var(--ink-soft)">Rebirth Auto demo yard · Bundaberg region, QLD. Exact address shown on confirmation (placeholder).</p>
+      </div>
+    </div>
+  </section>
+</Layout>

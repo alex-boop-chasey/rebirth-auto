@@ -1,0 +1,92 @@
+---
+import { dealer, brands } from '../_data';
+const base = '/concepts/regional-trust';
+const cols = [
+  { h: 'Browse', links: ['New vehicles', 'Demo vehicles', 'Quality used', 'Electric & hybrid', 'Special offers'] },
+  { h: 'Services', links: ['Finance', 'Sell your car', 'Trade-in valuation', 'Book a service', 'Genuine parts'] },
+  { h: 'Riverbend', links: ['Our story', 'Meet the team', 'Careers', 'Fleet & business', 'Contact us'] },
+];
+---
+<footer class="rt-foot">
+  <div class="rt-foot-cta rt-wrap">
+    <div>
+      <span class="rt-eyebrow">Here to help, locally</span>
+      <h2>Pop in, call, or ask Rebi anything — any hour.</h2>
+    </div>
+    <div class="rt-foot-cta-btns">
+      <a href={`${base}/rebi`} class="rt-btn rt-btn-primary"><span class="rt-rebi-orb"></span> Chat with Rebi</a>
+      <a href={`${base}/contact`} class="rt-btn rt-btn-ghost">Find our yard</a>
+    </div>
+  </div>
+
+  <div class="rt-foot-main rt-wrap">
+    <div class="rt-foot-brand">
+      <div class="rt-brand-mark-f">RB</div>
+      <p class="rt-foot-name">Riverbend Motor Co.</p>
+      <p class="rt-foot-sub">{dealer.tagline}. Proudly serving {dealer.region} and its farming, coastal and town communities.</p>
+      <div class="rt-foot-trust">
+        <span class="rt-pill rt-pill-gold">★ Family-owned since {dealer.established}</span>
+        <span class="rt-pill rt-pill-sand">1,900+ happy locals</span>
+      </div>
+    </div>
+    {cols.map((c) => (
+      <div class="rt-foot-col">
+        <h4>{c.h}</h4>
+        <ul>{c.links.map((l) => <li><a href={`${base}/listings`}>{l}</a></li>)}</ul>
+      </div>
+    ))}
+    <div class="rt-foot-col">
+      <h4>Visit us</h4>
+      <p class="rt-foot-contact">{dealer.addressPlaceholder}</p>
+      <p class="rt-foot-contact">{dealer.phonePlaceholder}</p>
+      <p class="rt-foot-contact">{dealer.emailPlaceholder}</p>
+      <p class="rt-foot-contact">Mon–Fri 8:30–5:30 · Sat 8:30–2</p>
+    </div>
+  </div>
+
+  <div class="rt-foot-brands rt-wrap">
+    {brands.map((b) => <span>{b}</span>)}
+  </div>
+
+  <div class="rt-foot-legal rt-wrap">
+    <span>© {dealer.established}–2026 Riverbend Motor Co. (demo). All figures illustrative.</span>
+    <span>Design concept · “Regional Trust” · Rebirth Auto contest entry — dummy content, not a real business.</span>
+  </div>
+</footer>
+
+<style>
+  .rt-foot { background: var(--green-deep); color: #d9e2dc; margin-top: 40px; }
+  .rt-foot a:hover { color: #fff; }
+  .rt-foot-cta {
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+    padding-block: 44px; border-bottom: 1px solid rgba(255,255,255,.12);
+  }
+  .rt-foot-cta h2 { color: #f4f0e6; font-size: 30px; margin-top: 8px; max-width: 520px; }
+  .rt-foot-cta .rt-eyebrow { color: #a9cbbc; }
+  .rt-foot-cta .rt-eyebrow::before { background: var(--clay); }
+  .rt-foot-cta-btns { display: flex; gap: 12px; }
+  .rt-foot-cta .rt-btn-ghost { background: transparent; color: #f4f0e6; border-color: rgba(255,255,255,.28); }
+  .rt-foot-cta .rt-btn-ghost:hover { border-color: #fff; color: #fff; }
+
+  .rt-foot-main { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr 1.2fr; gap: 32px; padding-block: 48px; }
+  .rt-brand-mark-f {
+    width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+    background: rgba(255,255,255,.1); color: #f2ede1; font-family: var(--ff-display); font-weight: 700; font-size: 18px;
+  }
+  .rt-foot-name { font-family: var(--ff-display); font-size: 20px; color: #f4f0e6; margin-top: 14px; }
+  .rt-foot-sub { font-size: 14px; color: #b8c7bf; margin-top: 8px; max-width: 300px; }
+  .rt-foot-trust { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .rt-foot-col h4 { color: #f4f0e6; font-size: 15px; margin-bottom: 14px; }
+  .rt-foot-col ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+  .rt-foot-col a { font-size: 14px; color: #c3d0c8; }
+  .rt-foot-contact { font-size: 14px; color: #c3d0c8; margin-bottom: 8px; }
+  .rt-foot-brands {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; padding-block: 22px;
+    border-top: 1px solid rgba(255,255,255,.12); border-bottom: 1px solid rgba(255,255,255,.12);
+  }
+  .rt-foot-brands span { font-size: 13px; font-weight: 700; color: #9fbaad; letter-spacing: .02em; }
+  .rt-foot-legal {
+    display: flex; justify-content: space-between; gap: 20px;
+    padding-block: 18px; font-size: 12px; color: #8fa89c;
+  }
+</style>

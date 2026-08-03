@@ -1,0 +1,143 @@
+---
+// SSR (not prerendered): EV/hybrid hub. Educational copy is config-driven and
+// figure-free (determinism — no invented range/cost/incentive numbers); the stock
+// strip is REAL inventory queried from Sanity via LISTING_FIELDS and rendered with
+// the shared ListingCard. The primary CTA hands back to the fuel facet:
+// /listings?fuelType=electric,hybrid. Ported from
+// concepts2/inline-contextual/electric.astro onto real SiteNav/SiteFooter.
+export const prerender = false;
+
+import '../styles/global.css';
+import SiteNav from '../components/site/SiteNav.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import ChatWidget from '../components/widgets/ChatWidget.astro';
+import ListingCard from '../components/ListingCard.astro';
+import { client } from '../sanity/lib/client';
+import { LISTING_FIELDS, type Listing } from '../lib/listing';
+import { dealerConfig } from '../config/dealer';
+
+const cfg = dealerConfig.electric;
+
+// Feature flag — a dealer can hide the EV hub without a deploy.
+if (!cfg.enabled) return Astro.redirect('/', 302);
+
+const { copy } = cfg;
+const benefits = cfg.benefits;
+
+// REAL electric/hybrid stock — active listings whose fuelType is electric OR
+// hybrid. Never invented; a make/model only appears if it is genuinely in stock.
+const FACET_HREF = '/listings?fuelType=electric,hybrid';
+const evStock = await client.fetch<Listing[]>(
+  `*[_type == "listing" && status == "active" && vehicleSpecs.fuelType in ["electric","hybrid"]]
+    | order(coalesce(listingDate, _createdAt) desc)[0...8]{ ${LISTING_FIELDS} }`,
+);
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    plug: '<path d="M9 2v6M15 2v6M7 8h10v3a5 5 0 01-10 0z"/><path d="M12 16v6"/>',
+    range: '<circle cx="12" cy="12" r="9"/><path d="M12 12l4-2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>',
+    leaf: '<path d="M11 20A7 7 0 014 13c0-5 5-9 15-10 1 10-3 16-8 17z"/><path d="M9 14c2-3 5-4 8-5"/>',
+    shield: '<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/>',
+    spark: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="currentColor" stroke="none"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `${copy.heading} — ${dealerConfig.identity.name}`;
+const description = copy.subheading;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active="browse" />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from the fuel facet (listings) · home fuel strip · Rebi</div>
+        <span class="eyebrow"><span set:html={icon('bolt', 13)} /> {copy.eyebrow}</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">{copy.heading}</h1>
+        <p class="lead mt-3 max-w-2xl">{copy.subheading}</p>
+        <div class="entry-rail" style="margin-top:18px">
+          <a href={FACET_HREF} class="entry entry--ai">
+            <span class="entry-ic" set:html={icon('plug', 18)} />
+            <span class="entry-tx"><b>{copy.browseCtaLabel}</b><span>the fuel = electric &amp; hybrid filter</span></span>
+            <span class="entry-go" set:html={icon('arrow', 15)} />
+          </a>
+        </div>
+      </section>
+
+      <!-- figure-free education (config-driven; determinism) -->
+      <section class="site-container section-tight">
+        <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))">
+          {benefits.map((bft) => (
+            <div class="card" style="padding:18px">
+              <span style="color:var(--teal-deep)" set:html={icon(bft.icon, 22)} />
+              <b style="display:block; font-size:15px; margin:10px 0 4px">{bft.title}</b>
+              <p class="muted" style="font-size:13px">{bft.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Ask Rebi -->
+      <section class="site-container section-tight">
+        <div class="ai-summary scan" style="padding:22px; display:grid; grid-template-columns:1fr auto; gap:20px; align-items:center">
+          <div>
+            <div style="display:flex; gap:9px; align-items:center; margin-bottom:8px">
+              <span class="orb orb-halo" style="width:24px;height:24px"></span>
+              <b style="color:var(--indigo-deep); font-size:13px">Ask Rebi</b>
+            </div>
+            <p style="font-size:14.5px; line-height:1.55">Tell Rebi how far you drive and where you park, and it will weigh up whether an EV or hybrid suits you — then point you at the matching stock.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" data-rebi-open data-rebi-kind="nav" style="cursor:pointer; white-space:nowrap">
+            <span class="mr-1.5 inline-flex" set:html={icon('spark', 14)} /> Is an EV right for my drive?
+          </button>
+        </div>
+      </section>
+
+      <!-- REAL electric/hybrid stock -->
+      <section class="site-container section-tight">
+        <div style="display:flex; align-items:end; justify-content:space-between; gap:12px; margin-bottom:16px">
+          <h2 class="text-2xl font-bold text-ink">{copy.stockHeading}</h2>
+          <a href={FACET_HREF} class="btn btn-ghost btn-sm">
+            {copy.browseCtaLabel} <span class="ml-1 inline-flex" set:html={icon('arrow', 15)} />
+          </a>
+        </div>
+        {evStock.length > 0 ? (
+          <section class="inventory-grid" style={`--result-cols:${evStock.length}`}>
+            {evStock.map((listing) => <ListingCard listing={listing} />)}
+          </section>
+        ) : (
+          <div class="card" style="padding:26px; text-align:center">
+            <p class="muted">{copy.emptyMessage}</p>
+            <a href="/listings" class="btn btn-primary btn-sm" style="margin-top:14px">Browse all stock</a>
+          </div>
+        )}
+        <p class="faint" style="font-size:11.5px; margin-top:16px">{copy.disclaimer}</p>
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+  </body>
+</html>

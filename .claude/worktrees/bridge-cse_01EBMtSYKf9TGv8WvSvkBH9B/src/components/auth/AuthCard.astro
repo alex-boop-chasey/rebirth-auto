@@ -1,0 +1,467 @@
+---
+/**
+ * AuthCard — sign-in / create-account card, re-skinned LIGHT for Rebirth Auto.
+ * ---------------------------------------------------------------------------
+ * Ported from astro-users-demo's dark glassmorphic AuthCard and re-skinned to
+ * this site's light theme (white card, slate inks, `ring-slate-900/10`
+ * hairlines, emerald success, slate-900 primary button) — same vocabulary as
+ * src/pages/index.astro. No dark styling and no prefers-color-scheme block.
+ *
+ * Behaviour is unchanged from the reference: a login/signup tab toggle, a
+ * honeypot, client-side validation, a Cloudflare Turnstile widget, and calls to
+ * the Supabase-backed Astro actions (signIn / signUp). On success it routes to
+ * /account (or /check-email when email confirmation is pending).
+ */
+import { dealerConfig } from '../../config/dealer';
+
+interface Props {
+  initialMode?: 'login' | 'signup';
+}
+
+const { initialMode = 'login' } = Astro.props;
+const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_USER_TURNSTILE_KEY;
+const brand = dealerConfig.identity.name;
+
+const tabBase =
+  'flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20';
+const tabActive = 'bg-white text-slate-900 shadow-sm';
+const tabIdle = 'text-slate-500 hover:text-slate-900';
+const inputClass =
+  'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pl-10 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10';
+const labelClass = 'block text-sm font-medium text-slate-700';
+---
+
+<div class="mx-auto w-full max-w-md">
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+    <!-- Header -->
+    <div class="mb-6 text-center">
+      <p class="text-base font-semibold tracking-tight text-slate-900">{brand}</p>
+      <h1 id="auth-title" class="mt-3 text-2xl font-bold tracking-tight text-slate-900">
+        {initialMode === 'login' ? 'Welcome back' : 'Create your account'}
+      </h1>
+      <p id="auth-subtitle" class="mt-2 text-sm text-slate-500">
+        {
+          initialMode === 'login'
+            ? 'Sign in to view your saved searches and service history.'
+            : 'Save searches and keep your service history in one place.'
+        }
+      </p>
+    </div>
+
+    <!-- Mode tabs -->
+    <div
+      class="mb-6 flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1"
+      role="tablist"
+    >
+      <button
+        type="button"
+        id="tab-login"
+        class={`${tabBase} ${initialMode === 'login' ? tabActive : tabIdle}`}
+        role="tab"
+        aria-selected={initialMode === 'login'}
+        aria-controls="auth-form"
+        data-mode="login"
+      >
+        Sign in
+      </button>
+      <button
+        type="button"
+        id="tab-signup"
+        class={`${tabBase} ${initialMode === 'signup' ? tabActive : tabIdle}`}
+        role="tab"
+        aria-selected={initialMode === 'signup'}
+        aria-controls="auth-form"
+        data-mode="signup"
+      >
+        Create account
+      </button>
+    </div>
+
+    <!-- Alert -->
+    <div
+      id="auth-alert"
+      role="alert"
+      class="mb-5 hidden items-start gap-2 rounded-xl border px-4 py-3 text-sm"
+    >
+      <span id="auth-alert-message"></span>
+    </div>
+
+    <!-- Form -->
+    <form id="auth-form" class="grid grid-cols-1 gap-4" novalidate>
+      <!-- Honeypot (visually hidden, off-screen) -->
+      <div class="absolute left-[-9999px] h-px w-px overflow-hidden" aria-hidden="true">
+        <label for="auth-website">Website</label>
+        <input type="text" id="auth-website" name="website" autocomplete="off" tabindex="-1" />
+      </div>
+
+      <!-- Name (signup only) -->
+      <div id="name-group" class={initialMode === 'signup' ? '' : 'hidden'}>
+        <label class={labelClass} for="auth-name">Full name</label>
+        <div class="relative mt-1.5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <input
+            type="text"
+            id="auth-name"
+            name="name"
+            class={inputClass}
+            autocomplete="name"
+            placeholder="John Doe"
+            required={initialMode === 'signup'}
+          />
+        </div>
+        <span class="mt-1 block text-xs font-medium text-red-600" id="name-error"></span>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label class={labelClass} for="auth-email">Email address</label>
+        <div class="relative mt-1.5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          >
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <path d="m22 6-10 7L2 6"></path>
+          </svg>
+          <input
+            type="email"
+            id="auth-email"
+            name="email"
+            class={inputClass}
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+        <span class="mt-1 block text-xs font-medium text-red-600" id="email-error"></span>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label class={labelClass} for="auth-password">Password</label>
+        <div class="relative mt-1.5">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <input
+            type="password"
+            id="auth-password"
+            name="password"
+            class={`${inputClass} pr-10`}
+            autocomplete={initialMode === 'signup' ? 'new-password' : 'current-password'}
+            placeholder="••••••••"
+            required
+          />
+          <button
+            type="button"
+            id="password-toggle"
+            aria-label="Toggle password visibility"
+            tabindex="-1"
+            class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition hover:text-slate-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="eye-icon h-4 w-4"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="eye-off-icon hidden h-4 w-4"
+            >
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </button>
+        </div>
+        <span class="mt-1 block text-xs font-medium text-red-600" id="password-error"></span>
+        <div id="forgot-password-row" class={`mt-2 text-right ${initialMode === 'login' ? '' : 'hidden'}`}>
+          <a
+            href="/reset-password"
+            class="text-xs font-semibold text-slate-500 transition hover:text-slate-900"
+          >
+            Forgot password?
+          </a>
+        </div>
+      </div>
+
+      <!-- Turnstile -->
+      <div class="flex flex-col items-center gap-1.5">
+        <div class="cf-turnstile" id="turnstile-widget" data-sitekey={TURNSTILE_SITE_KEY} data-theme="light"></div>
+        <span class="text-xs font-medium text-red-600" id="turnstile-error"></span>
+      </div>
+
+      <!-- Submit -->
+      <button
+        type="submit"
+        id="auth-submit-btn"
+        class="relative inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/30 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span id="btn-text-content">{initialMode === 'login' ? 'Sign in' : 'Create account'}</span>
+        <span
+          id="btn-spinner"
+          class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+        ></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Cloudflare Turnstile script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<script>
+  import { actions, isActionError } from 'astro:actions';
+
+  let currentMode: 'login' | 'signup' =
+    document.querySelector('[data-mode][aria-selected="true"]')?.getAttribute('data-mode') === 'signup'
+      ? 'signup'
+      : 'login';
+
+  const form = document.getElementById('auth-form') as HTMLFormElement;
+  const tabLogin = document.getElementById('tab-login') as HTMLButtonElement;
+  const tabSignup = document.getElementById('tab-signup') as HTMLButtonElement;
+  const nameGroup = document.getElementById('name-group') as HTMLDivElement;
+  const forgotPasswordRow = document.getElementById('forgot-password-row') as HTMLDivElement;
+  const nameInput = document.getElementById('auth-name') as HTMLInputElement;
+  const emailInput = document.getElementById('auth-email') as HTMLInputElement;
+  const passwordInput = document.getElementById('auth-password') as HTMLInputElement;
+  const honeypotInput = document.getElementById('auth-website') as HTMLInputElement;
+  const passwordToggle = document.getElementById('password-toggle') as HTMLButtonElement;
+
+  const authTitle = document.getElementById('auth-title') as HTMLHeadingElement;
+  const authSubtitle = document.getElementById('auth-subtitle') as HTMLParagraphElement;
+  const submitBtn = document.getElementById('auth-submit-btn') as HTMLButtonElement;
+  const btnText = document.getElementById('btn-text-content') as HTMLSpanElement;
+  const btnSpinner = document.getElementById('btn-spinner') as HTMLSpanElement;
+
+  const alertBox = document.getElementById('auth-alert') as HTMLDivElement;
+  const alertMessage = document.getElementById('auth-alert-message') as HTMLSpanElement;
+
+  const nameError = document.getElementById('name-error') as HTMLSpanElement;
+  const emailError = document.getElementById('email-error') as HTMLSpanElement;
+  const passwordError = document.getElementById('password-error') as HTMLSpanElement;
+  const turnstileError = document.getElementById('turnstile-error') as HTMLSpanElement;
+
+  const TAB_ACTIVE = ['bg-white', 'text-slate-900', 'shadow-sm'];
+  const TAB_IDLE = ['text-slate-500', 'hover:text-slate-900'];
+  const ALERT_ERROR = ['border-red-200', 'bg-red-50', 'text-red-700'];
+  const ALERT_SUCCESS = ['border-emerald-200', 'bg-emerald-50', 'text-emerald-700'];
+  const INPUT_ERROR = ['border-red-400', 'ring-2', 'ring-red-200'];
+
+  function activate(tab: HTMLButtonElement, active: boolean) {
+    tab.classList.remove(...TAB_ACTIVE, ...TAB_IDLE);
+    tab.classList.add(...(active ? TAB_ACTIVE : TAB_IDLE));
+    tab.setAttribute('aria-selected', String(active));
+  }
+
+  function setMode(mode: 'login' | 'signup') {
+    currentMode = mode;
+    clearAlert();
+    clearFieldErrors();
+
+    if (mode === 'login') {
+      activate(tabLogin, true);
+      activate(tabSignup, false);
+      nameGroup.classList.add('hidden');
+      nameInput.removeAttribute('required');
+      forgotPasswordRow.classList.remove('hidden');
+      authTitle.textContent = 'Welcome back';
+      authSubtitle.textContent = 'Sign in to view your saved searches and service history.';
+      btnText.textContent = 'Sign in';
+      window.history.pushState(null, '', '/login');
+    } else {
+      activate(tabSignup, true);
+      activate(tabLogin, false);
+      nameGroup.classList.remove('hidden');
+      nameInput.setAttribute('required', 'true');
+      forgotPasswordRow.classList.add('hidden');
+      authTitle.textContent = 'Create your account';
+      authSubtitle.textContent = 'Save searches and keep your service history in one place.';
+      btnText.textContent = 'Create account';
+      window.history.pushState(null, '', '/signup');
+    }
+    resetTurnstile();
+  }
+
+  tabLogin.addEventListener('click', () => setMode('login'));
+  tabSignup.addEventListener('click', () => setMode('signup'));
+
+  passwordToggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    (passwordToggle.querySelector('.eye-icon') as SVGElement).classList.toggle('hidden');
+    (passwordToggle.querySelector('.eye-off-icon') as SVGElement).classList.toggle('hidden');
+  });
+
+  window.addEventListener('popstate', () => {
+    const path = window.location.pathname;
+    if (path === '/signup') setMode('signup');
+    else if (path === '/login') setMode('login');
+  });
+
+  function showAlert(message: string, type: 'error' | 'success') {
+    alertBox.classList.remove('hidden', ...ALERT_ERROR, ...ALERT_SUCCESS);
+    alertBox.classList.add('flex', ...(type === 'error' ? ALERT_ERROR : ALERT_SUCCESS));
+    alertMessage.textContent = message;
+  }
+
+  function clearAlert() {
+    alertBox.classList.add('hidden');
+    alertBox.classList.remove('flex', ...ALERT_ERROR, ...ALERT_SUCCESS);
+    alertMessage.textContent = '';
+  }
+
+  function clearFieldErrors() {
+    nameError.textContent = '';
+    emailError.textContent = '';
+    passwordError.textContent = '';
+    turnstileError.textContent = '';
+    for (const el of [nameInput, emailInput, passwordInput]) el.classList.remove(...INPUT_ERROR);
+  }
+
+  function validateForm(): boolean {
+    clearFieldErrors();
+    let isValid = true;
+
+    if (honeypotInput.value.trim()) {
+      showAlert('Unable to process your request at this time.', 'error');
+      return false;
+    }
+
+    if (currentMode === 'signup') {
+      if (!nameInput.value.trim()) {
+        nameError.textContent = 'Name is required.';
+        nameInput.classList.add(...INPUT_ERROR);
+        isValid = false;
+      } else if (nameInput.value.trim().length < 2) {
+        nameError.textContent = 'Name must be at least 2 characters.';
+        nameInput.classList.add(...INPUT_ERROR);
+        isValid = false;
+      }
+    }
+
+    if (!emailInput.value.trim()) {
+      emailError.textContent = 'Email is required.';
+      emailInput.classList.add(...INPUT_ERROR);
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(emailInput.value)) {
+      emailError.textContent = 'Please enter a valid email address.';
+      emailInput.classList.add(...INPUT_ERROR);
+      isValid = false;
+    }
+
+    if (!passwordInput.value) {
+      passwordError.textContent = 'Password is required.';
+      passwordInput.classList.add(...INPUT_ERROR);
+      isValid = false;
+    } else if (passwordInput.value.length < 6) {
+      passwordError.textContent = 'Password must be at least 6 characters.';
+      passwordInput.classList.add(...INPUT_ERROR);
+      isValid = false;
+    }
+
+    const turnstileToken = new FormData(form).get('cf-turnstile-response') as string;
+    if (!turnstileToken) {
+      turnstileError.textContent = 'Please complete the security challenge.';
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  function resetTurnstile() {
+    if (typeof (window as any).turnstile !== 'undefined') (window as any).turnstile.reset();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAlert();
+    if (!validateForm()) return;
+
+    submitBtn.disabled = true;
+    btnText.classList.add('opacity-0');
+    btnSpinner.classList.remove('hidden');
+
+    const formData = new FormData(form);
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    const name = nameInput.value;
+    const turnstileToken = formData.get('cf-turnstile-response') as string;
+
+    try {
+      if (currentMode === 'login') {
+        const { data, error } = await actions.signIn({ email, password, turnstileToken });
+        if (error) {
+          showAlert(isActionError(error) ? error.message : 'An unexpected error occurred. Please try again.', 'error');
+          resetTurnstile();
+        } else if (data?.success) {
+          showAlert('Signed in — redirecting…', 'success');
+          setTimeout(() => (window.location.href = '/account'), 800);
+        }
+      } else {
+        const { data, error } = await actions.signUp({ name, email, password, turnstileToken });
+        if (error) {
+          showAlert(isActionError(error) ? error.message : 'An unexpected error occurred. Please try again.', 'error');
+          resetTurnstile();
+        } else if (data?.success) {
+          if (data.hasSession) {
+            showAlert('Account created — redirecting…', 'success');
+            setTimeout(() => (window.location.href = '/account'), 1200);
+          } else {
+            window.location.href = `/check-email?email=${encodeURIComponent(email)}`;
+          }
+        }
+      }
+    } catch {
+      showAlert('Network error. Please try again.', 'error');
+      resetTurnstile();
+    } finally {
+      submitBtn.disabled = false;
+      btnText.classList.remove('opacity-0');
+      btnSpinner.classList.add('hidden');
+    }
+  });
+</script>

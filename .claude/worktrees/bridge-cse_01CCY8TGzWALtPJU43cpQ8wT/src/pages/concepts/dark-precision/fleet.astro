@@ -1,0 +1,52 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+---
+<Layout title="Fleet & Business — Dark Precision" current="fleet" dockHint="Ask me to size a fleet to your business">
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Fleet & business</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:16px;max-width:18ch">One point of contact for the whole fleet</h1>
+      <p class="dp-lead" style="margin-top:16px;max-width:52ch">Whether it's two utes or two hundred, Rebi models total cost of ownership across brands and the fleet desk handles the rest — priority servicing, bulk pricing, ABN finance.</p>
+      <div style="display:flex;gap:14px;margin-top:26px">
+        <a class="dp-btn dp-btn--primary" href={`${base}/contact`}>Talk to the fleet desk</a>
+        <a class="dp-btn" href={`${base}/rebi`}>Model my fleet costs</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-grid dp-cols-4">
+      {[["◈","Bulk pricing","Volume-based drive-away rates across 13 franchises."],["◇","Priority servicing","Dedicated bays and loan vehicles to keep you moving."],["◎","ABN finance","Chattel mortgage & novated lease structured for business."],["◐","TCO modelling","Rebi compares fuel, service and resale across options."]].map(([g,t,d]) => (
+        <div class="dp-panel dp-tick" style="padding:22px;display:grid;gap:10px">
+          <span style="font-size:26px;color:var(--signal)">{g}</span>
+          <h3 style="font-family:var(--font-display);font-weight:600;font-size:16px">{t}</h3>
+          <p class="dp-mute" style="font-size:13px;line-height:1.55">{d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="dp-wrap dp-section--tight">
+    <div class="dp-panel dp-tick" style="padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+      <div>
+        <span class="dp-eyebrow">Rebi · fleet TCO snapshot</span>
+        <h2 class="dp-h2" style="margin-top:14px;max-width:18ch">See the 3-year cost before you commit</h2>
+        <p class="dp-dim" style="margin-top:14px;font-size:14px;line-height:1.6;max-width:42ch">Example: 10 dual-cab utes, 30,000 km/yr each. Rebi splits the numbers so procurement can sign off with confidence.</p>
+        <a class="dp-btn dp-btn--primary" href={`${base}/rebi`} style="margin-top:22px">Build my fleet model</a>
+      </div>
+      <div class="dp-ai" style="padding:24px">
+        <div class="dp-readout"><span class="dp-readout__k">Acquisition</span><span class="dp-readout__bar"><i style="width:80%"></i></span><span class="dp-readout__v">$589k</span></div>
+        <div class="dp-readout"><span class="dp-readout__k">Fuel (3yr)</span><span class="dp-readout__bar"><i style="width:52%"></i></span><span class="dp-readout__v">$214k</span></div>
+        <div class="dp-readout"><span class="dp-readout__k">Servicing</span><span class="dp-readout__bar"><i style="width:22%"></i></span><span class="dp-readout__v">$61k</span></div>
+        <div class="dp-readout"><span class="dp-readout__k">Resale (−)</span><span class="dp-readout__bar"><i style="width:44%"></i></span><span class="dp-readout__v" style="color:var(--pos)">−$248k</span></div>
+        <div class="dp-insight" style="margin-top:16px">
+          <span class="dp-insight__tag">REBI</span>
+          <p>Switching 4 of the 10 to hybrid trims the 3-year total by <strong>$41,000</strong> with no loss of payload.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

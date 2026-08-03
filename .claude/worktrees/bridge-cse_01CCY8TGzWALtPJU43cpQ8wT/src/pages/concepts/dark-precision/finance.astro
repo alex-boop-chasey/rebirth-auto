@@ -1,0 +1,127 @@
+---
+import '../../../styles/global.css';
+import Layout from './_components/Layout.astro';
+export const prerender = false;
+const base = "/concepts/dark-precision";
+---
+<Layout title="Finance — Dark Precision" current="finance" dockHint="Ask me what you can realistically afford">
+
+  <section style="border-bottom:1px solid var(--line)">
+    <div class="dp-wrap dp-section--tight">
+      <span class="dp-eyebrow">Finance · powered by Rebi</span>
+      <h1 class="dp-display" style="font-size:52px;margin-top:18px;max-width:18ch">Numbers first. No surprises at the desk.</h1>
+      <p class="dp-lead" style="margin-top:18px;max-width:52ch">Model your repayment before you enquire. Rebi factors rate, term and deposit into a live estimate — then explains what actually drives the figure.</p>
+    </div>
+  </section>
+
+  <!-- ===================== CALCULATOR ===================== -->
+  <section class="dp-wrap dp-section--tight">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start">
+
+      <!-- controls -->
+      <div class="dp-panel dp-tick" style="padding:30px">
+        <span class="dp-eyebrow--mute dp-eyebrow" style="display:flex;margin-bottom:22px">Repayment calculator</span>
+
+        <div style="display:grid;gap:26px">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span class="dp-label" style="margin:0">Vehicle price</span>
+              <span class="dp-mono" style="font-size:18px;color:var(--signal)">$62,990</span>
+            </div>
+            <div class="dp-range"><span class="dp-range__fill" style="width:63%"></span><span class="dp-range__knob" style="left:63%"></span></div>
+            <div style="display:flex;justify-content:space-between" class="dp-mono dp-mute"><span style="font-size:10px">$5k</span><span style="font-size:10px">$120k</span></div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span class="dp-label" style="margin:0">Deposit</span>
+              <span class="dp-mono" style="font-size:18px;color:var(--signal)">$8,000</span>
+            </div>
+            <div class="dp-range"><span class="dp-range__fill" style="width:22%"></span><span class="dp-range__knob" style="left:22%"></span></div>
+            <div style="display:flex;justify-content:space-between" class="dp-mono dp-mute"><span style="font-size:10px">$0</span><span style="font-size:10px">$40k</span></div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span class="dp-label" style="margin:0">Term</span>
+              <span class="dp-mono" style="font-size:18px;color:var(--signal)">60 months</span>
+            </div>
+            <div class="dp-seg" style="margin-top:10px">
+              <button aria-pressed="false">36</button>
+              <button aria-pressed="false">48</button>
+              <button aria-pressed="true">60</button>
+              <button aria-pressed="false">72</button>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span class="dp-label" style="margin:0">Comparison rate</span>
+              <span class="dp-mono" style="font-size:18px;color:var(--signal)">7.45% p.a.</span>
+            </div>
+            <div class="dp-range"><span class="dp-range__fill" style="width:44%"></span><span class="dp-range__knob" style="left:44%"></span></div>
+            <div style="display:flex;justify-content:space-between" class="dp-mono dp-mute"><span style="font-size:10px">4.9%</span><span style="font-size:10px">12%</span></div>
+          </div>
+
+          <div>
+            <span class="dp-label">Balloon / residual</span>
+            <div class="dp-pillrow" style="margin-top:6px">
+              <span class="dp-chip dp-chip--active">$0</span>
+              <span class="dp-chip">20%</span>
+              <span class="dp-chip">30%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- readout -->
+      <div style="display:grid;gap:20px">
+        <div class="dp-ai" style="padding:30px;text-align:center">
+          <span class="dp-mono" style="font-size:11px;letter-spacing:0.18em;color:var(--signal)">ESTIMATED REPAYMENT</span>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:12px">
+            <span class="dp-mono" style="font-size:66px;font-weight:600;letter-spacing:-0.03em">$312</span>
+            <span class="dp-dim dp-mono" style="font-size:16px">/ week</span>
+          </div>
+          <p class="dp-mute" style="font-size:12px;margin-top:8px">≈ $1,352 / month · indicative only, not a quote</p>
+          <hr class="dp-hr" style="margin-block:20px"/>
+          <div class="dp-grid dp-cols-3">
+            <div class="dp-stat"><b style="font-size:22px">$54,990</b><span>Amount financed</span></div>
+            <div class="dp-stat"><b style="font-size:22px">$11,130</b><span>Total interest</span></div>
+            <div class="dp-stat"><b style="font-size:22px">$66,120</b><span>Total payable</span></div>
+          </div>
+        </div>
+
+        <div class="dp-insight">
+          <span class="dp-insight__tag"><span class="dp-dot dp-dot--live"></span>REBI · WHAT MOVES THIS NUMBER</span>
+          <p>Adding <strong>$4,000 to your deposit</strong> drops the weekly figure to <strong>$289</strong> and saves <strong>$1,180</strong> in interest over the term. Stretching to 72 months lowers the weekly cost but costs more overall.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <a class="dp-btn dp-btn--primary" href={`${base}/rebi`} style="justify-content:center">Pre-qualify with Rebi</a>
+          <a class="dp-btn" href={`${base}/contact`} style="justify-content:center">Talk to finance team</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- finance options -->
+  <section class="dp-wrap dp-section--tight">
+    <span class="dp-eyebrow">Options</span>
+    <h2 class="dp-h2" style="margin-top:14px;margin-bottom:26px">Structured for how you buy</h2>
+    <div class="dp-grid dp-cols-3">
+      {[
+        ["Consumer loan","Fixed rate, own it outright at term end. Simplest path for private buyers.","From 6.9%*"],
+        ["Novated lease","Salary-package your next car and pay from pre-tax income. Popular for EVs.","Tax-effective"],
+        ["Chattel mortgage","For ABN holders — claim GST and depreciation on business vehicles.","Business"],
+      ].map(([t,d,tag]) => (
+        <div class="dp-panel dp-tick" style="padding:24px;display:grid;gap:12px">
+          <span class="dp-chip dp-chip--signal" style="justify-self:start">{tag}</span>
+          <h3 class="dp-h3">{t}</h3>
+          <p class="dp-dim" style="font-size:14px;line-height:1.6">{d}</p>
+          <a class="dp-mono" href={`${base}/rebi`} style="font-size:12px;color:var(--signal);margin-top:4px">Ask Rebi if this suits you →</a>
+        </div>
+      ))}
+    </div>
+    <p class="dp-mono dp-mute" style="font-size:11px;margin-top:20px">*Placeholder rates for demonstration only. Not an offer of credit. Lending criteria apply.</p>
+  </section>
+</Layout>

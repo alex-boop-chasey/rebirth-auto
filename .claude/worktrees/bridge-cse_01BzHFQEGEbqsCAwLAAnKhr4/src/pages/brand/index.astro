@@ -1,0 +1,85 @@
+---
+// SSR (not prerendered): the brand hub index. The make list is derived from REAL
+// inventory (distinct `make` of active listings) — never a hardcoded brand list
+// (determinism). Ported from concepts2/inline-contextual/brand.astro onto real
+// SiteNav/SiteFooter. Self-contained: does not touch listings-query.ts.
+export const prerender = false;
+
+import '../../styles/global.css';
+import SiteNav from '../../components/site/SiteNav.astro';
+import SiteFooter from '../../components/site/SiteFooter.astro';
+import ChatWidget from '../../components/widgets/ChatWidget.astro';
+import { fetchActiveMakes } from '../../lib/brands';
+import { dealerConfig } from '../../config/dealer';
+
+const brands = await fetchActiveMakes();
+
+const icon = (name: string, size = 16): string => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"`;
+  const p: Record<string, string> = {
+    star: '<path d="M12 3l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9 6.7 19l1-5.8L3.5 9.2l5.9-.9z"/>',
+    car: '<path d="M5 11l1.5-4A2 2 0 018.4 6h7.2a2 2 0 011.9 1.3L19 11"/><path d="M4 11h16v5H4z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  return `<svg ${s}>${p[name] ?? ''}</svg>`;
+};
+
+const title = `Shop by brand — ${dealerConfig.identity.name}`;
+const description = 'Jump straight to the brand you know — every make currently in our yard.';
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+  </head>
+
+  <body class="page-surface min-h-screen antialiased text-[15px] leading-relaxed">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to content
+    </a>
+
+    <SiteNav active="browse" />
+
+    <main id="main-content" tabindex="-1">
+      <section class="site-container hero-wrap">
+        <div class="entry-origin">Reached from a brand chip (home / listings / vehicle) · nav "Shop by brand"</div>
+        <span class="eyebrow"><span set:html={icon('star', 13)} /> Shop by brand</span>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-ink md:text-5xl">Shop by brand</h1>
+        <p class="lead mt-3 max-w-2xl">Jump straight to a make you know. These are the brands currently in our yard.</p>
+      </section>
+
+      <section class="site-container section-tight">
+        {brands.length > 0 ? (
+          <div class="grid-auto" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,14rem),1fr))">
+            {brands.map((b) => (
+              <a href={`/brand/${b.slug}`} class="card card-lift" style="padding:18px; text-decoration:none; color:inherit; display:flex; align-items:center; gap:12px">
+                <span class="entry-ic" style="width:38px; height:38px; border-radius:10px; display:grid; place-items:center; background:var(--mint-glow); color:var(--teal-deep)" set:html={icon('car', 20)} />
+                <span style="flex:1">
+                  <b style="display:block; font-size:15px">{b.make}</b>
+                  <span class="muted" style="font-size:12.5px">{b.count} {b.count === 1 ? 'vehicle' : 'vehicles'} in stock</span>
+                </span>
+                <span style="color:var(--ink-faint)" set:html={icon('arrow', 16)} />
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div class="card" style="padding:26px; text-align:center">
+            <p class="muted">No stock in the yard right now — <a href="/listings">browse all listings</a>.</p>
+          </div>
+        )}
+      </section>
+    </main>
+
+    <SiteFooter />
+    <ChatWidget />
+  </body>
+</html>

@@ -1,0 +1,41 @@
+---
+import Layout from './_shell/Layout.astro';
+import { icon, BASE } from './_shell/data';
+export const prerender = false;
+---
+<Layout title="Sell your car — Rebirth Auto">
+  <section class="site-container hero-wrap">
+    <div class="entry-origin">Reached from trade-in (sell vs trade fold) · vehicle page · footer</div>
+    <span class="eyebrow"><span set:html={icon('doc',13)}></span> Sell outright</span>
+    <h1 style="font-family:var(--font-display); font-size:clamp(30px,4vw,44px); margin:12px 0 10px">Sell us your car — no purchase required</h1>
+    <p class="lead">Distinct from a trade-in: walk away with the cash. Not sure which is better for you? We put them side by side.</p>
+  </section>
+
+  <section class="site-container" style="display:grid; grid-template-columns:1.3fr 1fr; gap:26px; padding-bottom:20px; align-items:start">
+    <div class="card" style="padding:26px">
+      <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:16px">Get an indicative offer</h2>
+      <div class="grid-auto" style="grid-template-columns:1fr 1fr; gap:14px">
+        {[['Make','e.g. Toyota'],['Model','e.g. HiLux'],['Year','2019'],['Odometer (km)','98,000']].map(([l,ph]) => (
+          <label style="display:block"><span class="faint" style="font-size:12px">{l}</span><input class="field" style="margin-top:5px" placeholder={ph as string} readonly /></label>
+        ))}
+      </div>
+      <label style="display:block; margin-top:14px"><span class="faint" style="font-size:12px">Condition</span>
+        <div style="display:flex; gap:7px; margin-top:6px">{['Excellent','Good','Fair'].map((c,i) => (<span class={`facet ${i===1?'is-on':''}`}>{c}</span>))}</div>
+      </label>
+      <button class="btn btn-primary" data-rebi-open style="margin-top:20px; width:100%; justify-content:center"><span set:html={icon('spark',15)}></span> Get my indicative price</button>
+      <p class="faint" style="font-size:11.5px; margin-top:10px">Indicative only — final offer after inspection. Demo form.</p>
+    </div>
+
+    <aside class="stack" style="gap:14px; position:sticky; top:92px">
+      <div class="card" style="padding:20px">
+        <h3 style="font-family:var(--font-display); font-size:16px; margin-bottom:10px">Sell vs trade — quick guide</h3>
+        {[['Sell outright','Best price, but you handle your next car separately.'],['Trade-in','Less admin, may reduce stamp duty on your new car.']].map(([t,d]) => (
+          <div style="padding:10px 0; border-bottom:1px solid var(--line)"><b style="font-size:13.5px">{t}</b><p class="muted" style="font-size:12.5px; margin-top:3px">{d}</p></div>
+        ))}
+        <!-- sell ↔ trade-in fold -->
+        <a href={`${BASE}/trade-in`} class="entry entry--amber" style="width:100%; box-shadow:none; margin-top:14px"><span class="entry-ic" set:html={icon('tag',16)}></span><span class="entry-tx"><b>Try a trade-in valuation</b><span>compare the two</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+      </div>
+      <a href={`${BASE}/listings`} class="entry"><span class="entry-ic" set:html={icon('car',18)}></span><span class="entry-tx"><b>Buying next, too?</b><span>browse stock</span></span><span class="entry-go" set:html={icon('arrow',15)}></span></a>
+    </aside>
+  </section>
+</Layout>
