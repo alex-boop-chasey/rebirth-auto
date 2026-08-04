@@ -114,17 +114,11 @@ const canonicalURL = new URL(
       <section class="home-hero">
         <div class="home-hero-media" aria-hidden="true">
           <picture>
-            <source
-              type="image/webp"
-              srcset="/images/home/hero-800.webp 800w, /images/home/hero-1200.webp 1200w, /images/home/hero-1600.webp 1600w, /images/home/hero-2400.webp 2400w"
-              sizes="100vw"
-            />
+            <source type="image/webp" srcset="/images/home/hero3.webp" />
             <img
-              src="/images/home/hero-1600.jpg"
-              srcset="/images/home/hero-800.jpg 800w, /images/home/hero-1200.jpg 1200w, /images/home/hero-1600.jpg 1600w, /images/home/hero-2400.jpg 2400w"
-              sizes="100vw"
-              width="2400"
-              height="1350"
+              src="/images/home/hero3.png"
+              width="1307"
+              height="656"
               alt=""
               fetchpriority="high"
               decoding="async"
@@ -301,11 +295,12 @@ const canonicalURL = new URL(
         position: relative;
         isolation: isolate;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         /* A contained band, never a 100vh splash — this is a browse-first page,
            so the inventory grid stays near the fold. The `24vw` term only bites
            past ~2100px, where a pure vh band would crop the photo to a sliver. */
-        min-height: clamp(430px, max(56vh, 24vw), 620px);
+        min-height: 92vh;
+        min-height: 92dvh;
         overflow: hidden;
         background: #060B14; /* fallback until the photo paints */
       }
@@ -325,7 +320,7 @@ const canonicalURL = new URL(
         object-fit: cover;
         /* The car sits centre-frame; bias the crop DOWN so the nose + bumper
            stay in shot on a wide, short band instead of being clipped. */
-        object-position: 50% 62%;
+        object-position: 50% 50%;
         animation: hero-drift 9s cubic-bezier(0.16, 0.8, 0.24, 1) both;
       }
 
@@ -338,22 +333,14 @@ const canonicalURL = new URL(
         position: absolute;
         inset: 0;
         z-index: -1;
-        background:
-          linear-gradient(
-            100deg,
-            rgba(6, 11, 20, 0.93) 0%,
-            rgba(6, 11, 20, 0.88) 24%,
-            rgba(6, 11, 20, 0.6) 50%,
-            rgba(6, 11, 20, 0.24) 76%,
-            rgba(6, 11, 20, 0.12) 100%
-          ),
-          linear-gradient(
-            180deg,
-            rgba(6, 11, 20, 0.5) 0%,
-            rgba(6, 11, 20, 0.1) 32%,
-            rgba(6, 11, 20, 0.34) 72%,
-            rgba(6, 11, 20, 0.6) 100%
-          );
+        background: linear-gradient(
+          180deg,
+          rgba(6, 11, 20, 0.55) 0%,
+          rgba(6, 11, 20, 0.30) 22%,
+          rgba(6, 11, 20, 0.34) 50%,
+          rgba(6, 11, 20, 0.52) 78%,
+          rgba(6, 11, 20, 0.72) 100%
+        );
       }
 
       /* Aurora hairline: crisp band edge into the page mist below. */
@@ -371,7 +358,9 @@ const canonicalURL = new URL(
         padding-block: clamp(2.25rem, 5.5vh, 4rem);
       }
       .home-hero-copy {
-        max-width: 36rem;
+        max-width: 44rem;
+        margin-inline: auto;
+        text-align: center;
       }
 
       /* Lift the teal toward white: the shipped --teal-deep fails AA on a dark
@@ -396,6 +385,7 @@ const canonicalURL = new URL(
       .home-hero-lead {
         margin: 14px 0 0;
         max-width: 34rem;
+        margin-inline: auto;
         font-size: clamp(15.5px, 1.15vw, 18px);
         line-height: 1.6;
         color: rgba(255, 255, 255, 0.84);
@@ -422,10 +412,12 @@ const canonicalURL = new URL(
          over a photo and left-align it with the copy column. */
       .home-hero-search {
         margin-top: 14px;
+        margin-inline: auto;
       }
       .home-hero-search :global(.search-dock) {
-        margin: 0;
+        margin: 0 auto;
         max-width: 100%;
+        margin-inline: auto;
       }
       .home-hero-search :global(.search-dock .entry) {
         margin-top: 0;
@@ -439,7 +431,7 @@ const canonicalURL = new URL(
         background: #fff;
       }
       .home-hero-search :global(.search-dock .hint) {
-        text-align: left;
+        text-align: center;
         color: rgba(255, 255, 255, 0.78);
         text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
       }
@@ -484,8 +476,8 @@ const canonicalURL = new URL(
           );
         }
         .home-hero-media {
-          bottom: auto;
-          height: 66%;
+          inset: 0;
+          height: 100%;
         }
         .home-hero-media img {
           object-position: 50% 45%;
