@@ -61,3 +61,10 @@
   max-width: calc(var(--result-cols, 99) * 18rem + (var(--result-cols, 99) - 1) * 1.5rem);
   margin-inline: auto;
 }
+
+/* Site-wide h1 size override. Unlayered + !important so it wins over Tailwind
+   text-* utilities (in the utilities layer) and any scoped heading classes,
+   making every <h1> render at 5em regardless of per-page utility sizing. */
+h1 {
+  font-size: 5em !important;
+}
