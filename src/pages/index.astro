@@ -411,24 +411,37 @@ const canonicalURL = new URL(
          the hero. These overrides just make the glass read as solid enough
          over a photo and left-align it with the copy column. */
       .home-hero-search {
-        margin-top: 14px;
-        margin-inline: auto;
+        margin-top: 22px;
       }
       .home-hero-search :global(.search-dock) {
-        margin: 0 auto;
-        max-width: 100%;
-        margin-inline: auto;
+        width: 70vw;
+        max-width: 70vw;
+        margin-left: 50%;
+        transform: translateX(-50%);
       }
       .home-hero-search :global(.search-dock .entry) {
         margin-top: 0;
-        padding: 0.7rem 0.5rem 0.7rem 1.05rem;
-        border-radius: 0.9rem;
+        padding: 1.05rem 1.05rem 1.05rem 1.7rem;
+        border-radius: 9999px;
         background: rgba(255, 255, 255, 0.97);
-        border-bottom-color: rgba(1, 97, 239, 0.55);
-        box-shadow: 0 22px 45px -20px rgba(0, 0, 0, 0.85);
+        border: 1px solid rgba(1, 97, 239, 0.22);
+        border-bottom: 2px solid rgba(1, 97, 239, 0.55);
+        box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.85);
       }
       .home-hero-search :global(.search-dock .entry:focus-within) {
         background: #fff;
+      }
+      .home-hero-search :global(.search-dock .search-dock-input) {
+        font-size: 1.18rem;
+        padding: 0.5rem 0;
+      }
+      .home-hero-search :global(.search-dock .search-dock-submit) {
+        font-size: 1rem;
+        padding: 0.72rem 1.4rem;
+      }
+      .home-hero-search :global(.search-dock .entry .mag svg) {
+        width: 1.4rem;
+        height: 1.4rem;
       }
       .home-hero-search :global(.search-dock .hint) {
         text-align: center;
@@ -481,6 +494,12 @@ const canonicalURL = new URL(
         }
         .home-hero-media img {
           object-position: 50% 45%;
+        }
+        .home-hero-search :global(.search-dock) {
+          width: 100%;
+          max-width: 100%;
+          margin-left: 0;
+          transform: none;
         }
       }
 
