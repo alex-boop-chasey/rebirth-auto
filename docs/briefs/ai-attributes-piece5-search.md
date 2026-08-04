@@ -15,7 +15,7 @@ These are shopper-facing filter/ranking dimensions (URL filter codes, exactly li
 fields). Your job: make them flow **planner → URL → GROQ**, show as removable chips, and be reachable
 from both the LLM query planner AND the regex fallback extractor.
 
-## Repo constraints that bite here (from AGENTS.md — obey exactly)
+## Repo constraints that bite here (from CLAUDE.md — obey exactly)
 - **Filter state only via the established seam.** Shopper filter state lives in the URL and is
   read/written through `applyFilterUrl` — do not construct filter URLs independently. The existing
   filter dimensions (`fuelType`, etc.) are your template; mirror them precisely for multi-select.

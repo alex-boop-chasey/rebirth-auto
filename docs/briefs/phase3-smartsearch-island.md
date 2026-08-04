@@ -5,7 +5,7 @@ Port the homepage AI natural-language search dock from a vanilla `<script>` in `
 React island `SmartSearch.tsx` that consumes the Phase 2 hooks. **Behaviour must be identical to today.**
 This is a parity migration of one homepage-only surface that has a real no-JS fallback (the FilterDrawer).
 
-## Non-negotiable constraints (restated per AGENTS.md)
+## Non-negotiable constraints (restated per CLAUDE.md)
 - **Filter state is URL-only (DECISION 5).** The island holds NO filter state. Read current filters via the
   `useFilterUrl` hook's `readState()` (which uses `parseFilters(new URLSearchParams(location.search))`);
   write ONLY via `useFilterUrl().apply(...)` (which calls the shared `applyFilterUrl`). Do not add any

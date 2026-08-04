@@ -14,7 +14,7 @@ substitute for this document, and a decision that exists only in the log has not
 **The companion documents:**
 - **`VISION.md`** — what the product is trying to become, and why that's worth building
 - **`LENSES.md`** — durable ways of looking at the product that shape design judgment
-- **`AGENTS.md`** — the operating rules and hard constraints for Claude Code in this repo
+- **`CLAUDE.md`** — the operating rules and hard constraints for Claude Code in this repo
 
 ---
 
@@ -265,14 +265,14 @@ rules or model left unset.
 
 - **This document** records the decisions and reasoning so intent survives across time and across
   many work sessions.
-- **`AGENTS.md`** carries the operating rules and hard constraints for Claude Code — so every session
+- **`CLAUDE.md`** carries the operating rules and hard constraints for Claude Code — so every session
   starts already knowing them, and so sub-agents can't miss a constraint the orchestrator forgot to
   mention.
 - **Enforcement in code** (a lint rule or test) should fail the build if dealer-specific values are
   hardcoded outside the central config, and if any private field appears in shopper-facing output.
   Structure beats memory.
 - **Periodic audits** — occasionally a task should audit the codebase against these conventions and
-  report any drift. Audit records are append-only (see `AGENTS.md`).
+  report any drift. Audit records are append-only (see `CLAUDE.md`).
 
 ---
 
@@ -283,7 +283,7 @@ rules or model left unset.
   major decision, every contest outcome, and anything irreversible before it proceeds.
 
 - **The planning surface** (the Claude.ai project, where `VISION.md`, `DECISIONS.md`, `LENSES.md` and
-  `AGENTS.md` live alongside the owner) turns the owner's decisions into architecture and into
+  `CLAUDE.md` live alongside the owner) turns the owner's decisions into architecture and into
   written tickets — plain language for the owner, precise instructions for the coding agent. This is
   where genuinely competitive design decisions get made, because it's the surface with the most
   context on intent and the least on implementation detail.

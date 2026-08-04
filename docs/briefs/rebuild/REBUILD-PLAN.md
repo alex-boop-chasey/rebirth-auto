@@ -28,7 +28,7 @@ must survive — READ BOTH before touching a surface) and the NFY concept at
    teal `#0FB5A6`, indigo `#5566F0` (Rebi/AI), amber `#E0813B` (local/offers), aurora gradient
    `linear-gradient(115deg,#0FB5A6,#2E86E4,#5566F0)`, shadows sh-1/2/3 + glow, radii 10/16/22/30/pill.
    (Future: accent could be driven from `dealerConfig` for multi-tenant — note only, not now.)
-4. **Light-theme standard is satisfied** (NFY is light-first) — no conflict with AGENTS.md.
+4. **Light-theme standard is satisfied** (NFY is light-first) — no conflict with CLAUDE.md.
 5. **Shared components are an improvement, additive.** The shipped site has no shared layout (each
    page inlines its `<html>`). Introduce real reusable `SiteNav` + `SiteFooter` + primitives and adopt
    them page-by-page. Config-as-data: nav/footer labels + dealer values from `dealerConfig`.

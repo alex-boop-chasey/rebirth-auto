@@ -56,5 +56,5 @@ offers, EV hub, fleet enquiry, multi-department contact.
 - **Visual-only.** No functionality, no JS behaviour, **no mobile responsiveness** (desktop ~1440 only).
 - **Additive + isolated.** New unlinked routes under `src/pages/concepts/<team>/…` — never
   overwrite or touch any shipped page/component/config (mirror the labs/ isolation pattern).
-- **Light-theme standard still binds** (AGENTS.md / /auto §2): light-first shells.
+- **Light-theme standard still binds** (CLAUDE.md / /auto §2): light-first shells.
 - Config-as-data spirit: no need to wire real `dealerConfig`, but don't hardcode contradictions.

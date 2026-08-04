@@ -1,6 +1,6 @@
 # Cloudflare security — audit & roadmap
 
-The site deploys as a **Cloudflare Worker** (not Pages — see `AGENTS.md`). That puts most of the
+The site deploys as a **Cloudflare Worker** (not Pages — see `CLAUDE.md`). That puts most of the
 edge-security surface in the Cloudflare account/dashboard, not in this repo. This doc audits what
 is already in place in code vs. what needs **owner / account-level action**. Owner-action items
 are also registered in `TODO_KEYS.md`.

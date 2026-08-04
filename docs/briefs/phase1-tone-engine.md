@@ -5,7 +5,7 @@ Split the pure Web-Audio tone synthesis out of `src/components/widgets/rebi-soun
 `createToneEngine()` so a future React hook can consume it, **without changing any current behaviour**.
 This is a pure, behaviour-preserving refactor. No React in this phase.
 
-## Constraints that bite here (restated per AGENTS.md)
+## Constraints that bite here (restated per CLAUDE.md)
 - **Determinism:** no `Math.random`, no module-top-level `new Date()`. (None exist today — keep it that way.)
 - **Light-theme / config-as-data / AI-through-`src/ai/`:** not touched by this file — leave alone.
 - The still-vanilla `ChatWidget.astro` imports `createRebiSounds()` from this module. Its public API and

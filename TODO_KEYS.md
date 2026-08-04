@@ -6,7 +6,7 @@ one live: add the credential where noted, flip the env flag, done — no code ch
 Format: **Service** — what's needed — where to add it — what it unlocks — activation effort.
 
 Flags live in `.dev.vars` (local) / `wrangler secret` (prod) for the Worker, and `.env` for
-Node scripts. See `AGENTS.md` for which is which.
+Node scripts. See `CLAUDE.md` for which is which.
 
 ---
 

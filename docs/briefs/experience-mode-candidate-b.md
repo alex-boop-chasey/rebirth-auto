@@ -60,7 +60,7 @@ reaction-steered tour.
   of the site). The **preference model is real deterministic code** (`taste.ts`): reactions tally over
   legible feature tokens, and `pickNext` re-ranks the unseen queue every step. Every narration line and
   every "tell me more" fact is derived **strictly from a car's real specs** — a car missing a spec
-  simply earns no claim about it (AGENTS.md determinism). Deep links go to the real `/listings/[slug]`.
+  simply earns no claim about it (CLAUDE.md determinism). Deep links go to the real `/listings/[slug]`.
 - **Faked / scripted (deliberately, per the brief's cheap-prototype allowance):** Rebi's "voice" is
   templated, **not** a live LLM — `narrationFor` assembles a sentence from present specs. No OpenRouter,
   no `~/ai` call. The taste-read and the "getting a feel for" chips are deterministic labels for the

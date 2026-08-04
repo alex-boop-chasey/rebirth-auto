@@ -17,7 +17,7 @@ If something I'm about to do contradicts this document, STOP.
 
 ## Hard constraints (non-negotiable)
 
-3. **The docs remain adhered to** — `VISION.md` / `DECISIONS.md` / `LENSES.md` / `AGENTS.md`:
+3. **The docs remain adhered to** — `VISION.md` / `DECISIONS.md` / `LENSES.md` / `CLAUDE.md`:
    config-as-data (no dealer literals outside `src/config/dealer.ts`), all AI through `src/ai/`,
    filter state only via `applyFilterUrl`, `dealerNotes` never public, determinism (never fabricate
    data), light-theme standard, the data-model rules.

@@ -17,7 +17,7 @@
 
 ---
 
-## 0. Guiding constraints (carried from AGENTS.md / DECISIONS.md / LENSES.md)
+## 0. Guiding constraints (carried from CLAUDE.md / DECISIONS.md / LENSES.md)
 
 These bind every part of the spec below:
 
@@ -415,7 +415,7 @@ and `dealer.ts`; filter URLs go only through `applyFilterUrl`.
 5. Re-skin data components (ListingCard, FilterDrawer/panel, SearchDock, chat launcher).
 6. Compose pages (home first, then listings/vehicle/hubs) from the above.
 
-Each ticket runs two-phase (investigate+propose → approved execute) per AGENTS.md.
+Each ticket runs two-phase (investigate+propose → approved execute) per CLAUDE.md.
 
 ---
 

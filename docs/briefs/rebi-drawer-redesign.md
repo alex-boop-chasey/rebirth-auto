@@ -42,7 +42,7 @@ navigate to the info they need)."*
 5. **Remove all leftovers** of the old chat interface once the new one works (dead CSS, the
    focus-stage engine wiring if now unused, the old carousel markup).
 
-## 3. Non-negotiable constraints (from AGENTS.md / DECISIONS.md)
+## 3. Non-negotiable constraints (from CLAUDE.md / DECISIONS.md)
 
 - **Private data stays private.** Tiles and action links are built **only** from the public listing
   projection (`LISTING_FIELDS` in `src/lib/listing.ts`). `dealerNotes` / cost / floor price never

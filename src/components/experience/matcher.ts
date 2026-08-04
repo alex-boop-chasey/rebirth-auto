@@ -11,7 +11,7 @@
  *   2. `curate()` — scores real vehicles against the shopper's answers and ranks
  *      them, attaching human-readable "why this one" reasons that are derived
  *      ONLY from a vehicle's real specs. Nothing is invented; a car that lacks a
- *      spec simply earns no reason from it (determinism, per AGENTS.md).
+ *      spec simply earns no reason from it (determinism, per CLAUDE.md).
  *
  * No `Math.random()`, no module-level clock, no side effects. Ties break on a
  * stable key (price asc, then id) so the same answers always yield the same order.

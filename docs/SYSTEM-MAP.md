@@ -2,7 +2,7 @@
 
 > A structured inventory of every file, system, process and external dependency the site
 > runs on. Built by surveying the real codebase (paths verified to exist as of 2026-07-29).
-> Companion to `docs/DECISIONS.md` (intent), `AGENTS.md` (rules), `docs/REMAINING-WORK.md`
+> Companion to `docs/DECISIONS.md` (intent), `CLAUDE.md` (rules), `docs/REMAINING-WORK.md`
 > (backlog) and `TODO_KEYS.md` (stub/integration registry).
 
 ---

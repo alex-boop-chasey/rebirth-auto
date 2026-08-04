@@ -18,7 +18,7 @@ external calls, no data writes. `npx astro check` stays green.
   DEGRADE GRACEFULLY (offline / command failure → just report current pinned versions, never crash).
   No writes, no upgrades. `--json` flag optional for machine output.
 - Doc: `docs/dependency-tracking.md` — the safe update process for THIS stack (the known-tricky bits
-  from AGENTS.md: the Cloudflare adapter v14 `cloudflare:workers` env pattern, the `node_modules/.vite`
+  from CLAUDE.md: the Cloudflare adapter v14 `cloudflare:workers` env pattern, the `node_modules/.vite`
   stale-optimizer gotcha, "Worker not Pages"), plus a checklist for a safe dependency bump.
 
 ## 2. Cloudflare security tooling — `docs/cloudflare-security.md`

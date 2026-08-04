@@ -11,7 +11,7 @@ Everything wraps existing, battle-tested vanilla modules. Two hard rules:
 - **The only source we lean on from Phase 1** is the new `createToneEngine()` in
   `src/components/widgets/rebi-sounds.ts` (already merged).
 
-## Constraints that bite here (restated per AGENTS.md)
+## Constraints that bite here (restated per CLAUDE.md)
 - **Filter state is URL-only (DECISION 5).** `useFilterUrl` must NOT introduce any React/in-memory filter
   store. Every read happens at call time off `location.search`; every write goes through the existing
   `applyFilterUrl`. Preserve the shared module-level `seq` in `filter-url.ts` (do not reimplement it).

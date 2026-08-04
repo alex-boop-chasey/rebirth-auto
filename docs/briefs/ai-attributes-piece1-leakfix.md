@@ -3,7 +3,7 @@
 You are a sub-agent on the `feat/ai-attributes` branch. Scope is EXACTLY this piece — do not touch
 search files, schema, the Studio component, or enrichment. One conventional commit at the end.
 
-## Repo constraints that bite here (from AGENTS.md — obey)
+## Repo constraints that bite here (from CLAUDE.md — obey)
 - **All AI through `src/ai/`.** The endpoint already calls `generate('writing')` via the `~/ai` barrel.
   Do NOT call OpenRouter or a provider directly, and do NOT add a model call for validation — the
   post-validation is PURE STRING CHECKS, not an LLM call.

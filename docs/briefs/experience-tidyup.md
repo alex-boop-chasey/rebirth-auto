@@ -21,7 +21,7 @@ animation/behaviour; only its **layout position** changes.
 - **Isolation:** these are experimental, unlinked `labs/` surfaces. Change ONLY the experience
   page + its own `experience/` components/CSS. Do NOT touch shipped pages/components/config, and
   do NOT touch `experience-alt` or the shared chat widget.
-- **Light-theme standard** (AGENTS.md): keep it light-first — do not restyle to dark.
+- **Light-theme standard** (CLAUDE.md): keep it light-first — do not restyle to dark.
 - **No new deps.** No package.json/lockfile changes. Config-as-data: no dealer literals.
 - Additive/surgical: smallest change that fixes the overlap and balances the hero.
 

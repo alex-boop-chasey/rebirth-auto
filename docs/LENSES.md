@@ -2,7 +2,7 @@
 
 This document holds design lenses — durable ways of looking at the product that shape judgment about
 what to build and how. Lenses are distinct from `DECISIONS.md` (which records architectural choices
-with their reasoning) and from `AGENTS.md` (which records mechanical rules that must be followed).
+with their reasoning) and from `CLAUDE.md` (which records mechanical rules that must be followed).
 
 A lens is a pattern of thinking that reveals design implications a narrower view would miss. Its job
 is to make you *look* somewhere you wouldn't have looked. A lens is not a gate — a good proposal that
@@ -12,7 +12,7 @@ its place; if it keeps foreclosing good ideas, revise or retire it deliberately 
 
 New lenses are added when a pattern of thinking has been useful across multiple decisions, not on
 first sighting. If a candidate lens turns out to be a Decision or a Constraint in disguise, it belongs
-in `DECISIONS.md` or `AGENTS.md` instead.
+in `DECISIONS.md` or `CLAUDE.md` instead.
 
 ---
 

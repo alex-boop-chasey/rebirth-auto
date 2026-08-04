@@ -39,7 +39,7 @@ and reliably lands: the shopper sees _why_, which is exactly the thing a brochur
 - **Config-as-data violation (hard-constraint level).** All dealer-tunable thresholds are
   **hardcoded in feature code**, not read from `dealerConfig`: budget bands `22000` / `30000` /
   `20000` / `42000` / `38000` (`matcher.ts:95,153,207,214,221`), low-km ceiling `40000`
-  (`matcher.ts:183`), "newest" floor `2023` (`matcher.ts:192`). AGENTS.md says _"Never hardcode a
+  (`matcher.ts:183`), "newest" floor `2023` (`matcher.ts:192`). CLAUDE.md says _"Never hardcode a
   dealer value anywhere else."_ Worse, A's low-km ceiling of **40,000** contradicts the site's
   canonical `lookup.lowKmThreshold` of **60,000** (`dealer.ts:771`) — so "low kms" means two
   different things in two parts of the same product. Onboarding a second tenant means editing the

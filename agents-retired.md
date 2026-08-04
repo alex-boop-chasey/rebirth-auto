@@ -1,3 +1,5 @@
+> RETIRED — superseded by CLAUDE.md. Kept for reference only. Do not follow.
+
 # AGENTS.md — Working instructions for Claude Code in this repo
 
 ## START HERE — every session, every agent

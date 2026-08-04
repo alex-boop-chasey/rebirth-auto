@@ -21,7 +21,7 @@ when anything is outdated — the script parses the JSON it prints on stdout in 
 
 ## Stack-specific gotchas (do NOT relearn these the hard way)
 
-These are the load-bearing constraints from `AGENTS.md`. A dependency bump that ignores them
+These are the load-bearing constraints from `CLAUDE.md`. A dependency bump that ignores them
 produces bugs that look like code bugs but aren't.
 
 1. **Cloudflare adapter is v14 — Worker, NOT Pages.** We deploy as a **Cloudflare Worker** via

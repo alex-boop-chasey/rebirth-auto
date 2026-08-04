@@ -15,14 +15,14 @@ what is already shipped), then execute everything that remains.
 
 ## 1. Authority granted in this mode
 These project-doc rules that normally require owner authorization are **lifted** here:
-- **Commit autonomously** (overrides AGENTS.md's "one commit per ticket / owner sign-off" gate).
+- **Commit autonomously** (overrides CLAUDE.md's "one commit per ticket / owner sign-off" gate).
 - **Push the working branch** to origin, and integrate to `main` **non-destructively** (fast-forward
   or merge).
 - **Run data scripts with `--commit`** once the dry-run diff is clean, deterministic, and WARN-free.
 - **Make directional / architectural decisions yourself** wherever the docs do not specify.
 
 ## 2. Rules that STILL bind — do NOT break any of these
-- Every **other** rule in `AGENTS.md` / `DECISIONS.md` / `LENSES.md`: **config-as-data** (no dealer
+- Every **other** rule in `CLAUDE.md` / `DECISIONS.md` / `LENSES.md`: **config-as-data** (no dealer
   literals outside `src/config/dealer.ts`), **all AI through `src/ai/`**, **determinism** (ambiguous →
   logged WARN, never guess or fabricate data), **filter state only via `applyFilterUrl`**,
   **`dealerNotes` never public**, the data-model rules, and the **light-theme** UI standard.
@@ -65,7 +65,7 @@ warrant a sub-agent contest** — a *design* contest for gold-standard UI/UX, a 
 hard or open-ended technical problem. Record the decision in `docs/REMAINING-WORK.md`. Then:
 - Build **everything else first**, autonomously, to completion.
 - **Defer the contest-designated features to the very end.** They are the **only** tasks that require
-  the human. Run each contest per AGENTS.md (**3 sub-agents, strict sequence**), present the candidates,
+  the human. Run each contest per CLAUDE.md (**3 sub-agents, strict sequence**), present the candidates,
   and let the **owner judge** — do **not** self-select the winner for a contest-designated feature.
 
 ## 7. Start & finish

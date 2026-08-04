@@ -44,7 +44,7 @@ preside over the questions, and settles above the curated reveal.
   and currency/locale (via `formatPrice`); the full client-side state machine, transitions, orb, and
   staggered reveal; and the **matching** — a pure, deterministic scoring function (`matcher.ts`) that
   ranks real stock against the shopper's answers. The per-car reason chips are generated **only from a
-  vehicle's real specs** — a car missing a spec simply earns no reason from it (AGENTS.md determinism).
+  vehicle's real specs** — a car missing a spec simply earns no reason from it (CLAUDE.md determinism).
 - **Faked / scripted (deliberately, per the brief's cheap-prototype allowance):** Rebi's conversational
   copy is a scripted local flow, **not** a live LLM call. The answer→preference weights live in
   `matcher.QUESTIONS` (the feature analogue of `dealer.ts` `concepts`). No OpenRouter, no `~/ai` call.
