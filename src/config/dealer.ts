@@ -311,15 +311,16 @@ export interface DealerConfig {
       /** Typewriter animation timings (ms). */
       typewriter: { typeMs: number; deleteMs: number; dwellMs: number };
       /**
-       * Copy for the inline AI search bubble (SearchDock's "Rebi speaks"
-       * message above the pill). All dealer-tunable — no literals in the
-       * component. `{count}` in `resultsRefine` is interpolated with the real
-       * match total read back from the swapped inventory grid.
+       * Copy for the carousel's short canned on-card replies (one line per
+       * outcome — long free-form replies were the original defect). All
+       * dealer-tunable — no literals in the component.
        */
       messages: {
         /** Shown with the waiting dots while /api/search + the grid swap run. */
         finding: string;
-        /** Applied a filter with matches. Supports a `{count}` token. */
+        /** Fresh search (no prior active filters) that found matches. */
+        resultsFound: string;
+        /** A follow-up search that narrows an already-filtered list. */
         resultsRefine: string;
         /** Applied a filter but nothing matched. */
         noMatch: string;
@@ -1366,11 +1367,12 @@ export const dealerConfig: DealerConfig = {
       typewriter: { typeMs: 45, deleteMs: 25, dwellMs: 1800 },
       messages: {
         finding: 'Finding your results…',
-        resultsRefine:
-          'Here are your {count} matches — tell me more to narrow it down, or start a new search.',
-        noMatch: 'Nothing matched that one — try describing it a different way.',
-        unclear:
-          "I couldn't quite pin that down — try adding a budget, body type, or fuel type.",
+        // Carousel's short canned on-card replies, keyed by outcome:
+        // resultsFound = fresh results, resultsRefine = refine, noMatch/unclear = no-match + unclear.
+        resultsFound: 'Here are the vehicles matching your needs.',
+        resultsRefine: 'Would you like to refine your search?',
+        noMatch: 'Tell me a bit more, or try rephrasing.',
+        unclear: 'Tell me a bit more, or try rephrasing.',
         newSearchLabel: 'New search',
       },
       greeting: {
