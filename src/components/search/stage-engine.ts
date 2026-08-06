@@ -241,7 +241,9 @@ export function createFocusStage(opts: FocusStageOptions): FocusStage {
 
   // Tokenise a descriptor into ordered {text, count?} chunks + the plain string.
   const tokensFor = (d: Descriptor): { toks: { text: string; count?: boolean }[]; plain: string } => {
-    if (d.kind === 'results') {
+    // Only inject the count token when the copy actually has a {count} placeholder —
+    // count-free results copy must render verbatim (no stray number spliced in).
+    if (d.kind === 'results' && d.text.includes('{count}')) {
       const parts = d.text.split('{count}');
       const before = parts[0] ?? '';
       const after = parts[1] ?? '';
