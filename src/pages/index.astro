@@ -516,6 +516,48 @@ const canonicalURL = new URL(
         mask-image: linear-gradient(180deg, transparent 0, rgb(0 0 0 / 0.35) 8%, #000 26%);
       }
 
+      /* ---- centre-drift: the trailing stack converges to one column ----
+         The depth engine (stage-engine.ts) sets transform/filter/opacity/z
+         on the `.turn` WRAPPER only and never touches the inner `.card`. So
+         we centre every turn (overriding stage.css's flex-start/flex-end)
+         and put a per-depth horizontal offset on the untouched `.card`: the
+         newest card (front, `:nth-last-child(1)`) starts just off-centre —
+         Rebi left, user right — and older cards ease inward to dead-centre.
+         NEVER put a transform on `.turn` — the engine owns it. */
+      .home-hero-search :global(.search-dock .focus-stage .turn) {
+        justify-content: center;
+      }
+      .home-hero-search :global(.search-dock .focus-stage .card) {
+        transition: transform 560ms cubic-bezier(0.22, 0.61, 0.30, 1);
+        will-change: transform;
+      }
+      /* depth 0 — front card, just off-centre */
+      .home-hero-search :global(.search-dock .focus-stage .turn.rebi:nth-last-child(1) .card) {
+        transform: translateX(-3.5rem);
+      }
+      .home-hero-search :global(.search-dock .focus-stage .turn.user:nth-last-child(1) .card) {
+        transform: translateX(3.5rem);
+      }
+      /* depth 1 */
+      .home-hero-search :global(.search-dock .focus-stage .turn.rebi:nth-last-child(2) .card) {
+        transform: translateX(-1.9rem);
+      }
+      .home-hero-search :global(.search-dock .focus-stage .turn.user:nth-last-child(2) .card) {
+        transform: translateX(1.9rem);
+      }
+      /* depth 2 */
+      .home-hero-search :global(.search-dock .focus-stage .turn.rebi:nth-last-child(3) .card) {
+        transform: translateX(-0.8rem);
+      }
+      .home-hero-search :global(.search-dock .focus-stage .turn.user:nth-last-child(3) .card) {
+        transform: translateX(0.8rem);
+      }
+      /* depth 3+ — dead centre, reads as one converged column */
+      .home-hero-search :global(.search-dock .focus-stage .turn.rebi:nth-last-child(n+4) .card),
+      .home-hero-search :global(.search-dock .focus-stage .turn.user:nth-last-child(n+4) .card) {
+        transform: translateX(0);
+      }
+
       /* ---- hero reactions, driven off the dock's active state ---------- */
       /* Background BLUR ONLY (no greyscale / no desaturate). The small scale on
          the WRAPPER keeps the blur's soft edge off-screen; the img keeps its own
@@ -528,7 +570,7 @@ const canonicalURL = new URL(
       /* Collapse the band to a compact frame — the top of `#inventory` below
          rises toward the fold (the "the AI did something" reveal). */
       .home-hero:has(.search-dock.is-active) {
-        min-height: clamp(360px, 52vh, 480px);
+        min-height: clamp(380px, 54vh, 500px);
       }
 
       /* Clear the prose — fade AND leave layout so the collapse genuinely
@@ -556,6 +598,7 @@ const canonicalURL = new URL(
         max-width: min(40rem, 92vw);
       }
       .home-hero-search :global(.search-dock.is-active .entry) {
+        margin-top: 1.4rem;
         padding: 0.5rem 0.55rem 0.5rem 1.05rem;
         box-shadow: 0 16px 34px -22px rgba(0, 0, 0, 0.7);
       }
@@ -591,6 +634,17 @@ const canonicalURL = new URL(
         .home-hero-search :global(.search-dock .entry),
         .home-hero-search :global(.search-dock .hint) {
           transition: none;
+        }
+        /* No horizontal drift at all under reduced motion — matches the
+           engine's opacity-only recede path. These selectors carry the same
+           specificity as the depth rules (role class + :nth-last-child) and
+           come later in source order, so `transform: none` reliably wins and
+           every card collapses to dead-centre. `:nth-last-child(n)` matches
+           every card regardless of depth. */
+        .home-hero-search :global(.search-dock .focus-stage .turn.rebi:nth-last-child(n) .card),
+        .home-hero-search :global(.search-dock .focus-stage .turn.user:nth-last-child(n) .card) {
+          transition: none;
+          transform: none;
         }
       }
 
