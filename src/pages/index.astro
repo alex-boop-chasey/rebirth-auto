@@ -12,6 +12,7 @@
 export const prerender = false;
 
 import '../styles/global.css';
+import '../components/search/stage.css';
 import { client } from '../sanity/lib/client';
 import CompareTray from '../components/CompareTray.astro';
 import ChatWidget from '../components/widgets/ChatWidget.astro';
@@ -303,12 +304,20 @@ const canonicalURL = new URL(
         min-height: 92dvh;
         overflow: hidden;
         background: #060B14; /* fallback until the photo paints */
+        /* Cinematic collapse when the dock goes active (see :has() rule below). */
+        transition: min-height 620ms cubic-bezier(0.22, 0.61, 0.30, 1);
       }
 
       .home-hero-media {
         position: absolute;
         inset: 0;
         z-index: -2;
+        /* Scale + blur are driven by the active state; keep the transform on the
+           WRAPPER so it never collides with the img's own hero-drift keyframes. */
+        transform-origin: 50% 50%;
+        transition:
+          filter 620ms cubic-bezier(0.22, 0.61, 0.30, 1),
+          transform 620ms cubic-bezier(0.22, 0.61, 0.30, 1);
       }
       .home-hero-media picture,
       .home-hero-media img {
@@ -405,6 +414,22 @@ const canonicalURL = new URL(
         text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
       }
 
+      /* Prose collapse targets — transition set on the base so the active-state
+         clear (opacity + height/margin to 0) animates. `overflow:hidden` is NOT
+         set here so the idle text-shadows never clip; it is added only in the
+         active rule, while the copy is fading out anyway. */
+      .home-hero .eyebrow,
+      .home-hero-title,
+      .home-hero-lead,
+      .home-hero-count {
+        transition:
+          opacity 340ms ease,
+          transform 340ms cubic-bezier(0.22, 0.61, 0.30, 1),
+          max-height 620ms cubic-bezier(0.22, 0.61, 0.30, 1),
+          margin 620ms cubic-bezier(0.22, 0.61, 0.30, 1);
+        max-height: 12rem;
+      }
+
       /* ---- the AI search bar, on the photograph ------------------------
          The dock renders a composer + hint only (its old carousel "stage"
          chrome was retired upstream), so the whole island sits happily in
@@ -427,6 +452,11 @@ const canonicalURL = new URL(
         border: 1px solid rgba(1, 97, 239, 0.22);
         border-bottom: 2px solid rgba(1, 97, 239, 0.55);
         box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.85);
+        /* padding/shadow morph on activate — the transform delta is the JS FLIP;
+           these two properties give the morph a real docked-composer feel. */
+        transition:
+          padding 460ms cubic-bezier(0.22, 0.61, 0.30, 1),
+          box-shadow 460ms cubic-bezier(0.22, 0.61, 0.30, 1);
       }
       .home-hero-search :global(.search-dock .entry:focus-within) {
         background: #fff;
@@ -450,6 +480,96 @@ const canonicalURL = new URL(
       }
       .home-hero-search :global(.search-dock-manual) {
         color: #8ED4FF;
+      }
+
+      /* ==================================================================
+         CINEMATIC ACTIVE STATE
+         The island adds `is-active` to `.search-dock` on submit. Everything
+         here is rooted at `.home-hero` / `.search-dock` — the nav and the
+         `#inventory-results` region below are NEVER touched.
+         ================================================================== */
+
+      /* ---- the stage viewport (idle: collapsed + clipped) --------------
+         `.search-dock` is `transform: translateX(-50%)` — a transformed
+         ancestor — so the stage MUST own its own positioning context, which
+         the active rule below establishes (`position: relative`). Idle it is a
+         0-height clipped box: the absolutely-positioned `.turn` cards inside
+         stay clipped, so nothing leaks before the first search. */
+      .home-hero-search :global(.search-dock .focus-stage) {
+        height: 0;
+        overflow: hidden;
+        transition: height 560ms cubic-bezier(0.22, 0.61, 0.30, 1);
+      }
+      /* Active: real height + the 3D depth model the receding cards animate in.
+         `overflow: visible` lets the receding cards fade ABOVE the box instead
+         of being hard-clipped at the top edge. */
+      .home-hero-search :global(.search-dock.is-active .focus-stage) {
+        position: relative;
+        height: clamp(300px, 42vh, 440px);
+        overflow: visible;
+        perspective: 1200px;
+        transform-style: preserve-3d;
+      }
+
+      /* ---- hero reactions, driven off the dock's active state ---------- */
+      /* Background BLUR ONLY (no greyscale / no desaturate). The small scale on
+         the WRAPPER keeps the blur's soft edge off-screen; the img keeps its own
+         hero-drift transform, uncollided. */
+      .home-hero:has(.search-dock.is-active) .home-hero-media {
+        filter: blur(14px);
+        transform: scale(1.06);
+      }
+
+      /* Collapse the band to a compact frame — the top of `#inventory` below
+         rises toward the fold (the "the AI did something" reveal). */
+      .home-hero:has(.search-dock.is-active) {
+        min-height: clamp(430px, 62vh, 580px);
+      }
+
+      /* Clear the prose — fade AND leave layout so the collapse genuinely
+         shrinks. `.home-hero-search` is intentionally NOT in this list. */
+      .home-hero:has(.search-dock.is-active) .eyebrow,
+      .home-hero:has(.search-dock.is-active) .home-hero-title,
+      .home-hero:has(.search-dock.is-active) .home-hero-lead,
+      .home-hero:has(.search-dock.is-active) .home-hero-count {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        overflow: hidden;
+        transform: translateY(-6px);
+        pointer-events: none;
+      }
+
+      /* ---- docked composer + hint ------------------------------------- */
+      /* Slightly tighter padding + softer shadow so the FLIP morph has a real,
+         pleasing delta. Pill radius is preserved. */
+      .home-hero-search :global(.search-dock.is-active .entry) {
+        padding: 0.85rem 0.85rem 0.85rem 1.5rem;
+        box-shadow: 0 16px 34px -22px rgba(0, 0, 0, 0.7);
+      }
+      /* Hide the hint over the stage — it reads as clutter once active. */
+      .home-hero-search :global(.search-dock.is-active .hint) {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .home-hero-search :global(.search-dock .hint) {
+        transition: opacity 300ms ease;
+      }
+
+      /* ---- reduced motion: every hero-layer change is INSTANT ---------- */
+      @media (prefers-reduced-motion: reduce) {
+        .home-hero,
+        .home-hero-media,
+        .home-hero .eyebrow,
+        .home-hero-title,
+        .home-hero-lead,
+        .home-hero-count,
+        .home-hero-search :global(.search-dock .focus-stage),
+        .home-hero-search :global(.search-dock .entry),
+        .home-hero-search :global(.search-dock .hint) {
+          transition: none;
+        }
       }
 
       /* ---- motion ------------------------------------------------------ */
