@@ -56,6 +56,15 @@ function describeState(state: FilterState): { interpretation: string; matchReaso
   };
 }
 
+// Deterministic extraction can't handle negation or a new/used contradiction —
+// defer those to the LLM planner even when concrete filters were matched.
+function needsPlanner(query: string): boolean {
+  const q = query.toLowerCase();
+  const negation = /\b(no|not|non|without|isn'?t|aren'?t|doesn'?t|don'?t|except|excluding|nor)\b/.test(q);
+  const contradiction = /\bnew\b/.test(q) && /\b(used|second[-\s]?hand|pre-?owned)\b/.test(q);
+  return negation || contradiction;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const cfg = dealerConfig.chat.search;
 
@@ -129,19 +138,44 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
 
-  // --- Stage 0: LLM query planner (PRIMARY interpreter) -----------------------
-  // Config-as-data kill-switch + a live-key gate + fresh-search-only guard (a
-  // refine keeps the existing carry-forward path; the planner does no
-  // carry-forward/removal). On ANY planner failure/timeout `plan` is null → FALL
-  // THROUGH to the UNCHANGED regex pre-pass + Stage-2 chain below. When the
-  // planner is disabled or there's no key, this block is skipped ENTIRELY, so the
-  // fallback path is byte-identical to pre-planner behaviour.
+  // --- Stage 1: deterministic pre-pass (regex-first, free, no LLM) ------------
+  // REGEX-FIRST: run the deterministic matcher BEFORE any LLM. On a fresh search,
+  // if it finds concrete filters AND the query isn't one the extractor can't be
+  // trusted on (negation / new-vs-used contradiction → needsPlanner), answer from
+  // it and SKIP every LLM call — the fast path. A refine always skips this (see
+  // `refine` above) so carry-forward/removal work. Tricky queries fall through to
+  // the planner below even when concrete filters matched.
+  try {
+    const pre = refine ? null : extractFilters(query);
+    if (pre && hasConcreteFilters(pre.state) && !needsPlanner(query)) {
+      const { interpretation, matchReasons } = describeState(pre.state);
+      const resp: SearchResponse = {
+        interpretation,
+        confidence: 'high',
+        clarifyingQuestion: null,
+        filters: pre.state,
+        matchReasons,
+      };
+      await captureSearch(pre.state);
+      return withVid(json(resp, 200));
+    }
+  } catch (err) {
+    console.error('[ai-search] deterministic pre-pass failed (falling through to LLM)', err);
+  }
+
+  // --- Stage 0: LLM query planner (fallback interpreter) ----------------------
+  // Reached only when the regex-first fast path missed (no concrete filters, or a
+  // negation/contradiction the extractor can't be trusted on). Config-as-data
+  // kill-switch + a live-key gate + fresh-search-only guard (a refine keeps the
+  // existing carry-forward path; the planner does no carry-forward/removal). When
+  // the planner is disabled or there's no key, this block is skipped ENTIRELY and
+  // the code falls through to the Stage-2 chain below.
   if (cfg.planner.enabled && env.OPENROUTER_API_KEY && !refine) {
     let plan: SearchPlan | null = null;
     try {
       plan = await planSearch(query, current);
     } catch (err) {
-      console.error('[ai-search] planner threw (falling through to regex)', err);
+      console.error('[ai-search] planner threw (returning graceful fallback)', err);
       plan = null;
     }
     if (plan && plan.kind === 'search') {
@@ -163,32 +197,18 @@ export const POST: APIRoute = async ({ request }) => {
       };
       return withVid(json(resp, 200));
     }
-    // plan === null → fall through to the existing fallback chain, unchanged.
-  }
-
-  // --- Stage 1: deterministic pre-pass (free, no LLM) -------------------------
-  // If the enum/synonym matcher finds concrete filters, answer from them and skip
-  // the model entirely. Only soft/ambiguous queries fall through to Stage 2. A
-  // refine always skips this (see `refine` above) so carry-forward/removal work.
-  try {
-    const pre = refine ? null : extractFilters(query);
-    if (pre && hasConcreteFilters(pre.state)) {
-      const { interpretation, matchReasons } = describeState(pre.state);
-      const resp: SearchResponse = {
-        interpretation,
-        confidence: 'high',
-        clarifyingQuestion: null,
-        filters: pre.state,
-        matchReasons,
-      };
-      await captureSearch(pre.state);
-      return withVid(json(resp, 200));
-    }
-  } catch (err) {
-    console.error('[ai-search] deterministic pre-pass failed (falling through to LLM)', err);
+    // plan === null (planner failed/timed out) → return a graceful low-confidence
+    // fallback DIRECTLY. Do NOT fall through to the Stage-2 generateObject: that
+    // would fire a second same-tier LLM call right after the planner already ran
+    // (the "double-LLM trap"). The regex fast path above already had its chance,
+    // and on a needsPlanner query its result is deliberately not trusted.
+    return withVid(json(fallbackResponse(), 200));
   }
 
   // --- Stage 2: structured LLM extraction (soft concepts / ambiguity) ---------
+  // Reachable ONLY for a refine (carry-forward/removal interpreter) or when the
+  // planner is disabled / has no key — never as a second call right after the
+  // planner returned null on a fresh search.
   if (!env.OPENROUTER_API_KEY) {
     return withVid(
       json(

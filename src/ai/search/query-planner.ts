@@ -276,15 +276,23 @@ export async function planSearch(
   const timeoutMs = dealerConfig.chat.search.planner.timeoutMs;
   const system = buildSystemPrompt();
 
+  // Abort the in-flight LLM call when the timeout wins the race, so the losing
+  // `generateObject` doesn't keep running (and burning quota) in the background.
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('planner timeout')), timeoutMs),
-    );
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error('planner timeout'));
+      }, timeoutMs);
+    });
     const call = generateObject({
       capability: 'structured',
       schema: SearchPlan,
       schemaName: 'SearchPlan',
       maxTokens: 1024, // small payload — bound cost/latency (per-request override)
+      signal: controller.signal,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: query },
@@ -296,5 +304,7 @@ export async function planSearch(
   } catch (err) {
     console.error('[search-planner] planSearch failed (falling back to regex)', err);
     return null;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
   }
 }
