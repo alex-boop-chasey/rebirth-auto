@@ -32,7 +32,6 @@ import { useReducedMotion, useFilterUrl } from '~/components/ai/hooks';
 import type { FilterState } from '~/lib/listings-query';
 import { useTypewriter } from './useTypewriter';
 import {
-  MIN_BEAT_MS,
   delay,
   fadeGridOut,
   fadeGridIn,
@@ -65,6 +64,7 @@ export interface SmartSearchConfig {
     unmuteLabel: string;
   };
   maxQueryLength: number;
+  minBeatMs: number;
 }
 
 interface Props {
@@ -132,7 +132,7 @@ export default function SmartSearch({ config }: Props) {
 
       // Guarantee a minimum "thinking" beat so the grid fade-out always reads.
       const elapsed = performance.now() - started;
-      if (elapsed < MIN_BEAT_MS) await delay(MIN_BEAT_MS - elapsed);
+      if (elapsed < config.minBeatMs) await delay(config.minBeatMs - elapsed);
       if (my !== seqRef.current) return; // superseded during the beat
 
       const gridPresent = !!document.getElementById('inventory-results');

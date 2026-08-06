@@ -15,7 +15,7 @@
 import { dealerConfig } from '../../config/dealer';
 import SmartSearch, { type SmartSearchConfig } from './SmartSearch.tsx';
 
-const { placeholders, typewriter, messages, greeting, sounds, stage, maxQueryLength } =
+const { placeholders, typewriter, messages, greeting, sounds, stage, maxQueryLength, minBeatMs } =
   dealerConfig.chat.search;
 
 // A real object prop (not a JSON string) — the island types it as SmartSearchConfig.
@@ -27,6 +27,7 @@ const config: SmartSearchConfig = {
   sounds,
   stage,
   maxQueryLength,
+  minBeatMs,
 };
 ---
 

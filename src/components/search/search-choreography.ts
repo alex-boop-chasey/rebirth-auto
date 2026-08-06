@@ -12,8 +12,12 @@
 
 /** Fade out / fade in duration (ms). */
 export const GRID_FADE_MS = 260;
-/** Guaranteed "thinking" beat (ms) so the fade-out + dots always read. */
-export const MIN_BEAT_MS = 650;
+/**
+ * Fallback "thinking" beat (ms) so the fade-out + dots always read. The island now
+ * reads the dealer-tunable `config.minBeatMs` (dealerConfig.chat.search); this const
+ * is only the default. Keep ≥ GRID_FADE_MS so the fade-out still reads.
+ */
+export const MIN_BEAT_MS = 300;
 
 export const delay = (ms: number): Promise<void> => new Promise<void>((r) => setTimeout(r, ms));
 

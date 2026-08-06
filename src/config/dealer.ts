@@ -286,6 +286,8 @@ export interface DealerConfig {
       enabled: boolean;
       /** Reject queries longer than this (chars) before any AI call. */
       maxQueryLength: number;
+      /** Guaranteed "thinking" beat (ms); keep ≥ the grid fade so the fade-out reads. */
+      minBeatMs: number;
       /** Per-IP rate limit for /api/search (its OWN `search:` KV counter). */
       rateLimit: { windowSeconds: number; maxRequests: number };
       /**
@@ -1312,6 +1314,8 @@ export const dealerConfig: DealerConfig = {
     search: {
       enabled: true,
       maxQueryLength: 300,
+      // Guaranteed "thinking" beat (ms); keep ≥ the grid fade so the fade-out reads.
+      minBeatMs: 300,
       // Shopper search is higher-volume than Studio authoring but still capped
       // per-IP to bound AI cost. Generous for genuine refining.
       rateLimit: { windowSeconds: 3600, maxRequests: 30 },
