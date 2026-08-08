@@ -1,0 +1,338 @@
+---
+// CONCEPT MOCK — throwaway. "Attached" placement: the Rebi reply grows OUT OF the
+// search bar as one continuous glass unit; the hero collapses to hug it.
+// Self-contained: no Sanity, no ~/ai, no network. Only global tokens imported.
+import '../../../styles/global.css';
+
+const CARS = [
+  { title: '2022 Mazda CX-5 Touring', price: '$38,990', chip: '24,500 km · Used', hue: '210 70% 42%' },
+  { title: '2021 Toyota RAV4 GXL',    price: '$41,500', chip: '31,200 km · Used', hue: '158 55% 38%' },
+  { title: '2023 Kia Sportage S',     price: '$36,750', chip: '18,900 km · Used', hue: '268 55% 46%' },
+  { title: '2020 Subaru Forester 2.5i',price:'$33,200', chip: '48,100 km · Used', hue: '18 70% 46%' },
+];
+---
+
+<!-- slim nav strip for realism -->
+<header class="nav">
+  <div class="site-container nav-in">
+    <span class="brand">REBIRTH <b>AUTO</b></span>
+    <nav class="nav-links">
+      <a href="#">Inventory</a>
+      <a href="#">Finance</a>
+      <a href="#">About</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO: starts tall, collapses on submit to hug the bar + reply unit -->
+<section class="hero" id="hero" data-state="idle">
+  <div class="site-container hero-in">
+    <p class="eyebrow">Ask · then browse</p>
+    <h1 class="hero-h1">Tell us the car you're picturing.</h1>
+
+    <!-- The single glass unit: bar is the top lip, reply unfolds below it -->
+    <div class="unit" id="unit">
+      <form class="entry" id="form" autocomplete="off">
+        <span class="mag" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path>
+          </svg>
+        </span>
+        <input class="search-dock-input" id="q" type="text"
+               placeholder="Describe your ideal car…" aria-label="Describe your ideal car" />
+        <button class="search-dock-submit" type="submit" id="ask">
+          <span>Ask</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path>
+          </svg>
+        </button>
+      </form>
+
+      <!-- reply panel — same container, no gap, shares the border -->
+      <div class="panel" id="panel" aria-hidden="true">
+        <div class="panel-in">
+          <span class="rebi-tag">
+            <span class="dot"></span> REBI
+          </span>
+          <p class="reply" id="reply"></p>
+          <button class="reset" id="reset" type="button" hidden>New search</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+  </div>
+  <div class="hero-fade" aria-hidden="true"></div>
+</section>
+
+<!-- inventory grid — top row peeks through once the hero collapses -->
+<section class="inv">
+  <div class="site-container">
+    <p class="eyebrow inv-eye">Current inventory</p>
+    <div class="grid">
+      {CARS.map((c) => (
+        <article class="card">
+          <div class="thumb" style={`--hue:${c.hue}`}>
+            <span class="thumb-badge">Photo</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">{c.title}</h3>
+            <p class="card-price">{c.price}</p>
+            <span class="card-chip">{c.chip}</span>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  :global(body) { margin: 0; background: #fff; color: var(--ink); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); border: 0; white-space: nowrap;
+  }
+
+  /* ---------- nav ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(255, 255, 255, 0.86);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(13, 22, 38, 0.08);
+  }
+  .nav-in { display: flex; align-items: center; justify-content: space-between; height: 58px; }
+  .brand { font-family: var(--font-mono); letter-spacing: 0.16em; font-size: 13px; font-weight: 600; }
+  .brand b { color: var(--teal-deep); }
+  .nav-links { display: flex; gap: 26px; }
+  .nav-links a { color: var(--ink-soft); text-decoration: none; font-size: 14px; }
+  .nav-links a:hover { color: var(--ink); }
+
+  /* ---------- hero: tall by default, collapses via max-height ---------- */
+  .hero {
+    position: relative;
+    min-height: 92vh;
+    display: flex; align-items: center;
+    overflow: hidden;
+    background:
+      radial-gradient(1200px 700px at 72% -10%, rgba(85, 102, 240, 0.38), transparent 60%),
+      radial-gradient(900px 600px at 12% 108%, rgba(15, 181, 166, 0.30), transparent 62%),
+      linear-gradient(160deg, #0b1220 0%, #0d1626 55%, #0a141f 100%);
+    transition: min-height 620ms cubic-bezier(0.22, 0.7, 0.25, 1),
+                padding 620ms cubic-bezier(0.22, 0.7, 0.25, 1);
+    padding: 40px 0;
+  }
+  .hero[data-state="answering"] {
+    /* collapse: only tall enough for bar + reply; grid peeks below */
+    min-height: 0;
+    padding: 96px 0 40px;
+  }
+
+  .hero-in { position: relative; z-index: 2; width: 100%; text-align: center; }
+
+  .eyebrow {
+    font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.22em;
+    font-size: 11.5px; color: rgba(143, 212, 255, 0.9); margin: 0 0 14px;
+  }
+  .hero-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 5vw, 58px); line-height: 1.03; letter-spacing: -0.03em;
+    color: #fff; margin: 0 0 30px; font-weight: 700;
+    max-width: 16ch; margin-inline: auto;
+    transition: font-size 620ms cubic-bezier(0.22,0.7,0.25,1), margin 620ms cubic-bezier(0.22,0.7,0.25,1),
+                opacity 380ms ease, max-height 620ms ease;
+  }
+  .hero[data-state="answering"] .hero-h1 {
+    font-size: clamp(19px, 2.4vw, 26px); margin: 0 0 20px; opacity: 0.92;
+  }
+
+  .hero-fade {
+    position: absolute; inset: auto 0 0 0; height: 90px; z-index: 1;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.06));
+    pointer-events: none;
+  }
+
+  /* ---------- the single glass unit (bar + panel share one surface) ---------- */
+  .unit {
+    width: 70vw; max-width: 760px; margin: 0 auto;
+    text-align: left;
+    border-radius: 30px;               /* pill radius; panel inherits the bottom curve */
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(1, 97, 239, 0.22);
+    box-shadow: 0 30px 60px -22px rgba(0, 0, 0, 0.85);
+    overflow: hidden;                  /* keeps the two children on one continuous surface */
+    transition: border-radius 400ms ease;
+  }
+  .hero[data-state="answering"] .unit { border-radius: 26px; }
+
+  /* the bar — matches the home pill; no bottom border of its own */
+  .entry {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 1.05rem 1.05rem 1.05rem 1.7rem;
+    background: transparent; border: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+  .entry .mag { flex: none; color: rgb(100 116 139); display: grid; place-items: center; }
+  .entry .mag svg { width: 1.4rem; height: 1.4rem; }
+  .search-dock-input {
+    flex: 1; border: 0; background: transparent; outline: none;
+    font-family: inherit; font-size: 1.18rem; color: rgb(15 23 42);
+    min-width: 0; padding: 0.5rem 0;
+  }
+  .search-dock-input::placeholder { color: rgb(100 116 139); }
+  .search-dock-submit {
+    flex: none; display: inline-flex; align-items: center; gap: 0.4rem;
+    border: 0; cursor: pointer; font-family: inherit; font-weight: 700;
+    font-size: 1rem; color: #fff; background: rgb(1 97 239);
+    padding: 0.72rem 1.4rem; border-radius: 9999px;
+    transition: background 160ms ease, transform 120ms ease;
+  }
+  .search-dock-submit:hover { background: rgb(1 84 207); }
+  .search-dock-submit:active { transform: scale(0.96); }
+  .search-dock-submit svg { width: 0.95rem; height: 0.95rem; }
+
+  /* the panel — collapsed to 0 by default, unfolds into the same container */
+  .panel {
+    max-height: 0; opacity: 0;
+    transition: max-height 560ms cubic-bezier(0.22, 0.7, 0.25, 1), opacity 380ms ease 120ms;
+  }
+  .panel::before {
+    /* hairline seam so bar + panel read connected but the fold is legible */
+    content: ""; display: block; height: 1px; margin: 0 1.2rem;
+    background: linear-gradient(90deg, transparent, rgba(1, 97, 239, 0.28), transparent);
+  }
+  .hero[data-state="answering"] .panel { max-height: 320px; opacity: 1; }
+
+  .panel-in { padding: 1rem 1.5rem 1.35rem; }
+  .rebi-tag {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.2em;
+    color: var(--indigo-deep); text-transform: uppercase; font-weight: 600;
+  }
+  .rebi-tag .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--aurora); box-shadow: 0 0 0 3px rgba(85, 102, 240, 0.16);
+  }
+  .reply {
+    margin: 0.55rem 0 0; font-size: 1.02rem; line-height: 1.55; color: var(--ink);
+    min-height: 1.4em;
+  }
+  .reply .caret {
+    display: inline-block; width: 2px; height: 1.05em; margin-left: 1px;
+    background: var(--indigo); vertical-align: -2px; animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .reset {
+    margin-top: 0.9rem; background: none; border: 1px solid rgba(1, 97, 239, 0.3);
+    color: rgb(1 97 239); font: inherit; font-weight: 600; font-size: 0.85rem;
+    padding: 0.4rem 0.9rem; border-radius: 9999px; cursor: pointer;
+  }
+  .reset:hover { background: rgba(1, 97, 239, 0.06); }
+
+  /* ---------- inventory ---------- */
+  .inv { padding: 40px 0 80px; }
+  .inv-eye { color: var(--teal-deep); margin: 0 0 18px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .card {
+    border: 1px solid rgba(13, 22, 38, 0.08); border-radius: 16px; overflow: hidden;
+    background: #fff; box-shadow: 0 12px 30px -22px rgba(13, 22, 38, 0.4);
+  }
+  .thumb {
+    aspect-ratio: 16 / 10; position: relative;
+    background: linear-gradient(135deg, hsl(var(--hue) / 0.9), hsl(var(--hue) / 0.55));
+  }
+  .thumb-badge {
+    position: absolute; left: 10px; bottom: 10px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.28); padding: 3px 8px; border-radius: 999px;
+  }
+  .card-body { padding: 14px 15px 18px; }
+  .card-title { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
+  .card-price { margin: 6px 0 10px; font-size: 18px; font-weight: 700; color: var(--teal-deep); }
+  .card-chip {
+    display: inline-block; font-size: 11.5px; color: var(--ink-soft);
+    background: rgba(13, 22, 38, 0.05); padding: 4px 10px; border-radius: 999px;
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) {
+    .hero { min-height: 90vh; }
+    .unit { width: 100%; max-width: none; }
+    .grid { grid-template-columns: 1fr; }
+    .hero-h1 { font-size: clamp(26px, 8vw, 34px); }
+    .search-dock-submit span { display: none; }
+    .search-dock-submit { padding: 0.72rem 0.85rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero, .hero-h1, .unit, .panel { transition: none !important; }
+    .reply .caret { animation: none; }
+  }
+</style>
+
+<script>
+  const REPLY =
+    "Got it — a family SUV, budget under $40,000, low kilometres. I've narrowed the " +
+    "list to 12 matches. The closest is a 2022 Mazda CX-5 Touring at $38,990 with " +
+    "24,500 km. Want me to prioritise boot space or fuel economy?";
+  const DEMO_QUERY = 'family SUV under 40k with low kms';
+
+  const hero  = document.getElementById('hero');
+  const form  = document.getElementById('form') as HTMLFormElement;
+  const input = document.getElementById('q') as HTMLInputElement;
+  const panel = document.getElementById('panel');
+  const reply = document.getElementById('reply');
+  const live  = document.getElementById('live');
+  const reset = document.getElementById('reset') as HTMLButtonElement;
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let timer: number | undefined;
+
+  function run() {
+    if (timer) { window.clearInterval(timer); timer = undefined; }
+    // If the visitor didn't type anything, use the canned demo query.
+    if (!input.value.trim()) input.value = DEMO_QUERY;
+
+    hero!.dataset.state = 'answering';
+    panel!.setAttribute('aria-hidden', 'false');
+    reply!.textContent = '';
+    reset.hidden = true;
+
+    if (reduce) {
+      reply!.textContent = REPLY;
+      live!.textContent = REPLY;
+      reset.hidden = false;
+      return;
+    }
+
+    // Deterministic typewriter — fixed 18ms/char, caret while streaming.
+    let i = 0;
+    const caret = '<span class="caret"></span>';
+    timer = window.setInterval(() => {
+      i++;
+      reply!.innerHTML = REPLY.slice(0, i).replace(/</g, '&lt;') + (i < REPLY.length ? caret : '');
+      if (i >= REPLY.length) {
+        window.clearInterval(timer);
+        timer = undefined;
+        live!.textContent = REPLY;
+        reset.hidden = false;
+      }
+    }, 18);
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  reset.addEventListener('click', () => {
+    if (timer) { window.clearInterval(timer); timer = undefined; }
+    hero!.dataset.state = 'idle';
+    panel!.setAttribute('aria-hidden', 'true');
+    reply!.textContent = '';
+    live!.textContent = '';
+    reset.hidden = true;
+    input.value = '';
+    input.focus();
+  });
+</script>

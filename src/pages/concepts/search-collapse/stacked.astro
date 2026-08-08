@@ -1,0 +1,603 @@
+---
+// THROWAWAY design mock — "STACKED BELOW" collapse concept.
+// Self-contained: no Sanity, no ~/ai, no cloudflare:workers, no /api.
+// Only imports the site's token stylesheets so the brand language carries.
+import '../../../styles/global.css';
+import '../../../styles/theme.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Search collapse — STACKED BELOW (concept)</title>
+  </head>
+  <body>
+    <!-- 1. slim nav strip -->
+    <header class="nav">
+      <div class="site-container nav-inner">
+        <span class="nav-brand">Rebirth<span>Auto</span></span>
+        <nav class="nav-links">
+          <a href="#">Buy</a>
+          <a href="#">Sell</a>
+          <a href="#">Finance</a>
+          <a href="#">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- 2. hero band (starts tall, collapses on submit) -->
+    <section class="hero" id="hero" data-state="idle">
+      <div class="site-container hero-inner">
+        <div class="hero-copy">
+          <span class="eyebrow">AI-Guided Search</span>
+          <h1 class="hero-title">Tell us the car. We'll find it.</h1>
+          <p class="hero-lead">
+            Describe what you need in plain English — Rebi reads your whole
+            garage of requirements and narrows the lot in seconds.
+          </p>
+        </div>
+
+        <!-- The composer — reproduces the home hero white pill EXACTLY.
+             It must NOT resize or move on submit (HARD CONSTRAINT 1). -->
+        <div class="dock" id="dock">
+          <form class="entry" id="form" autocomplete="off">
+            <span class="mag" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <input
+              class="search-dock-input"
+              id="input"
+              type="text"
+              placeholder="e.g. family SUV under 40k with low kms"
+              aria-label="Describe the car you want"
+            />
+            <button class="search-dock-submit" id="submit" type="submit">
+              <span>Ask</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </form>
+
+          <!-- STACKED style: a SEPARATE reply card, same width, small gap below.
+               Collapsed to zero until a search runs. -->
+          <div class="reply" id="reply" hidden>
+            <div class="reply-head">
+              <span class="rebi-orb" aria-hidden="true"></span>
+              <span class="rebi-name">Rebi</span>
+              <span class="rebi-status" id="status">thinking…</span>
+              <button class="reply-reset" id="reset" type="button">New search</button>
+            </div>
+            <p class="reply-body" id="stream" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <p class="hero-hint" id="hint">Rebi understands makes, budgets, body types and use-cases.</p>
+      </div>
+    </section>
+
+    <!-- 3. inventory row (top row peeks up as the hero collapses) -->
+    <section class="inventory">
+      <div class="site-container">
+        <div class="inv-head">
+          <span class="eyebrow">Current inventory</span>
+          <h2 class="inv-title">Freshly on the lot</h2>
+        </div>
+        <div class="grid">
+          <article class="card">
+            <div class="card-media media-a"><span class="card-badge">Featured</span></div>
+            <div class="card-body">
+              <h3 class="card-title">2022 Mazda CX-5 Touring</h3>
+              <p class="card-sub">2.5L · AWD · Auto</p>
+              <div class="card-foot">
+                <span class="card-price">$38,990</span>
+                <span class="chip">24,500 km</span>
+              </div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-media media-b"></div>
+            <div class="card-body">
+              <h3 class="card-title">2021 Toyota RAV4 GXL</h3>
+              <p class="card-sub">2.0L · FWD · CVT</p>
+              <div class="card-foot">
+                <span class="card-price">$36,450</span>
+                <span class="chip">31,200 km</span>
+              </div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-media media-c"></div>
+            <div class="card-body">
+              <h3 class="card-title">2023 Kia Sportage S</h3>
+              <p class="card-sub">2.0L · FWD · Auto</p>
+              <div class="card-foot">
+                <span class="card-price">$34,990</span>
+                <span class="chip chip-new">New</span>
+              </div>
+            </div>
+          </article>
+          <article class="card">
+            <div class="card-media media-d"></div>
+            <div class="card-body">
+              <h3 class="card-title">2020 Subaru Forester 2.5i</h3>
+              <p class="card-sub">2.5L · AWD · CVT</p>
+              <div class="card-foot">
+                <span class="card-price">$32,700</span>
+                <span class="chip">42,800 km</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      :global(body) {
+        margin: 0;
+        background: #f6f8fb;
+        color: var(--ink);
+        font-family: var(--font-display, system-ui, sans-serif);
+      }
+
+      /* ---- nav ---- */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(13, 22, 38, 0.08);
+      }
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 58px;
+      }
+      .nav-brand {
+        font-weight: 800;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+      }
+      .nav-brand span { color: var(--teal-deep); }
+      .nav-links { display: flex; gap: 26px; }
+      .nav-links a {
+        font-size: 14px;
+        color: var(--ink-soft);
+        text-decoration: none;
+      }
+      .nav-links a:hover { color: var(--ink); }
+
+      /* ---- hero ---- */
+      .hero {
+        position: relative;
+        min-height: 92vh;
+        min-height: 92dvh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        background:
+          radial-gradient(120% 90% at 18% 12%, rgba(85, 102, 240, 0.28), transparent 60%),
+          radial-gradient(90% 80% at 88% 30%, rgba(15, 181, 166, 0.20), transparent 62%),
+          linear-gradient(160deg, #0a1120 0%, #0d1626 52%, #060b14 100%);
+        /* Height is animated by driving min-height down to a compact target. */
+        transition: min-height 620ms cubic-bezier(0.22, 0.7, 0.24, 1);
+      }
+      .hero::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        height: 3px;
+        background: var(--aurora);
+      }
+      .hero-inner {
+        position: relative;
+        width: 100%;
+        padding-block: clamp(2rem, 5vh, 4rem);
+        transition: padding-block 620ms cubic-bezier(0.22, 0.7, 0.24, 1);
+      }
+
+      /* Collapsed state: hero shrinks to just fit copy-lite + bar + gap + card,
+         so the inventory top row peeks above the fold. */
+      .hero[data-state="active"] {
+        min-height: 0;
+      }
+      .hero[data-state="active"] .hero-inner {
+        padding-block: clamp(1.4rem, 3vh, 2rem);
+      }
+      /* Copy folds away to buy the vertical room; the bar stays put. */
+      .hero-copy {
+        max-width: 44rem;
+        margin-inline: auto;
+        text-align: center;
+        overflow: hidden;
+        transition: max-height 620ms cubic-bezier(0.22, 0.7, 0.24, 1),
+                    opacity 300ms ease, margin 620ms ease;
+        max-height: 320px;
+      }
+      .hero[data-state="active"] .hero-copy {
+        max-height: 0;
+        opacity: 0;
+        margin-bottom: -6px;
+      }
+      .hero .eyebrow {
+        color: color-mix(in srgb, var(--teal) 58%, #fff);
+      }
+      .hero-title {
+        margin: 14px 0 0;
+        font-family: var(--font-display);
+        font-size: clamp(2.05rem, 5.1vw, 3.4rem);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        color: #fff;
+      }
+      .hero-lead {
+        margin: 14px auto 0;
+        max-width: 34rem;
+        font-size: clamp(15px, 1.1vw, 17px);
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.82);
+      }
+      .hero-hint {
+        margin: 14px auto 0;
+        text-align: center;
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.66);
+        transition: opacity 300ms ease, max-height 620ms ease, margin 620ms ease;
+        max-height: 40px;
+      }
+      .hero[data-state="active"] .hero-hint {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+      }
+
+      /* ---- the dock: reproduces the home hero white pill EXACTLY ---- */
+      .dock {
+        --rebi-blue: rgb(1 97 239);
+        --rebi-blue-hover: rgb(1 84 207);
+        width: 70vw;
+        max-width: 70vw;
+        margin: 22px auto 0;
+        color: rgb(15 23 42);
+      }
+      .entry {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1.05rem 1.05rem 1.05rem 1.7rem;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.97);
+        border: 1px solid rgba(1, 97, 239, 0.22);
+        border-bottom: 2px solid rgba(1, 97, 239, 0.55);
+        box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.85);
+        transition: background 200ms ease, border-color 200ms ease;
+      }
+      .entry:focus-within {
+        background: #fff;
+        border-bottom-color: var(--rebi-blue);
+      }
+      .entry .mag {
+        flex: none;
+        color: rgb(100 116 139);
+        display: grid;
+        place-items: center;
+      }
+      .entry .mag svg { width: 1.4rem; height: 1.4rem; }
+      .search-dock-input {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        outline: none;
+        font-family: inherit;
+        font-size: 1.18rem;
+        color: rgb(15 23 42);
+        min-width: 0;
+        padding: 0.5rem 0;
+      }
+      .search-dock-input::placeholder { color: rgb(100 116 139); }
+      .search-dock-submit {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 1rem;
+        color: #fff;
+        background: var(--rebi-blue);
+        padding: 0.72rem 1.4rem;
+        border-radius: 9999px;
+        transition: background 160ms ease, transform 120ms ease;
+      }
+      .search-dock-submit:hover { background: var(--rebi-blue-hover); }
+      .search-dock-submit:active { transform: scale(0.96); }
+      .search-dock-submit svg { width: 0.95rem; height: 0.95rem; }
+
+      /* ---- STACKED reply card: separate element, small gap, same width ---- */
+      .reply {
+        margin-top: 12px;               /* the "small gap" below the bar */
+        background: rgba(255, 255, 255, 0.97);
+        border: 1px solid rgba(85, 102, 240, 0.22);
+        border-radius: 20px;
+        box-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.75);
+        padding: 16px 20px;
+        text-align: left;
+        overflow: hidden;
+        /* animate open from zero so the split reads as a distinct panel */
+        max-height: 0;
+        opacity: 0;
+        padding-block: 0;
+        transition: max-height 520ms cubic-bezier(0.22, 0.7, 0.24, 1),
+                    opacity 320ms ease, padding-block 520ms ease;
+      }
+      .reply[data-open="1"] {
+        max-height: 320px;
+        opacity: 1;
+        padding-block: 16px;
+      }
+      .reply-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .rebi-orb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--aurora);
+        box-shadow: 0 0 0 4px rgba(85, 102, 240, 0.14);
+        flex: none;
+      }
+      .rebi-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--ink);
+      }
+      .rebi-status {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--indigo-deep);
+      }
+      .reply-reset {
+        margin-left: auto;
+        background: none;
+        border: 1px solid rgba(13, 22, 38, 0.16);
+        border-radius: 9999px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+      }
+      .reply-reset:hover { border-color: var(--teal); color: var(--teal-deep); }
+      .reply-body {
+        margin: 0;
+        font-size: 15.5px;
+        line-height: 1.6;
+        color: var(--ink);
+        min-height: 1.6em;
+      }
+      .caret {
+        display: inline-block;
+        width: 2px;
+        height: 1.05em;
+        vertical-align: -0.16em;
+        margin-left: 1px;
+        background: var(--indigo);
+        animation: caret-blink 900ms steps(2, start) infinite;
+      }
+      @keyframes caret-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+      /* ---- inventory ---- */
+      .inventory { padding: 40px 0 80px; }
+      .inv-head { margin-bottom: 20px; }
+      .inv-title {
+        margin: 8px 0 0;
+        font-family: var(--font-display);
+        font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid rgba(13, 22, 38, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px -20px rgba(13, 22, 38, 0.45);
+        transition: transform 180ms ease, box-shadow 180ms ease;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 40px -22px rgba(13, 22, 38, 0.5);
+      }
+      .card-media {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        background: linear-gradient(135deg, #cfd8e6, #eef2f8);
+      }
+      .media-a { background: linear-gradient(135deg, #22344f, #4a5f80); }
+      .media-b { background: linear-gradient(135deg, #2f4a45, #5a7f78); }
+      .media-c { background: linear-gradient(135deg, #3a3f66, #6a72a8); }
+      .media-d { background: linear-gradient(135deg, #4a3a2f, #86705a); }
+      .card-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--indigo-deep);
+        padding: 3px 8px;
+        border-radius: 6px;
+      }
+      .card-body { padding: 14px 16px 16px; }
+      .card-title {
+        margin: 0;
+        font-size: 15.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .card-sub {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--ink-soft);
+      }
+      .card-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+      }
+      .card-price {
+        font-weight: 800;
+        font-size: 17px;
+        color: var(--ink);
+      }
+      .chip {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: rgba(13, 22, 38, 0.05);
+        border: 1px solid rgba(13, 22, 38, 0.08);
+        border-radius: 9999px;
+        padding: 3px 10px;
+      }
+      .chip-new {
+        color: var(--teal-deep);
+        background: rgba(15, 181, 166, 0.12);
+        border-color: rgba(15, 181, 166, 0.22);
+      }
+
+      /* ---- responsive ---- */
+      @media (max-width: 900px) {
+        .grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 560px) {
+        .dock { width: 90vw; max-width: 90vw; }
+        .entry { padding: 0.85rem 0.85rem 0.85rem 1.2rem; }
+        .search-dock-input { font-size: 1.02rem; }
+        .search-dock-submit span { display: none; }
+        .search-dock-submit { padding: 0.6rem 0.8rem; }
+        .nav-links { display: none; }
+        .grid { grid-template-columns: 1fr; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hero, .hero-inner, .hero-copy, .hero-hint, .reply,
+        .card, .search-dock-submit, .entry {
+          transition: none !important;
+        }
+        .caret { animation: none; }
+      }
+    </style>
+
+    <script>
+      (() => {
+        const hero = document.getElementById('hero');
+        const form = document.getElementById('form');
+        const input = document.getElementById('input') as HTMLInputElement;
+        const reply = document.getElementById('reply');
+        const stream = document.getElementById('stream');
+        const status = document.getElementById('status');
+        const reset = document.getElementById('reset');
+        if (!hero || !form || !input || !reply || !stream || !status || !reset) return;
+
+        const REPLY =
+          "Got it — a family SUV, budget under $40,000, low kilometres. " +
+          "I've narrowed the list to 12 matches. The closest is a 2022 Mazda CX-5 " +
+          "Touring at $38,990 with 24,500 km. Want me to prioritise boot space or " +
+          "fuel economy?";
+
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let typingTimer: number | null = null;
+
+        function collapseHero() {
+          hero!.setAttribute('data-state', 'active');
+        }
+
+        function typeReply() {
+          const caret = document.createElement('span');
+          caret.className = 'caret';
+          stream!.textContent = '';
+          stream!.appendChild(caret);
+
+          if (reduce) {
+            caret.remove();
+            stream!.textContent = REPLY;
+            status!.textContent = 'done';
+            return;
+          }
+
+          let i = 0;
+          const step = () => {
+            i += 1;
+            caret.remove();
+            stream!.textContent = REPLY.slice(0, i);
+            stream!.appendChild(caret);
+            if (i < REPLY.length) {
+              typingTimer = window.setTimeout(step, 16); // fixed, deterministic
+            } else {
+              caret.remove();
+              status!.textContent = 'done';
+            }
+          };
+          typingTimer = window.setTimeout(step, 420); // brief "thinking" beat
+        }
+
+        function run() {
+          if (!input.value.trim()) input.value = 'family SUV under 40k with low kms';
+          if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+
+          collapseHero();
+          status!.textContent = 'thinking…';
+          reply!.hidden = false;
+          // next frame so the open transition runs
+          requestAnimationFrame(() => reply!.setAttribute('data-open', '1'));
+          typeReply();
+        }
+
+        form!.addEventListener('submit', (e) => {
+          e.preventDefault();
+          run();
+        });
+
+        reset!.addEventListener('click', () => {
+          if (typingTimer) { clearTimeout(typingTimer); typingTimer = null; }
+          reply!.removeAttribute('data-open');
+          status!.textContent = 'thinking…';
+          stream!.textContent = '';
+          hero!.setAttribute('data-state', 'idle');
+          input.value = '';
+          input.focus();
+          window.setTimeout(() => { reply!.hidden = true; }, reduce ? 0 : 520);
+        });
+      })();
+    </script>
+  </body>
+</html>

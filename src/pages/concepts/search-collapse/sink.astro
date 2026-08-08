@@ -1,0 +1,485 @@
+---
+// CONCEPT MOCK — "BAR SINKS, REPLY ABOVE" search-collapse interaction.
+// Throwaway front-end design page. Self-contained: no Sanity, no ~/ai, no API.
+// Only global.css/theme.css are imported (for design tokens). Everything else is
+// page-scoped <style> + one inline <script>. Nothing here touches the real
+// search flow or any shipped component.
+export const prerender = false;
+
+import '../../../styles/global.css';
+
+// Fake inventory — static markup only, styled to read like a real car card.
+const cars = [
+  {
+    title: '2022 Mazda CX-5 Touring',
+    price: '$38,990',
+    km: '24,500 km',
+    cond: 'Used',
+    grad: 'linear-gradient(135deg,#1b2a4a,#324a7d)',
+  },
+  {
+    title: '2021 Toyota RAV4 GXL Hybrid',
+    price: '$39,880',
+    km: '31,200 km',
+    cond: 'Used',
+    grad: 'linear-gradient(135deg,#123a36,#1f6b60)',
+  },
+  {
+    title: '2023 Hyundai Tucson Elite',
+    price: '$41,500',
+    km: '12,900 km',
+    cond: 'Demo',
+    grad: 'linear-gradient(135deg,#2a2350,#4b3b8f)',
+  },
+  {
+    title: '2020 Kia Sportage SX',
+    price: '$29,990',
+    km: '58,400 km',
+    cond: 'Used',
+    grad: 'linear-gradient(135deg,#3a2130,#7a3550)',
+  },
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Concept — Search collapse (bar sinks, reply above)</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="page-surface">
+    <!-- slim nav strip for realism (no dropdowns) -->
+    <nav class="c-nav">
+      <div class="c-nav-inner site-container">
+        <span class="c-brand">Rebirth<span>Auto</span></span>
+        <span class="c-nav-links">
+          <a href="#">Browse</a>
+          <a href="#">Finance</a>
+          <a href="#">Sell</a>
+        </span>
+      </div>
+    </nav>
+
+    <main>
+      <!-- HERO — starts tall; on submit it collapses and the bar SINKS toward
+           the fold with Rebi's reply streaming into the cleared space ABOVE. -->
+      <section class="hero" id="hero" data-state="idle">
+        <div class="hero-inner site-container">
+          <!-- copy block: fades + collapses on submit -->
+          <div class="hero-copy" id="heroCopy">
+            <span class="eyebrow">Ask for it in plain english</span>
+            <h1 class="hero-title">Describe the car.<br />We'll find it.</h1>
+            <p class="hero-lead">
+              Tell Rebi what you're after in your own words — budget, kids, kays,
+              whatever matters. No filter menus to learn.
+            </p>
+          </div>
+
+          <!-- REPLY ZONE — empty at idle; Rebi's answer streams in here, ABOVE
+               the bar, once collapsed. -->
+          <div class="reply-zone" id="replyZone" aria-hidden="true">
+            <div class="reply-card">
+              <span class="reply-orb" aria-hidden="true"></span>
+              <div class="reply-body">
+                <span class="reply-name">Rebi</span>
+                <p class="reply-text" id="replyText"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEARCH BAR — fixed pill geometry (reproduces the home hero pill).
+               Only its vertical position shifts on submit; size/shape locked. -->
+          <form class="searchbar" id="searchForm" autocomplete="off">
+            <label class="entry" for="q">
+              <span class="mag" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M21 21l-4.3-4.3" />
+                </svg>
+              </span>
+              <input
+                id="q"
+                class="entry-input"
+                type="text"
+                name="q"
+                placeholder="e.g. family SUV under 40k with low kms"
+                aria-label="Describe the car you want"
+              />
+              <button class="entry-submit" type="submit">
+                <span>Ask</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </button>
+            </label>
+            <button class="reset-link" type="button" id="resetBtn" hidden>
+              New search
+            </button>
+          </form>
+        </div>
+
+        <span class="hero-hairline" aria-hidden="true"></span>
+      </section>
+
+      <!-- LISTINGS — top row peeks up under the bar once the hero collapses. -->
+      <section class="inv site-container">
+        <h2 class="inv-h">Current inventory</h2>
+        <div class="inv-grid">
+          {cars.map((c) => (
+            <article class="ccard">
+              <div class="ccard-img" style={`background:${c.grad}`}>
+                <span class="ccard-cond">{c.cond}</span>
+              </div>
+              <div class="ccard-body">
+                <h3 class="ccard-title">{c.title}</h3>
+                <div class="ccard-meta">
+                  <span class="ccard-price">{c.price}</span>
+                  <span class="ccard-chip">{c.km}</span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+
+    <style>
+      /* ---- page base --------------------------------------------------- */
+      .page-surface { background: var(--bg); color: var(--ink); }
+      main { display: block; }
+
+      /* ---- slim nav ---------------------------------------------------- */
+      .c-nav {
+        position: sticky; top: 0; z-index: 20;
+        background: rgba(255, 255, 255, 0.82);
+        -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--line);
+      }
+      .c-nav-inner {
+        display: flex; align-items: center; justify-content: space-between;
+        height: 58px;
+      }
+      .c-brand {
+        font-family: var(--font-display); font-weight: 800; font-size: 18px;
+        letter-spacing: -0.02em;
+      }
+      .c-brand span { color: var(--teal-deep); }
+      .c-nav-links { display: flex; gap: 22px; }
+      .c-nav-links a {
+        font-size: 14px; color: var(--ink-soft); text-decoration: none;
+        font-weight: 600;
+      }
+      .c-nav-links a:hover { color: var(--ink); }
+
+      /* ---- hero band --------------------------------------------------- */
+      .hero {
+        position: relative;
+        min-height: 92vh;
+        display: flex; flex-direction: column;
+        background:
+          radial-gradient(120% 80% at 50% -10%, rgba(85,102,240,0.35), transparent 60%),
+          linear-gradient(180deg, #0b1220 0%, #0d1626 55%, #101c31 100%);
+        overflow: hidden;
+        transition: min-height 0.8s cubic-bezier(0.22, 0.68, 0.24, 1);
+      }
+      /* collapsed: only tall enough for the reply area + the bar near the fold */
+      .hero[data-state='searching'] { min-height: 46vh; }
+
+      .hero-inner {
+        position: relative; z-index: 2;
+        flex: 1;
+        display: flex; flex-direction: column;
+        /* idle: everything centred. searching: pushed to the bottom so the bar
+           SINKS toward the fold with the reply stacked directly above it. */
+        justify-content: center;
+        padding-block: clamp(2rem, 5vh, 4rem);
+        gap: 0;
+        transition: justify-content 0.6s ease;
+      }
+      .hero[data-state='searching'] .hero-inner {
+        justify-content: flex-end;
+      }
+
+      .hero-hairline {
+        position: absolute; inset-inline: 0; bottom: 0; height: 3px;
+        background: var(--aurora); z-index: 3;
+      }
+
+      /* ---- hero copy (collapses away on submit) ------------------------ */
+      .hero-copy {
+        text-align: center; color: #fff;
+        max-width: 44rem; margin-inline: auto;
+        transition: opacity 0.45s ease, max-height 0.7s ease,
+          margin 0.7s ease, transform 0.55s ease;
+        max-height: 40vh; overflow: hidden;
+      }
+      .hero[data-state='searching'] .hero-copy {
+        opacity: 0; max-height: 0; margin: 0;
+        transform: translateY(-14px); pointer-events: none;
+      }
+      .hero .eyebrow {
+        color: color-mix(in srgb, var(--teal) 60%, #fff);
+        justify-content: center;
+      }
+      .hero .eyebrow::before { background: color-mix(in srgb, var(--teal) 70%, #fff); }
+      .hero-title {
+        margin: 16px 0 0; font-family: var(--font-display);
+        font-size: clamp(2.05rem, 5.1vw, 3.4rem); font-weight: 800;
+        line-height: 1.05; letter-spacing: -0.03em; color: #fff;
+        text-shadow: 0 2px 26px rgba(0,0,0,0.5);
+      }
+      /* neutralise the site-wide h1 { 5em !important } so the hero headline
+         keeps its own clamp size on this mock page */
+      h1.hero-title { font-size: clamp(2.05rem, 5.1vw, 3.4rem) !important; }
+      .hero-lead {
+        margin: 14px auto 0; max-width: 34rem;
+        font-size: clamp(15px, 1.1vw, 17.5px); line-height: 1.6;
+        color: rgba(255,255,255,0.85); text-shadow: 0 1px 14px rgba(0,0,0,0.55);
+      }
+
+      /* ---- reply zone (grows ABOVE the bar) ---------------------------- */
+      .reply-zone {
+        max-width: 70vw; margin: 0 auto;
+        max-height: 0; opacity: 0; overflow: hidden;
+        transition: max-height 0.6s ease, opacity 0.5s ease,
+          margin-bottom 0.6s ease;
+      }
+      .hero[data-state='searching'] .reply-zone {
+        max-height: 40vh; opacity: 1; margin-bottom: 18px;
+      }
+      .reply-card {
+        display: flex; gap: 14px; align-items: flex-start;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-left: 2px solid var(--indigo);
+        border-radius: 16px;
+        padding: 16px 18px;
+        -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+        box-shadow: 0 18px 40px -22px rgba(0,0,0,0.8);
+      }
+      .reply-orb {
+        flex: none; width: 30px; height: 30px; border-radius: 50%;
+        background: var(--aurora); background-size: 180% 180%;
+        box-shadow: 0 0 0 3px rgba(85,102,240,0.18);
+        animation: orb-pulse 2.4s ease-in-out infinite;
+      }
+      .reply-body { min-width: 0; }
+      .reply-name {
+        display: block; font-family: var(--font-mono);
+        font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+        color: color-mix(in srgb, var(--indigo) 45%, #fff);
+        margin-bottom: 4px;
+      }
+      .reply-text {
+        margin: 0; color: #fff; font-size: clamp(14.5px, 1.05vw, 16.5px);
+        line-height: 1.55; min-height: 1.55em;
+      }
+      /* streaming caret */
+      .reply-text.is-streaming::after {
+        content: ''; display: inline-block;
+        width: 2px; height: 1.05em; margin-left: 2px;
+        vertical-align: -0.15em; background: var(--teal);
+        animation: caret-blink 1s steps(1) infinite;
+      }
+      @keyframes caret-blink { 50% { opacity: 0; } }
+
+      /* ---- SEARCH BAR — fixed pill (home hero geometry) ---------------- */
+      .searchbar {
+        --rebi-blue: rgb(1 97 239);
+        --rebi-blue-hover: rgb(1 84 207);
+        position: relative; z-index: 2;
+        width: 70vw; max-width: 70vw; margin-inline: auto;
+      }
+      .entry {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 1.05rem 1.05rem 1.05rem 1.7rem;
+        border-radius: 9999px;
+        background: rgba(255,255,255,0.97);
+        border: 1px solid rgba(1,97,239,0.22);
+        border-bottom: 2px solid rgba(1,97,239,0.55);
+        box-shadow: 0 24px 50px -20px rgba(0,0,0,0.85);
+        transition: background 200ms ease, border-color 200ms ease;
+        cursor: text;
+      }
+      .entry:focus-within {
+        background: #fff; border-bottom-color: var(--rebi-blue);
+      }
+      .entry .mag {
+        flex: none; color: rgb(100 116 139);
+        display: grid; place-items: center;
+      }
+      .entry .mag svg { width: 1.4rem; height: 1.4rem; }
+      .entry-input {
+        flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
+        font-family: var(--font-ui); font-size: 1.18rem; color: rgb(15 23 42);
+        padding: 0.5rem 0;
+      }
+      .entry-input::placeholder { color: rgb(100 116 139); }
+      .entry-submit {
+        flex: none; display: inline-flex; align-items: center; gap: 0.35rem;
+        border: 0; cursor: pointer;
+        font-family: var(--font-ui); font-weight: 700; font-size: 1rem; color: #fff;
+        background: var(--rebi-blue);
+        padding: 0.72rem 1.4rem; border-radius: 9999px;
+        transition: background 160ms ease, transform 120ms ease;
+      }
+      .entry-submit:hover { background: var(--rebi-blue-hover); }
+      .entry-submit:active { transform: scale(0.96); }
+      .entry-submit svg { width: 0.95rem; height: 0.95rem; }
+
+      .reset-link {
+        display: block; margin: 12px auto 0;
+        background: none; border: 0; cursor: pointer;
+        font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.7); text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .reset-link:hover { color: #fff; }
+
+      /* ---- inventory --------------------------------------------------- */
+      .inv { padding-block: 28px 64px; }
+      .inv-h {
+        font-family: var(--font-display); font-size: 20px; font-weight: 750;
+        letter-spacing: -0.01em; margin: 0 0 18px;
+      }
+      .inv-grid {
+        display: grid; gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+      }
+      .ccard {
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: var(--r); overflow: hidden; box-shadow: var(--sh-1);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+      }
+      .ccard:hover { box-shadow: var(--sh-2); transform: translateY(-3px); }
+      .ccard-img {
+        position: relative; aspect-ratio: 16 / 10;
+        display: flex; align-items: flex-end;
+      }
+      .ccard-cond {
+        margin: 10px; font-family: var(--font-mono); font-size: 10.5px;
+        letter-spacing: 0.1em; text-transform: uppercase; color: #fff;
+        background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.25);
+        padding: 4px 9px; border-radius: 999px;
+      }
+      .ccard-body { padding: 14px 16px 16px; }
+      .ccard-title { margin: 0; font-size: 15.5px; font-weight: 700; line-height: 1.3; }
+      .ccard-meta {
+        margin-top: 12px; display: flex; align-items: center;
+        justify-content: space-between; gap: 10px;
+      }
+      .ccard-price { font-family: var(--font-display); font-size: 18px; font-weight: 800; }
+      .ccard-chip {
+        font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+        background: var(--bg-2); border: 1px solid var(--line);
+        padding: 4px 9px; border-radius: 999px; white-space: nowrap;
+      }
+
+      /* ---- mobile ------------------------------------------------------ */
+      @media (max-width: 560px) {
+        .hero { min-height: 88vh; }
+        .hero[data-state='searching'] { min-height: 56vh; }
+        .searchbar, .reply-zone { width: auto; max-width: none; }
+        .entry { padding: 0.85rem 0.85rem 0.85rem 1.2rem; }
+        .entry-input { font-size: 1.02rem; }
+        .entry-submit span { display: none; }
+        .entry-submit { padding: 0.7rem 0.85rem; }
+        .c-nav-links { gap: 14px; }
+      }
+
+      /* ---- reduced motion: no collapse/stream animation ---------------- */
+      @media (prefers-reduced-motion: reduce) {
+        .hero, .hero-inner, .hero-copy, .reply-zone, .entry, .entry-submit,
+        .ccard { transition: none !important; }
+        .reply-orb { animation: none; }
+        .reply-text.is-streaming::after { animation: none; }
+      }
+    </style>
+
+    <script>
+      const REPLY =
+        "Got it — a family SUV, budget under $40,000, low kilometres. " +
+        "I've narrowed the list to 12 matches. The closest is a 2022 Mazda " +
+        "CX-5 Touring at $38,990 with 24,500 km. Want me to prioritise boot " +
+        'space or fuel economy?';
+      const DEMO_QUERY = 'family SUV under 40k with low kms';
+      const CHAR_MS = 16; // fixed, deterministic typewriter tick
+
+      const hero = document.getElementById('hero');
+      const form = document.getElementById('searchForm');
+      const input = /** @type {HTMLInputElement} */ (document.getElementById('q'));
+      const replyZone = document.getElementById('replyZone');
+      const replyText = document.getElementById('replyText');
+      const resetBtn = document.getElementById('resetBtn');
+
+      const reduced = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+      let streamTimer = null;
+
+      function stopStream() {
+        if (streamTimer) {
+          clearInterval(streamTimer);
+          streamTimer = null;
+        }
+      }
+
+      function stream(text) {
+        stopStream();
+        replyText.textContent = '';
+        replyText.classList.add('is-streaming');
+        if (reduced) {
+          replyText.textContent = text;
+          replyText.classList.remove('is-streaming');
+          return;
+        }
+        let i = 0;
+        streamTimer = setInterval(() => {
+          i += 1;
+          replyText.textContent = text.slice(0, i);
+          if (i >= text.length) {
+            stopStream();
+            replyText.classList.remove('is-streaming');
+          }
+        }, CHAR_MS);
+      }
+
+      function runSearch() {
+        // Use whatever the visitor typed; fall back to the canned demo query so
+        // the scripted exchange always lines up (the reply is fixed regardless).
+        if (!input.value.trim()) input.value = DEMO_QUERY;
+
+        hero.setAttribute('data-state', 'searching');
+        replyZone.setAttribute('aria-hidden', 'false');
+        resetBtn.hidden = false;
+        input.blur();
+
+        // Let the collapse begin, then stream the reply into the space above.
+        const delay = reduced ? 0 : 520;
+        window.setTimeout(() => stream(REPLY), delay);
+      }
+
+      function reset() {
+        stopStream();
+        hero.setAttribute('data-state', 'idle');
+        replyZone.setAttribute('aria-hidden', 'true');
+        replyText.textContent = '';
+        replyText.classList.remove('is-streaming');
+        resetBtn.hidden = true;
+        input.value = '';
+        input.focus();
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        runSearch(); // re-runnable: submitting again restreams the reply
+      });
+      resetBtn.addEventListener('click', reset);
+    </script>
+  </body>
+</html>
